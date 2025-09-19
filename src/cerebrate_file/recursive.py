@@ -8,6 +8,7 @@ replicating directory structures, and coordinating parallel file processing.
 """
 
 import os
+import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Callable, Any
@@ -21,6 +22,7 @@ __all__ = [
     "replicate_directory_structure",
     "process_files_parallel",
     "ProcessingResult",
+    "expand_brace_patterns",
 ]
 
 
@@ -36,6 +38,40 @@ class ProcessingResult:
         self.total_time: float = 0.0
 
 
+def expand_brace_patterns(pattern: str) -> List[str]:
+    """Expand brace patterns like '*.{md,py,js}' into separate patterns.
+
+    Args:
+        pattern: Glob pattern that may contain brace expansion like '**/*.{md,py,js}'
+
+    Returns:
+        List of expanded patterns, or single pattern if no braces found
+
+    Examples:
+        expand_brace_patterns('*.{md,py}') -> ['*.md', '*.py']
+        expand_brace_patterns('**/*.{txt,md,py,js}') -> ['**/*.txt', '**/*.md', '**/*.py', '**/*.js']
+        expand_brace_patterns('*.md') -> ['*.md']
+    """
+    # Find brace pattern like {ext1,ext2,ext3}
+    brace_match = re.search(r'\{([^}]+)\}', pattern)
+
+    if not brace_match:
+        return [pattern]
+
+    # Extract the options inside braces
+    options = [opt.strip() for opt in brace_match.group(1).split(',')]
+
+    # Create base pattern with placeholder
+    base_pattern = pattern[:brace_match.start()] + '{}' + pattern[brace_match.end():]
+
+    # Generate all expanded patterns
+    expanded = [base_pattern.format(opt) for opt in options if opt]
+
+    logger.debug(f"Expanded pattern '{pattern}' into {len(expanded)} patterns: {expanded}")
+
+    return expanded
+
+
 def find_files_recursive(
     input_dir: Path,
     pattern: str,
@@ -45,7 +81,7 @@ def find_files_recursive(
 
     Args:
         input_dir: Root directory to search in
-        pattern: Glob pattern for file matching (e.g., "*.md", "**/*.txt")
+        pattern: Glob pattern for file matching (e.g., "*.md", "**/*.{txt,md}")
         output_dir: Optional output directory. If None, files are processed in-place
 
     Returns:
@@ -60,8 +96,24 @@ def find_files_recursive(
     if not input_dir.is_dir():
         raise ValueError(f"Input path is not a directory: {input_dir}")
 
-    # Find all matching files
-    matching_files = list(input_dir.rglob(pattern))
+    # Expand brace patterns like **/*.{md,py,js}
+    patterns = expand_brace_patterns(pattern)
+    logger.debug(f"Using {len(patterns)} pattern(s) for file discovery")
+
+    # Find all matching files across all patterns
+    all_matching_files = set()
+    for p in patterns:
+        try:
+            pattern_matches = input_dir.rglob(p)
+            for match in pattern_matches:
+                if match.is_file():  # Only include files, not directories
+                    all_matching_files.add(match)
+            logger.debug(f"Pattern '{p}' found {len(list(input_dir.rglob(p)))} matches")
+        except Exception as e:
+            logger.warning(f"Error processing pattern '{p}': {e}")
+            continue
+
+    matching_files = list(all_matching_files)
 
     if not matching_files:
         logger.warning(f"No files found matching pattern '{pattern}' in {input_dir}")
@@ -73,10 +125,6 @@ def find_files_recursive(
     file_pairs: List[Tuple[Path, Path]] = []
 
     for input_file in matching_files:
-        # Skip directories that might match the pattern
-        if input_file.is_dir():
-            continue
-
         # Calculate relative path from input_dir
         relative_path = input_file.relative_to(input_dir)
 

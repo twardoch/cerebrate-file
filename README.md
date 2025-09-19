@@ -29,22 +29,82 @@ uv run old/cereproc.py \
   --verbose
 ```
 
-## CLI Flags
+## CLI 
 
-- `--input_data PATH` (required) Text/Markdown/code file to process.
-- `--output_data PATH` Destination file (defaults to the input path).
-- `--file_prompt PATH` Load reusable instructions; appended before the inline prompt.
-- `--prompt TEXT` Freeform instructions appended after the file prompt.
-- `--chunk_size INT` Target chunk size in tokens (default `32000`).
-- `--data_format text|semantic|markdown|code` Chunking strategy (default `markdown`).
-- `--sample_size INT` Continuity example size in tokens (default `200`, use `0` to disable).
-- `--max_tokens_ratio INT` Completion budget as `%` of chunk tokens (default `100`).
-- `--temp FLOAT` and `--top_p FLOAT` Sampling controls (defaults `0.7` / `0.8`).
-- `--model TEXT` Cerebras model name override (default `qwen-3-coder-480b`).
-- `--verbose` Enable detailed logging and chunk previews.
-- `--dry_run` Inspect chunking and request envelopes without calling the API.
-- `--explain` Parse Markdown frontmatter, ensure required metadata fields, and
-  ask the model to fill gaps before processing.
+```
+INFO: Showing help with the command 'cerebrate-file -- --help'.
+
+NAME
+    cerebrate-file - Process large documents by chunking for Cerebras qwen-3-coder-480b.
+
+SYNOPSIS
+    cerebrate-file INPUT_DATA <flags>
+
+DESCRIPTION
+    Process large documents by chunking for Cerebras qwen-3-coder-480b.
+
+POSITIONAL ARGUMENTS
+    INPUT_DATA
+        Type: str
+        Path to input file to process
+
+FLAGS
+    -o, --output_data=OUTPUT_DATA
+        Type: Optional[Optional]
+        Default: None
+        Output file path (default: overwrite input_data)
+    -f, --file_prompt=FILE_PROMPT
+        Type: Optional[Optional]
+        Default: None
+        Path to file containing initial instructions
+    -p, --prompt=PROMPT
+        Type: Optional[Optional]
+        Default: None
+        Freeform instruction text to append after file_prompt
+    -c, --chunk_size=CHUNK_SIZE
+        Type: int
+        Default: 32000
+        Target maximum input chunk size in tokens (default: 32000)
+    --max_tokens_ratio=MAX_TOKENS_RATIO
+        Type: int
+        Default: 100
+        Completion budget as % of chunk size (default: 100)
+    --data_format=DATA_FORMAT
+        Type: str
+        Default: 'markdown'
+        Chunking strategy - text|semantic|markdown|code (default: markdown)
+    -s, --sample_size=SAMPLE_SIZE
+        Type: int
+        Default: 200
+        Number of tokens for continuity examples (default: 200)
+    --temp=TEMP
+        Type: float
+        Default: 0.7
+        Model temperature (default: 0.7)
+    --top_p=TOP_P
+        Type: float
+        Default: 0.8
+        Model top-p (default: 0.8)
+    --model=MODEL
+        Type: str
+        Default: 'qwen-3-coder-480b'
+        Model name override (default: qwen-3-coder-480b)
+    -v, --verbose=VERBOSE
+        Type: bool
+        Default: False
+        Enable debug logging (default: False)
+    -e, --explain=EXPLAIN
+        Type: bool
+        Default: False
+        Enable metadata processing with frontmatter parsing (default: False)
+    --dry_run=DRY_RUN
+        Type: bool
+        Default: False
+        Perform chunking and display results without making API calls (default: False)
+
+NOTES
+    You can also use flags syntax for POSITIONAL ARGUMENTS
+```
 
 ## Processing Pipeline
 

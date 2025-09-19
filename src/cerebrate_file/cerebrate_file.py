@@ -175,24 +175,7 @@ def process_document(
         else tqdm(total=len(chunks), desc="Processing chunks", unit="chunk")
     )
 
-    # Use recoverable operation for checkpoint support
-    with RecoverableOperation(
-        operation_name="cerebrate_process",
-        checkpoint_interval=5,  # Save checkpoint every 5 chunks
-        enable_checkpoints=len(chunks) > 10  # Only use checkpoints for larger documents
-    ) as recovery_op:
-        # Resume from checkpoint if available
-        if recovery_op.checkpoint_data:
-            results = recovery_op.checkpoint_data.get("results", [])
-            state = ProcessingState(**recovery_op.checkpoint_data.get("state", {}))
-            start_index = recovery_op.checkpoint_data.get("last_chunk_index", -1) + 1
-            if verbose and start_index > 0:
-                print(f"Resuming from chunk {start_index + 1}/{len(chunks)}")
-        else:
-            start_index = 0
-
-        for i in range(start_index, len(chunks)):
-            chunk = chunks[i]
+    for i, chunk in enumerate(chunks):
         # Show progress differently based on verbose mode
         if verbose:
             print(

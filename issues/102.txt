@@ -1,0 +1,5 @@
+No, it stops here. This looks like overkill. Instead, add very minimal 'rich' support. Replace the progress bar with a setup where processing of each file gets
+  visualized by just two lines: one line is a microtable where on the left side we see the input path and on the right side we get the chunk progress bar (using rich
+  progress bar). And the 2nd line gets emitted at the end: on the left is the save path, and on the right the remaining API calls (drop the remaining tokens
+  calculation). Make sure the text UI is extremely minimalistic, no borders etc. But color is OK. Then the 2nd thing is:
+─

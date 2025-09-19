@@ -429,19 +429,32 @@ def make_cerebras_request(
 
         response_text = ""
         rate_status = RateLimitStatus()
-
-        # Extract rate limit info from stream response headers
-        try:
-            if hasattr(stream, "response") and hasattr(stream.response, "headers"):
-                headers_dict = dict(stream.response.headers)
-                rate_status = parse_rate_limit_headers(headers_dict, verbose=verbose)
-                logger.debug(f"Rate limit headers parsed from stream response")
-        except Exception as e:
-            logger.debug(f"Could not parse rate limit headers from stream: {e}")
+        last_chunk = None
 
         for chunk in stream:
             if chunk.choices[0].delta.content:
                 response_text += chunk.choices[0].delta.content
+            last_chunk = chunk
+
+        # Extract rate limit info from the final chunk/stream response headers
+        try:
+            # Try to get headers from stream response (initial headers)
+            if hasattr(stream, "response") and hasattr(stream.response, "headers"):
+                headers_dict = dict(stream.response.headers)
+                rate_status = parse_rate_limit_headers(headers_dict, verbose=verbose)
+                logger.debug(f"Rate limit headers parsed from stream response")
+
+            # If we have a last chunk with response headers, try to get updated headers
+            if last_chunk and hasattr(last_chunk, "_raw_response") and hasattr(last_chunk._raw_response, "headers"):
+                final_headers_dict = dict(last_chunk._raw_response.headers)
+                updated_rate_status = parse_rate_limit_headers(final_headers_dict, verbose=verbose)
+                # Use updated headers if they were successfully parsed
+                if updated_rate_status.headers_parsed:
+                    rate_status = updated_rate_status
+                    logger.debug(f"Rate limit headers updated from final chunk")
+
+        except Exception as e:
+            logger.debug(f"Could not parse rate limit headers: {e}")
 
         logger.debug(f"Streaming complete: {len(response_text)} chars received")
         return response_text, rate_status

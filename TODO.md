@@ -1,17 +1,14 @@
 - [x] Analyze issues/104.txt to understand the problems
 - [x] Read PLAN.md and TODO.md files
 - [x] Create detailed plan to fix the identified issues
-- [ ] Read src/cerebrate_file/cli.py to understand current processing flow
-- [ ] Identify API response parsing logic for call counting
-- [ ] Map explain mode processing workflow
-- [ ] Understand chunk processing flow in explain vs normal mode
-- [ ] Fix call counting bug in API response parsing
-- [ ] Fix frontmatter generation issue in explain mode
-- [ ] Fix chunk processing to ensure first chunk gets real prompt
-- [ ] Test fixes with test2.sh script
-- [ ] Verify call counting shows correct decreasing values
-- [ ] Confirm frontmatter appears in all explain mode outputs
-- [ ] Ensure all chunks processed with real prompt
+- [x] Read src/cerebrate_file/cli.py to understand current processing flow
+- [x] Identify root cause: recursive mode ignores explain parameter entirely
+- [x] Fix recursive mode to support explain parameter like single-file mode
+- [x] Implement frontmatter parsing in recursive processing
+- [x] Add metadata generation for missing fields in recursive mode
+- [x] Update process_file_wrapper to handle explain mode
+- [x] Fix API call counting display bug by parsing final response headers
+- [ ] Test fixes with test1.sh and test2.sh scripts
+- [ ] Verify both modes produce YAML frontmatter when --explain is used
 - [ ] Run full test suite to check for regressions
-- [ ] Implement @issues/105.txt
 

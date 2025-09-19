@@ -33,6 +33,15 @@ classifiers = [
 ]
 
 dependencies = [
+    "fire>=0.6.0",
+    "loguru>=0.7.0",
+    "python-dotenv>=1.0.0",
+    "tenacity>=8.2.0",
+    "cerebras-cloud-sdk>=1.0.0",
+    "semantic-text-splitter>=0.13.0",
+    "qwen-tokenizer>=0.0.8",
+    "tqdm>=4.66.0",
+    "python-frontmatter>=1.1.0",
 ]
 
 # Author information
@@ -92,7 +101,7 @@ all = [
 # Entry points for command-line executables installed with the package.
 #------------------------------------------------------------------------------
 [project.scripts]
-# CLINAME = "cerebrate_file.__main__:main"
+cerebrate-file = "cerebrate_file.__main__:main"
 
 #------------------------------------------------------------------------------
 # BUILD SYSTEM CONFIGURATION

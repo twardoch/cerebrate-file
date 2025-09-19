@@ -97,22 +97,140 @@ def run(
         # Recursive processing mode - validate recursive parameters
         validate_recursive_inputs(input_data, recurse, workers, output_data)
 
-        # TODO: Implement recursive processing in Phase 4
+        # Implement recursive processing
         from pathlib import Path
-        input_path = Path(input_data)
+        from .recursive import find_files_recursive, replicate_directory_structure, process_files_parallel
+        from .ui import MultiFileProgressDisplay
 
-        # For now, show a message about upcoming recursive processing
-        print(f"🔄 Recursive processing with pattern '{recurse}' will be implemented in Phase 4")
+        input_path = Path(input_data)
+        output_path = Path(output_data) if output_data else None
+
+        print(f"🔄 Starting recursive processing with pattern '{recurse}'")
         print(f"📁 Input directory: {input_path}")
         print(f"👥 Workers: {workers}")
 
-        if output_data:
-            output_path = Path(output_data)
+        if output_path:
             print(f"📁 Output directory: {output_path}")
         else:
             print(f"📁 Output: In-place (overwrite input files)")
 
-        logger.info(f"Recursive processing planned: {input_path} with pattern '{recurse}', {workers} workers")
+        # Find all matching files
+        file_pairs = find_files_recursive(input_path, recurse, output_path)
+
+        if not file_pairs:
+            print("⚠️  No files found matching the pattern")
+            return
+
+        print(f"📊 Found {len(file_pairs)} files to process")
+
+        # Create output directory structure if needed
+        if output_path:
+            replicate_directory_structure(file_pairs)
+
+        # If dry-run, just show what would be processed
+        if dry_run:
+            print("\n🔍 DRY-RUN MODE - Files that would be processed:")
+            for input_file, output_file in file_pairs[:10]:
+                print(f"  {input_file} -> {output_file}")
+            if len(file_pairs) > 10:
+                print(f"  ... and {len(file_pairs) - 10} more files")
+            return
+
+        # Set up multi-file progress display
+        progress_display = MultiFileProgressDisplay() if not verbose else None
+
+        if progress_display:
+            progress_display.start_overall_processing(len(file_pairs))
+
+        # Build base prompt once for all files
+        base_prompt, base_prompt_tokens = build_base_prompt(file_prompt, text_prompt)
+
+        # Define processing function for each file
+        def process_file_wrapper(input_file: Path, output_file: Path):
+            """Process a single file."""
+            from .models import ProcessingState
+
+            try:
+                # Read file content
+                content = read_file_safely(str(input_file))
+
+                # Create chunks
+                chunks = create_chunks(content, data_format, chunk_size)
+
+                if not chunks:
+                    logger.warning(f"No chunks created for {input_file}")
+                    return ProcessingState()
+
+                # Initialize client
+                client = Cerebras(api_key=os.environ.get("CEREBRAS_API_KEY"))
+
+                # Start progress for this file if display available
+                if progress_display:
+                    progress_display.start_file(str(input_file), str(output_file), len(chunks))
+
+                # Create progress callback for this file
+                def file_progress_callback(chunks_done: int, remaining_calls: int):
+                    if progress_display:
+                        progress_display.update_file_progress(str(input_file), chunks_done, remaining_calls)
+
+                # Process document
+                output_text, state = process_document(
+                    client=client,
+                    chunks=chunks,
+                    base_prompt=base_prompt,
+                    base_prompt_tokens=base_prompt_tokens,
+                    model=model,
+                    temp=temp,
+                    top_p=top_p,
+                    max_tokens_ratio=max_tokens_ratio,
+                    sample_size=sample_size,
+                    metadata=None,  # No metadata in recursive mode for now
+                    verbose=verbose,
+                    progress_callback=file_progress_callback if progress_display else None,
+                )
+
+                # Write output
+                write_output_atomically(output_text, str(output_file), None)
+
+                # Finish progress for this file
+                if progress_display:
+                    progress_display.finish_file(str(input_file))
+
+                return state
+
+            except Exception as e:
+                logger.error(f"Error processing {input_file}: {e}")
+                if progress_display:
+                    progress_display.finish_file(str(input_file))
+                raise
+
+        # Process files in parallel
+        result = process_files_parallel(
+            file_pairs,
+            process_file_wrapper,
+            workers,
+            None  # Progress handled internally
+        )
+
+        # Finish overall progress
+        if progress_display:
+            progress_display.finish_overall_processing()
+
+        # Show summary
+        print(f"\n📊 Processing Summary:")
+        print(f"  ✅ Successful: {len(result.successful)} files")
+        if result.failed:
+            print(f"  ❌ Failed: {len(result.failed)} files")
+            for failed_file, error in result.failed[:5]:  # Show first 5 failures
+                print(f"     - {failed_file}: {error}")
+            if len(result.failed) > 5:
+                print(f"     ... and {len(result.failed) - 5} more failures")
+
+        if result.successful:
+            print(f"  📝 Total tokens: {result.total_input_tokens:,} input, {result.total_output_tokens:,} output")
+            print(f"  ⏱️  Total time: {result.total_time:.1f}s")
+
+        logger.info(f"Recursive processing complete: {len(result.successful)} successful, {len(result.failed)} failed")
         return
 
     # Single file processing mode - existing logic

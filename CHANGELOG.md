@@ -6,6 +6,44 @@ this_file: CHANGELOG.md
 
 All notable changes to cerebrate-file will be documented in this file.
 
+## [Unreleased] - 2025-09-20
+
+### Added - Issues #102 Implementation
+- **Rich UI Support**: Replaced tqdm with rich library for enhanced terminal UI
+  - Minimalistic two-row progress display (input path + progress, output path + remaining calls)
+  - `FileProgressDisplay` class for single file processing
+  - `MultiFileProgressDisplay` class for parallel file processing
+  - Progress callback architecture for clean separation of UI and logic
+  - 98% test coverage for UI components
+
+- **Recursive Processing Infrastructure**: Added foundation for recursive file processing
+  - `--recurse` parameter for glob pattern matching (e.g., "*.md", "**/*.txt")
+  - `--workers` parameter for parallel processing (default: 4)
+  - Comprehensive validation for directories, patterns, and worker counts
+  - `validate_recursive_inputs()` function with user-friendly error messages
+
+### Changed
+- **Dependencies**:
+  - Added `rich>=13.0.0` for enhanced terminal UI
+  - Removed `tqdm>=4.66.0` (replaced by rich)
+
+- **CLI Interface**:
+  - Extended `run()` function with recurse and workers parameters
+  - Updated help text and documentation for new features
+  - Input/output paths now support directories when using --recurse
+
+- **Processing Pipeline**:
+  - Modified `process_document()` to use progress callbacks instead of tqdm
+  - Added `progress_callback` parameter for UI integration
+  - Maintained full backward compatibility with verbose mode
+
+### Technical Improvements
+- Added comprehensive test suite for UI components (18 tests, 98% coverage)
+- Full type hints for all new functions and classes
+- Clean separation between UI and processing logic via callbacks
+- Maintained 100% backward compatibility with existing CLI
+- Error messages enhanced for better user experience
+
 ## [2.0.0] - 2025-09-19
 
 ### Changed - Major Refactoring

@@ -115,18 +115,8 @@ class FileProgressDisplay:
         if not self.input_path:
             return
 
-        # The progress bar itself shows the first row (input path + progress)
-        # We need to print the second row separately
-        output_text = Text()
-        output_text.append("💾 ", style="green")
-        output_text.append(self.output_path, style="cyan")
-
-        if self.remaining_calls > 0:
-            calls_text = f" ({self.remaining_calls:,} calls remaining)"
-            output_text.append(calls_text, style="yellow")
-
-        # Print second row (output path + remaining calls)
-        self.console.print(output_text)
+        # Only show the progress bar during updates, no second row
+        # The second row (output path + remaining calls) is only shown at completion
 
     def _show_completion(self) -> None:
         """Show completion status for the file."""

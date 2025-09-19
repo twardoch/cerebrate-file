@@ -91,7 +91,7 @@ class CerebrasClient:
         """
         client = self._get_client()
         response_text, self.rate_status = make_cerebras_request(
-            client, messages, self.model, max_completion_tokens, temperature, top_p
+            client, messages, self.model, max_completion_tokens, temperature, top_p, False
         )
         return response_text, self.rate_status
 
@@ -135,11 +135,12 @@ class CerebrasClient:
         return calculate_backoff_delay(self.rate_status, next_chunk_tokens)
 
 
-def parse_rate_limit_headers(headers: Dict[str, str]) -> RateLimitStatus:
+def parse_rate_limit_headers(headers: Dict[str, str], verbose: bool = False) -> RateLimitStatus:
     """Extract rate limit info from response headers.
 
     Args:
         headers: HTTP response headers
+        verbose: If True, log all x-ratelimit-* headers
 
     Returns:
         RateLimitStatus object
@@ -147,6 +148,14 @@ def parse_rate_limit_headers(headers: Dict[str, str]) -> RateLimitStatus:
     try:
         status = RateLimitStatus()
         found_any_headers = False
+
+        # In verbose mode, log all x-ratelimit-* headers
+        if verbose:
+            ratelimit_headers = {k: v for k, v in headers.items() if k.lower().startswith('x-ratelimit')}
+            if ratelimit_headers:
+                logger.info(f"All x-ratelimit headers: {ratelimit_headers}")
+            else:
+                logger.info("No x-ratelimit headers found in response")
 
         # Parse limits (maximum allowed)
         if "x-ratelimit-limit-requests-day" in headers:
@@ -390,6 +399,7 @@ def make_cerebras_request(
     max_completion_tokens: int,
     temperature: float,
     top_p: float,
+    verbose: bool = False,
 ) -> Tuple[str, RateLimitStatus]:
     """Make streaming request to Cerebras API with retry logic.
 
@@ -400,6 +410,7 @@ def make_cerebras_request(
         max_completion_tokens: Maximum tokens for completion
         temperature: Model temperature
         top_p: Model top_p
+        verbose: Enable verbose logging of rate limit headers
 
     Returns:
         Tuple of (response_text, rate_limit_status)
@@ -423,7 +434,7 @@ def make_cerebras_request(
         try:
             if hasattr(stream, "response") and hasattr(stream.response, "headers"):
                 headers_dict = dict(stream.response.headers)
-                rate_status = parse_rate_limit_headers(headers_dict)
+                rate_status = parse_rate_limit_headers(headers_dict, verbose=verbose)
                 logger.debug(f"Rate limit headers parsed from stream response")
         except Exception as e:
             logger.debug(f"Could not parse rate limit headers from stream: {e}")

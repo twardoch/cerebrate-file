@@ -1742,13 +1742,8 @@ def run(
 
     # Show remaining daily requests from the last chunk's rate limit headers
     if last_rate_status.headers_parsed and last_rate_status.requests_remaining is not None:
-        # Cerebras provides daily request limits but not daily token limits
-        # We can estimate remaining token capacity based on average token usage
-        avg_tokens_per_chunk = state.total_input_tokens / len(chunks) if chunks else 0
-        estimated_remaining_tokens = last_rate_status.requests_remaining * avg_tokens_per_chunk
-
-        # Show both the estimated tokens and actual remaining requests
-        print(f"📊 Remaining today: ~{estimated_remaining_tokens:,.0f} tokens ({last_rate_status.requests_remaining} requests remaining)")
+        # Show remaining daily requests from rate limit headers
+        print(f"📊 Remaining today: {last_rate_status.requests_remaining} requests")
 
         # If we're getting close to the limit, show a warning
         if last_rate_status.requests_limit > 0:

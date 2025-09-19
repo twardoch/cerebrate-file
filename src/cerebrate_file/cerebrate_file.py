@@ -261,7 +261,7 @@ def process_document(
                 print(f"  → Calling Cerebras API...")
 
             response_text, rate_status = make_cerebras_request(
-                client, messages, model, max_completion_tokens, temp, top_p
+                client, messages, model, max_completion_tokens, temp, top_p, verbose
             )
 
             # Update state for next iteration

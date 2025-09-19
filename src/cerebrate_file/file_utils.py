@@ -137,8 +137,8 @@ def write_output_atomically(
         if create_backup and output_path_obj.exists():
             backup_file(output_path_obj)
 
-        # If metadata is provided, wrap content with frontmatter
-        if metadata:
+        # If metadata is provided (not None), wrap content with frontmatter
+        if metadata is not None:
             post = frontmatter.Post(content, **metadata)
             final_content = frontmatter.dumps(post)
         else:

@@ -1,0 +1,114 @@
+
+When I run: 
+
+./test2.sh
+
+which is
+
+```
+#!/usr/bin/env bash
+cd "$(dirname "$0")"
+python -m cerebrate_file --recurse="*.md" --workers=4 --input_data=testdata/in/ --output_data=testdata/out/ --file_prompt=testdata/poml-fix-pdf-extracted-text.xml --explain 
+```
+
+
+
+I get:
+
+```
+📁 Output directory: testdata/out
+📊 Found 18 files to process
+🚀 Processing 18 files recursively
+
+📄 testdata/in/Creative Haven Modern Tattoo Designs Coloring Book (Creative Haven Coloring Books) (Siuda, Erik, Creative Haven) (Z-Library)_2.md ━━━━━━━━━━━━━━━━━━━ 100%
+✅ Saved: testdata/out/Creative Haven Modern Tattoo Designs Coloring Book (Creative Haven Coloring Books) (Siuda, Erik, Creative Haven) (Z-Library)_2.md (172,799 calls
+remaining)
+
+📊 Progress: 1/18 files completed
+
+📄 testdata/in/02-tattoo-design.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+✅ Saved: testdata/out/02-tattoo-design.md (172,799 calls remaining)
+
+📊 Progress: 2/18 files completed
+
+📄 testdata/in/Great_Book_of_Tattoo_Designs__Revised_Edition_More_than_500_Body_Art_Designs__Lora_S__Irish___Z-Library_.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+✅ Saved: testdata/out/Great_Book_of_Tattoo_Designs__Revised_Edition_More_than_500_Body_Art_Designs__Lora_S__Irish___Z-Library_.md (172,799 calls remaining)
+
+📊 Progress: 3/18 files completed
+
+📄 testdata/in/Tattoo _ alphabets and scripts _ an essential reference for -- Vince Hemingson -- Bloomsbury UK, London, 2010 -- A&C Black Visual Arts -- 978140812838… 1…
+✅ Saved: testdata/out/Tattoo _ alphabets and scripts _ an essential reference for -- Vince Hemingson -- Bloomsbury UK, London, 2010 -- A&C Black Visual Arts --
+9781408128381 -- 864821544fde1e02ca5754ce066e0a31 -- Anna’s Archive_2.md (172,799 calls remaining)
+
+📊 Progress: 4/18 files completed
+
+📄 testdata/in/Tattoos, Body Piercings, and Art (Kris Hirschmann) (Z-Library)_2.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+📄 testdata/in/02-tattoo-design.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+📄 testdata/in/Creative Haven Modern Tattoo Designs Coloring Book (Creative Haven Coloring Books) (Siuda, Erik, Creative Haven) (Z-Library)_2.md ━━━━━━━━━━━━━━━━━━━ 100%
+✅ Saved: testdata/out/Tattoos, Body Piercings, and Art (Kris Hirschmann) (Z-Library)_2.md (172,799 calls remaining)
+
+📊 Progress: 5/18 files completed
+
+📄 testdata/in/Japanese Tattoos History Culture Design (Brian Ashcraft, Hori Benny) (Z-Library)_2.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+✅ Saved: testdata/out/Japanese Tattoos History Culture Design (Brian Ashcraft, Hori Benny) (Z-Library)_2.md (172,799 calls remaining)
+
+📊 Progress: 6/18 files completed
+
+📄 testdata/in/Bodies of Inscription A Cultural History of the Modern Tattoo Community (Margo DeMello) (Z-Library)_2.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+✅ Saved: testdata/out/Bodies of Inscription A Cultural History of the Modern Tattoo Community (Margo DeMello) (Z-Library)_2.md (172,799 calls remaining)
+
+📊 Progress: 7/18 files completed
+
+📄 testdata/in/Tattoo_Bodies__Art_and_Exchange_in_the_Pacific_and_Europe__Nicholas_Thomas___Z-Library_.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+✅ Saved: testdata/out/Tattoo_Bodies__Art_and_Exchange_in_the_Pacific_and_Europe__Nicholas_Thomas___Z-Library_.md (172,799 calls remaining)
+
+📊 Progress: 8/18 files completed
+
+📄 testdata/in/Everything_you_need_to_know_about_mehndi__temporary_tattoos__and_other_temporary_body_art__Stefanie_Iris_Weiss___Z-Library_.md ━━━━━━━━━━━━━━━━━━━━━━ 100%
+✅ Saved: testdata/out/Everything_you_need_to_know_about_mehndi__temporary_tattoos__and_other_temporary_body_art__Stefanie_Iris_Weiss___Z-Library_.md (172,799 calls
+remaining)
+
+📊 Progress: 9/18 files completed
+
+📄 testdata/in/Tattoo How to Draw Beautiful Modern Tattoo, Beginner Drawing Books, Step-By-Step Guide to Drawing for Adults, for Kids (I Can… (Jensen Baker) (Z-Libra… 1…
+✅ Saved: testdata/out/Tattoo How to Draw Beautiful Modern Tattoo, Beginner Drawing Books, Step-By-Step Guide to Drawing for Adults, for Kids (I Can… (Jensen Baker)
+(Z-Library)_2.md (172,799 calls remaining)
+
+📊 Progress: 10/18 files completed
+
+📄 testdata/in/The_Black_Tattoo_--_Enthoven__Sam_--_0_--_e9f35adc31dd22db924e0fba87c36242_--_Anna_s_Archive.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+✅ Saved: testdata/out/The_Black_Tattoo_--_Enthoven__Sam_--_0_--_e9f35adc31dd22db924e0fba87c36242_--_Anna_s_Archive.md (172,799 calls remaining)
+
+📊 Progress: 11/18 files completed
+
+📄 testdata/in/Tattooed The Sociogenesis of a Body Art (Michael M. Atkinson) (Z-Library)_2.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+✅ Saved: testdata/out/Tattooed The Sociogenesis of a Body Art (Michael M. Atkinson) (Z-Library)_2.md (172,799 calls remaining)
+
+📊 Progress: 12/18 files completed
+
+📄 testdata/in/Japanese_Tattoos_History__Culture__Design__Brian_Ashcraft__Hori_Benny___Z-Library_.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+✅ Saved: testdata/out/Japanese_Tattoos_History__Culture__Design__Brian_Ashcraft__Hori_Benny___Z-Library_.md (172,799 calls remaining)
+
+📊 Progress: 13/18 files completed
+
+📄 testdata/in/The World Atlas of Tattoo (Anna Felicity Friedman) (Z-Library)_2.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+✅ Saved: testdata/out/The World Atlas of Tattoo (Anna Felicity Friedman) (Z-Library)_2.md (172,799 calls remaining)
+
+📊 Progress: 14/18 files completed
+
+📄 testdata/in/The_Tattoo_Encyclopedia_A_Guide_to_Choosing_Your_Tattoo__Terisa_Green___Z-Library_.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+✅ Saved: testdata/out/The_Tattoo_Encyclopedia_A_Guide_to_Choosing_Your_Tattoo__Terisa_Green___Z-Library_.md (172,799 calls remaining)
+
+📊 Progress: 15/18 files completed
+
+📄 testdata/in/The Tattoo Encyclopedia (Terisa Green) (Z-Library)_2.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+✅ Saved: testdata/out/The Tattoo Encyclopedia (Terisa Green) (Z-Library)_2.md (172,799 calls remaining)
+```
+
+
+PROBLEMS: 
+
+- It’s seriously suspicious that we get "172,799 calls remaining" after each call
+- Despite having `--explain`, there sometimes is no YAML frontmatter in the output Markdown. 
+- When `--explain` is given, we need to process the 1st chunk for the purpose of metadata building, but then we ALSO need to process the 1st chunk (and 2nd, and 3rd etc.) with our real prompt! It seems to me that somehow right now the 1st chunk is NOT processed with the "real" prompt. 
+

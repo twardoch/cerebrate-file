@@ -335,6 +335,7 @@ def run(
         chunks = temp_chunks
         if verbose:
             print(f"✂️  Using chunks from metadata processing...")
+            print(f"ℹ️  All chunks (including first) will be processed with the normal prompt")
     else:
         if verbose:
             print(f"✂️  Creating chunks using {data_format} mode...")
@@ -412,19 +413,13 @@ def run(
         progress_display.finish_file_processing()
 
     # Write output atomically
-    print(f"💾 Saved: {output_data}")
     write_output_atomically(final_output, output_data, metadata if explain else None)
 
     # Show remaining daily requests from the last chunk's rate limit headers
     last_rate_status = state.last_rate_status
     if last_rate_status.headers_parsed and last_rate_status.requests_remaining is not None:
-        # Cerebras provides daily request limits but not daily token limits
-        # We can estimate remaining token capacity based on average token usage
-        avg_tokens_per_chunk = state.total_input_tokens / len(chunks) if chunks else 0
-        estimated_remaining_tokens = last_rate_status.requests_remaining * avg_tokens_per_chunk
-
-        # Show both the estimated tokens and actual remaining requests
-        print(f"📊 Remaining today: ~{estimated_remaining_tokens:,.0f} tokens ({last_rate_status.requests_remaining} requests remaining)")
+        # Show remaining daily requests from rate limit headers
+        print(f"📊 Remaining today: {last_rate_status.requests_remaining} requests")
 
         # If we're getting close to the limit, show a warning
         if last_rate_status.requests_limit > 0:

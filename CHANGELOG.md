@@ -8,6 +8,25 @@ All notable changes to cerebrate-file will be documented in this file.
 
 ## [Unreleased] - 2025-09-20
 
+### Added
+- **Comprehensive GitHub Pages Documentation**: Full Jekyll-based documentation site
+  - Complete documentation site using Just-the-Docs theme
+  - 10+ detailed documentation pages covering all aspects
+  - Installation, usage, configuration, and troubleshooting guides
+  - API reference for programmatic usage
+  - Real-world examples and use cases
+  - Development and contribution guidelines
+  - Quick start guide for new users
+  - Searchable documentation with navigation
+
+### Fixed
+- **Rate Limit Display**: Removed incorrect token calculation from remaining quota display
+  - Fixed misleading "remaining tokens" calculation that multiplied requests by average chunk size
+  - Now correctly shows only actual remaining daily requests from Cerebras API headers
+  - Display simplified to show `📊 Remaining today: X requests` without bogus token count
+
+## [1.0.10] - 2025-09-20
+
 ### Added - Issues #102 Implementation (Phase 1-3 Complete)
 - **Rich UI Support**: Replaced tqdm with rich library for enhanced terminal UI
   - ✅ Minimalistic two-row progress display (input path + progress, output path + remaining calls)

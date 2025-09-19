@@ -12,7 +12,6 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
-from tqdm import tqdm
 
 from .api_client import make_cerebras_request
 from .chunking import create_chunks
@@ -140,6 +139,7 @@ def process_document(
     sample_size: int,
     metadata: Optional[Dict[str, Any]] = None,
     verbose: bool = False,
+    progress_callback: Optional[callable] = None,
 ) -> Tuple[str, ProcessingState]:
     """Process all chunks through the Cerebras API.
 
@@ -155,6 +155,8 @@ def process_document(
         sample_size: Continuity sample size
         metadata: Optional metadata
         verbose: Enable verbose output
+        progress_callback: Optional callback function for progress updates.
+                          Called with (chunks_completed, remaining_calls)
 
     Returns:
         Tuple of (final_output, processing_state)
@@ -167,13 +169,6 @@ def process_document(
     state = ProcessingState()
     results = []
     last_rate_status = RateLimitStatus()
-
-    # Create progress bar for non-verbose mode
-    progress_bar = (
-        None
-        if verbose
-        else tqdm(total=len(chunks), desc="Processing chunks", unit="chunk")
-    )
 
     for i, chunk in enumerate(chunks):
         # Show progress differently based on verbose mode
@@ -291,8 +286,11 @@ def process_document(
                     print(
                         f"  → Rate status: {rate_status.requests_remaining} requests, {rate_status.tokens_remaining} tokens remaining"
                     )
-            elif progress_bar:
-                progress_bar.update(1)
+
+            # Call progress callback if provided
+            if progress_callback:
+                remaining_calls = rate_status.requests_remaining if rate_status.headers_parsed else 0
+                progress_callback(i + 1, remaining_calls)
 
             logger.info(
                 f"Chunk {i + 1} complete: {len(response_text)} chars, "
@@ -303,16 +301,15 @@ def process_document(
             error_msg = format_error_message(e)
             if verbose:
                 print(f"  ✗ Chunk {i + 1} failed: {error_msg}")
-            elif progress_bar:
-                progress_bar.update(1)
+
+            # Call progress callback even for failed chunks
+            if progress_callback:
+                remaining_calls = last_rate_status.requests_remaining if last_rate_status.headers_parsed else 0
+                progress_callback(i + 1, remaining_calls)
 
             logger.error(f"Failed to process chunk {i + 1}: {error_msg}")
             # For now, continue with remaining chunks rather than failing entirely
             results.append(f"[ERROR: Chunk {i + 1} failed - {str(e)}]")
-
-    # Close progress bar
-    if progress_bar:
-        progress_bar.close()
 
     # Combine all results
     final_output = "".join(results)

@@ -40,7 +40,7 @@ dependencies = [
     "cerebras-cloud-sdk>=1.0.0",
     "semantic-text-splitter>=0.13.0",
     "qwen-tokenizer>=0.0.8",
-    "tqdm>=4.66.0",
+    "rich>=13.0.0",
     "python-frontmatter>=1.1.0",
 ]
 

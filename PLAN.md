@@ -1,415 +1,397 @@
-# Cerebrate File Refactoring Plan
+# Issues #102 Implementation Plan
 
 ## Project Overview and Objectives
 
-**Project Scope**: Refactor the monolithic `old/cereproc.py` (1788 lines) into a well-structured Python package with ~10 modules of ~200 lines each, while preserving all functionality and improving maintainability.
+**Project Scope**: Implement minimal `rich` UI support and recursive file processing for cerebrate-file package based on issues/102.txt requirements.
 
 **Core Objectives**:
-- Break down large monolithic file into logical, focused modules
-- Maintain exact same CLI interface and functionality
-- Improve code organization and maintainability
-- Enable easier testing and future enhancements
-- Follow Python packaging best practices
+- **Task A**: Replace current progress output with minimal rich two-row microtable
+- **Task B**: Add recursive directory processing with glob patterns and parallel workers
+- Maintain existing CLI interface compatibility
+- Keep UI extremely minimalistic with no borders, but allow color
+- Preserve all existing functionality while adding new features
 
 ## Technical Architecture Decisions
 
-### Module Structure Analysis
+### Task A: Rich UI Implementation
 
-Based on analysis of `old/cereproc.py`, the code can be logically grouped into these functional areas:
+**Current State Analysis**:
+- Package uses `tqdm` for progress bars in `cerebrate_file.py:15`
+- Simple print statements for status updates in `cli.py`
+- No rich dependency currently exists
 
-1. **Data Models** (3 classes, ~50 lines)
-2. **Text Processing & Tokenization** (~200 lines)
-3. **Chunking Strategies** (4 functions, ~300 lines)
-4. **Continuity Management** (~100 lines)
-5. **API Communication** (~200 lines)
-6. **Configuration & Validation** (~250 lines)
-7. **File I/O & Metadata** (~150 lines)
-8. **CLI Interface** (~100 lines)
-9. **Main Processing Logic** (~300 lines)
-10. **Constants & Utilities** (~100 lines)
+**Target Design**:
+- Two-row microtable for each file being processed:
+  - Row 1: `[input_path] [progress_bar]`
+  - Row 2: `[output_path] [remaining_api_calls]`
+- Minimal styling, no borders, colors allowed
+- Replace existing tqdm usage
 
+### Task B: Recursive Processing Implementation
 
+**Current State Analysis**:
+- CLI only accepts single file input (`input_data: str`)
+- Single-threaded processing in `process_document()`
+- No directory structure replication support
 
-## Phase-by-Phase Breakdown
+**Target Design**:
+- New `--recurse=GLOB_PATTERN` option
+- Input becomes folder path when `--recurse` is specified
+- Optional `--workers` parameter (default: 4)
+- Output folder replicates input directory structure
+- Parallel processing using `concurrent.futures`
 
-### Phase 1: Setup and Constants Module
+## Implementation Phases
+
+### Phase 1: Add Rich Dependency and Basic UI Components
 **Priority**: High | **Dependencies**: None
 
 **Tasks**:
-- Create `constants.py` with model limits, schemas, patterns
-- Extract all constants from cereproc.py
-- Define shared error classes
-- Setup proper logging configuration
+- Add `rich>=13.0.0` to dependencies in `pyproject.toml`
+- Create `src/cerebrate_file/ui.py` module for UI components
+- Create progress bar helper functions
+- Design minimalistic two-row display system
 
 **Implementation Details**:
-- `MAX_CONTEXT_TOKENS = 131000`
-- `MAX_OUTPUT_TOKENS = 40000`
-- `DEFAULT_CHUNK_SIZE = 32000`
-- `REQUIRED_METADATA_FIELDS`
-- `METADATA_SCHEMA`
-- Boundary patterns for code chunking
+- Use `rich.progress.Progress` with custom columns
+- Create `FileProgressDisplay` class to manage two-row output
+- Integrate with existing processing pipeline
+- Remove `tqdm` dependency and usage
+
+**Package Selection Rationale**:
+- **rich**: Chosen for flexible progress bars, minimal overhead, excellent terminal output
+- **concurrent.futures**: Standard library for parallel processing
+- **pathlib**: Modern path handling for directory operations
 
 **Success Criteria**:
-- All constants centralized
-- No magic numbers in other modules
-- Consistent logging setup
+- Rich dependency installed and working
+- Basic two-row progress display functional
+- No regression in existing functionality
 
-### Phase 2: Data Models Module
-**Priority**: High | **Dependencies**: constants.py
+### Phase 2: Replace Current Progress System with Rich UI
+**Priority**: High | **Dependencies**: Phase 1
 
 **Tasks**:
-- Create `models.py` with dataclasses
-- Extract `Chunk`, `RateLimitStatus`, `ProcessingState`
-- Add proper type hints and documentation
-- Ensure immutability where appropriate
+- Update `cerebrate_file.py` to use rich instead of tqdm
+- Modify `cli.py` to use new progress display
+- Create progress update callbacks for API calls
+- Test progress display with single file processing
 
 **Implementation Details**:
-- `@dataclass` classes with proper defaults
-- Type hints for all fields
-- Validation methods where needed
-- JSON serialization support
+- Replace `tqdm` import and usage in `cerebrate_file.py:15`
+- Integrate progress updates in `process_document()` function
+- Update `make_cerebras_request()` to trigger progress callbacks
+- Maintain verbose/quiet mode compatibility
 
 **Success Criteria**:
-- All data models in one place
-- Proper typing throughout
-- Clear documentation
+- Rich progress bars work for single file processing
+- Two-row display shows: input path + progress, output path + remaining calls
+- All existing CLI options work unchanged
 
-### Phase 3: Tokenizer Module
-**Priority**: High | **Dependencies**: models.py, constants.py
+### Phase 3: Extend CLI Interface for Recursive Processing
+**Priority**: Medium | **Dependencies**: Phase 2
 
 **Tasks**:
-- Create `tokenizer.py` for text processing
-- Extract `encode_text()`, `decode_tokens_safely()`
-- Handle qwen-tokenizer dependency gracefully
-- Add fallback mechanisms
+- Add `--recurse` and `--workers` parameters to CLI
+- Modify input validation to handle directories
+- Update help text and documentation
+- Implement directory vs file detection logic
 
 **Implementation Details**:
-- Graceful handling of missing qwen-tokenizer
-- Character-based fallback implementation
-- Error handling and logging
-- Performance optimizations
+- Update `cli.py:run()` function signature:
+  ```python
+  def run(
+      input_data: str,
+      # ... existing params ...
+      recurse: Optional[str] = None,  # glob pattern
+      workers: int = 4,  # parallel workers
+  ):
+  ```
+- Add validation for `recurse` parameter in `config.py`
+- Update `validate_inputs()` to handle directory inputs
 
 **Success Criteria**:
-- Tokenization works with and without qwen-tokenizer
-- Proper error handling
-- Performance maintained
+- CLI accepts new parameters without breaking existing usage
+- Input validation works for both files and directories
+- Help text accurately describes new options
 
-### Phase 4: File Utilities Module
-**Priority**: High | **Dependencies**: models.py, constants.py
+### Phase 4: Implement Recursive File Discovery
+**Priority**: Medium | **Dependencies**: Phase 3
 
 **Tasks**:
-- Create `file_utils.py` for I/O operations
-- Extract file reading, writing, frontmatter parsing
-- Include `read_file_safely()`, `write_output_atomically()`
-- Handle `parse_frontmatter_content()`, `check_metadata_completeness()`
+- Create `src/cerebrate_file/recursive.py` module
+- Implement glob pattern matching using `pathlib`
+- Add directory structure replication logic
+- Create file list generation and validation
 
 **Implementation Details**:
-- Atomic file operations
-- Frontmatter parsing with python-frontmatter
-- Metadata validation
-- Path handling with pathlib
+- Use `pathlib.Path.rglob(pattern)` for recursive file matching
+- Implement `find_files_recursive()` function:
+  ```python
+  def find_files_recursive(
+      input_dir: Path,
+      pattern: str
+  ) -> List[Tuple[Path, Path]]:
+      """Find files matching pattern and compute output paths."""
+  ```
+- Create `replicate_directory_structure()` function
+- Handle edge cases: no matches, permission errors, invalid patterns
 
 **Success Criteria**:
-- Safe file operations
-- Metadata handling works correctly
-- Error recovery mechanisms
+- Recursive file discovery works with various glob patterns
+- Output directory structure correctly replicates input structure
+- Proper error handling for invalid patterns and permissions
 
-### Phase 5: Configuration Module
-**Priority**: High | **Dependencies**: constants.py, file_utils.py
+### Phase 5: Implement Parallel Processing Pipeline
+**Priority**: Medium | **Dependencies**: Phase 4
 
 **Tasks**:
-- Create `config.py` for validation and setup
-- Extract `validate_environment()`, `validate_inputs()`
-- Include `setup_logging()`
-- Environment variable handling
+- Create parallel processing coordinator
+- Integrate with existing `process_document()` function
+- Implement worker pool management
+- Add progress aggregation across multiple files
 
 **Implementation Details**:
-- Comprehensive input validation
-- Environment setup and checking
-- Logging configuration
-- User-friendly error messages
+- Use `concurrent.futures.ThreadPoolExecutor` for I/O-bound operations
+- Create `process_files_parallel()` function:
+  ```python
+  def process_files_parallel(
+      file_pairs: List[Tuple[Path, Path]],
+      workers: int,
+      progress_callback: Callable
+  ) -> ProcessingResults:
+  ```
+- Update progress display to show multiple files
+- Handle worker exceptions and failures gracefully
 
 **Success Criteria**:
-- Robust input validation
-- Clear error messages
-- Proper environment setup
+- Parallel processing works with configurable worker count
+- Progress display updates correctly for multiple files
+- Error handling prevents single file failures from stopping entire process
 
-### Phase 6: Chunking Module
-**Priority**: Medium | **Dependencies**: models.py, tokenizer.py, constants.py
+### Phase 6: Integration and UI Enhancement
+**Priority**: Medium | **Dependencies**: Phase 5
 
 **Tasks**:
-- Create `chunking.py` with all strategies
-- Extract `chunk_text_mode()`, `chunk_semantic_mode()`, etc.
-- Include `create_chunks()` dispatcher
-- Maintain strategy pattern
+- Integrate recursive processing with rich UI
+- Enhance progress display for multiple files
+- Add overall progress tracking
+- Implement remaining API calls calculation across files
 
 **Implementation Details**:
-- Four chunking strategies: text, semantic, markdown, code
-- Strategy pattern for extensibility
-- Token-aware chunking
-- Boundary detection for code
+- Update `FileProgressDisplay` to handle multiple files
+- Show overall progress: `Processing file X of Y`
+- Aggregate remaining API calls across all files
+- Maintain individual file progress in two-row format
 
 **Success Criteria**:
-- All chunking strategies work
-- Easy to add new strategies
-- Proper token counting
+- Rich UI works seamlessly with parallel processing
+- Overall and per-file progress clearly displayed
+- Remaining API calls accurately calculated and displayed
 
-### Phase 7: Continuity Module
-**Priority**: Medium | **Dependencies**: models.py, tokenizer.py, constants.py
+### Phase 7: Testing and Documentation
+**Priority**: High | **Dependencies**: Phase 6
 
 **Tasks**:
-- Create `continuity.py` for context management
-- Extract `extract_continuity_examples()`, `build_continuity_block()`
-- Include `fit_continuity_to_budget()`
-- Manage token budgets
+- Create comprehensive tests for new functionality
+- Update existing tests to work with rich UI
+- Test edge cases and error conditions
+- Update documentation and help text
 
 **Implementation Details**:
-- Context preservation between chunks
-- Token budget management
-- Template-based continuity blocks
-- Fallback when budget exceeded
+- Create `tests/test_recursive.py` for recursive processing
+- Create `tests/test_ui.py` for rich UI components
+- Test with various glob patterns and directory structures
+- Test parallel processing with different worker counts
+- Update integration tests to cover new workflows
 
 **Success Criteria**:
-- Continuity works across chunks
-- Respects token limits
-- Graceful degradation
+- All tests pass including new functionality
+- Edge cases properly handled and tested
+- Documentation accurately reflects new features
 
-### Phase 8: API Client Module
-**Priority**: Medium | **Dependencies**: models.py, constants.py
+## Technical Specifications
 
-**Tasks**:
-- Create `api_client.py` for Cerebras communication
-- Extract `make_cerebras_request()`, `parse_rate_limit_headers()`
-- Include `calculate_backoff_delay()`, `explain_metadata_with_llm()`
-- Handle rate limiting and retries
+### Rich UI Component Design
 
-**Implementation Details**:
-- Cerebras SDK integration
-- Rate limit parsing and handling
-- Retry logic with tenacity
-- Streaming support
+```python
+# src/cerebrate_file/ui.py
+from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn
+from rich.console import Console
 
-**Success Criteria**:
-- API communication works reliably
-- Rate limiting respected
-- Proper error handling
+class FileProgressDisplay:
+    def __init__(self):
+        self.console = Console()
+        self.progress = Progress(
+            TextColumn("{task.description}"),
+            BarColumn(),
+            TextColumn("{task.percentage:>3.0f}%"),
+            console=self.console
+        )
 
-### Phase 9: Main Processing Logic
-**Priority**: Medium | **Dependencies**: All above modules
+    def update_file_progress(self, input_path: str, output_path: str,
+                           progress: float, remaining_calls: int):
+        """Update two-row progress display."""
+        # Row 1: input path + progress bar
+        # Row 2: output path + remaining calls
+```
 
-**Tasks**:
-- Create new `cerebrate_file.py` with core logic
-- Extract main processing pipeline from `run()`
-- Include `prepare_chunk_messages()`, `calculate_completion_budget()`
-- Orchestrate all components
+### Recursive Processing Interface
 
-**Implementation Details**:
-- Main processing pipeline
-- Message preparation
-- Progress tracking
-- Result aggregation
+```python
+# src/cerebrate_file/recursive.py
+from pathlib import Path
+from typing import List, Tuple, Optional
+from concurrent.futures import ThreadPoolExecutor
 
-**Success Criteria**:
-- Core functionality preserved
-- Clean separation of concerns
-- Easy to test and modify
+def find_files_recursive(input_dir: Path, pattern: str) -> List[Tuple[Path, Path]]:
+    """Find files matching glob pattern and generate output paths."""
 
-### Phase 10: CLI Interface
-**Priority**: Low | **Dependencies**: cerebrate_file.py, config.py
+def process_files_parallel(
+    file_pairs: List[Tuple[Path, Path]],
+    workers: int,
+    processing_params: dict,
+    progress_callback: callable
+) -> dict:
+    """Process multiple files in parallel with progress tracking."""
+```
 
-**Tasks**:
-- Create `cli.py` with Fire-based interface
-- Extract CLI argument handling
-- Create `__main__.py` entry point
-- Preserve exact same CLI API
+### CLI Interface Extension
 
-**Implementation Details**:
-- Fire-based CLI (preserve existing interface)
-- Argument validation and parsing
-- Help text and usage examples
-- Entry point configuration
+```python
+# Updated cli.py:run() signature
+def run(
+    input_data: str,
+    output_data: Optional[str] = None,
+    # ... existing parameters ...
+    recurse: Optional[str] = None,  # NEW: glob pattern for recursive processing
+    workers: int = 4,               # NEW: number of parallel workers
+) -> None:
+    """Enhanced to support recursive directory processing."""
+```
 
-**Success Criteria**:
-- Identical CLI behavior
-- Good help documentation
-- Proper entry points
+## Dependencies and Package Justification
 
-### Phase 11: Package Integration
-**Priority**: Low | **Dependencies**: All modules
+### New Dependencies
 
-**Tasks**:
-- Update `__init__.py` with proper exports
-- Add dependencies to pyproject.toml
-- Create proper entry points
-- Integration testing
+1. **rich>=13.0.0**
+   - **Why**: Modern, flexible terminal UI with excellent progress bars
+   - **Alternatives considered**: tqdm (current), alive-progress, enlighten
+   - **Selection rationale**: Rich provides the most flexible two-row display system with minimal overhead
 
-**Implementation Details**:
-- Clean package interface
-- Dependency management
-- Entry point configuration
-- Version handling
+### Updated Dependencies
 
-**Success Criteria**:
-- Package installs correctly
-- All functionality accessible
-- Dependencies resolved
+1. **Remove or keep tqdm>=4.66.0**
+   - **Decision**: Remove tqdm, fully replace with rich
+   - **Reason**: Avoid dependency bloat, rich provides superior functionality
+
+### Standard Library Usage
+
+1. **concurrent.futures.ThreadPoolExecutor**
+   - **Why**: I/O-bound operations benefit from threading
+   - **Alternative**: ProcessPoolExecutor (for CPU-bound, but file processing is I/O-bound)
+
+2. **pathlib.Path.rglob()**
+   - **Why**: Modern, robust recursive file pattern matching
+   - **Alternative**: glob.glob() with recursive=True
 
 ## Testing and Validation Criteria
 
 ### Unit Testing Strategy
-- Test each module independently
-- Mock external dependencies (Cerebras API, file system)
-- Validate all chunking strategies
-- Test error handling paths
+- Test recursive file discovery with various glob patterns
+- Test rich UI components in isolation
+- Test parallel processing coordination
+- Mock API calls to test progress tracking
 
 ### Integration Testing Strategy
-- Test full pipeline with sample files
-- Verify CLI compatibility
-- Test with and without optional dependencies
-- Performance regression testing
+- Test full recursive processing pipeline
+- Test CLI compatibility with existing and new options
+- Test error handling across parallel workers
+- Performance testing with large directory structures
+
+### Edge Cases to Test
+- Empty directories
+- Invalid glob patterns
+- Permission denied scenarios
+- Network failures during parallel processing
+- Very large directory structures
+- Files with special characters in names
 
 ### Validation Checklist
-- [ ] All original functionality preserved
-- [ ] CLI interface identical
-- [ ] Dependencies properly managed
-- [ ] Error handling maintained
-- [ ] Performance not degraded
-- [ ] Code coverage maintained
-- [ ] Documentation updated
+- [ ] Rich UI displays correctly in various terminals
+- [ ] Parallel processing completes successfully
+- [ ] Directory structure replication is accurate
+- [ ] Error handling prevents cascading failures
+- [ ] Performance scales appropriately with worker count
+- [ ] Existing single-file processing unchanged
+- [ ] All CLI options work as documented
+- [ ] Memory usage remains reasonable for large directories
 
 ## Risk Assessment and Mitigation
 
 ### High Risk Areas
-1. **Token counting accuracy** - Critical for chunking
-   - Mitigation: Extensive testing with various inputs
-   - Fallback mechanisms for missing tokenizer
+1. **Rich UI compatibility across terminals**
+   - Mitigation: Test on various terminal types, provide fallback
+   - Test matrix: Terminal.app, iTerm2, Windows Terminal, Linux terminals
 
-2. **API rate limiting** - Complex logic
-   - Mitigation: Careful extraction and testing
-   - Preserve exact timing behavior
+2. **Parallel processing resource management**
+   - Mitigation: Proper worker pool cleanup, resource monitoring
+   - Add configurable limits and timeouts
 
-3. **File I/O atomicity** - Data safety
-   - Mitigation: Maintain atomic operations
-   - Test failure scenarios
+3. **Directory structure replication accuracy**
+   - Mitigation: Extensive testing with complex directory hierarchies
+   - Handle edge cases: symlinks, permissions, special characters
 
 ### Medium Risk Areas
-1. **Continuity context** - Complex state management
-2. **Frontmatter parsing** - Metadata handling
-3. **Chunking strategy selection** - Strategy pattern complexity
+1. **Performance with large directory structures**
+   - Mitigation: Implement streaming discovery, memory-efficient processing
+2. **API rate limiting with parallel requests**
+   - Mitigation: Coordinate rate limiting across workers
 
 ### Mitigation Strategies
-- Incremental refactoring with tests at each step
-- Preserve original file as reference
-- Comprehensive integration testing
-- Performance benchmarking
+- Comprehensive error handling at each level
+- Graceful degradation for UI components
+- Resource cleanup in all exit paths
+- Extensive logging for debugging issues
+- Progress persistence for long-running operations
 
 ## Implementation Guidelines
 
 ### Code Quality Standards
-- Maximum 200 lines per file (except main processing)
-- Comprehensive type hints
-- Detailed docstrings for all public functions
+- All new modules under 200 lines
+- Comprehensive type hints for all functions
+- Detailed docstrings following existing patterns
 - Error handling with proper logging
-- No circular dependencies
+- Unit tests for all public functions
 
 ### Dependency Management
-- Minimize inter-module dependencies
-- Use dependency injection where needed
-- Clear separation of concerns
-- Graceful handling of optional dependencies
+- Minimal new dependencies (only rich)
+- Graceful handling of missing optional features
+- Clear separation between UI and core logic
+- Backward compatibility for existing CLI usage
 
-### Testing Requirements
-- Unit tests for each module
-- Integration tests for full pipeline
-- Mock external services
-- Test error conditions
-- Performance benchmarks
-
-## Phase 12: Documentation and Website
-**Priority**: Medium | **Dependencies**: Phase 11
-
-**Tasks**:
-- Create @docs folder with Github Pages Jekyll documentation
-- Write comprehensive documentation for the project
-- Update README.md with new documentation structure
-- Include usage examples and API documentation
-
-**Implementation Details**:
-- Jekyll-based documentation site
-- Clear navigation and structure
-- Examples and tutorials
-- API reference documentation
-
-**Success Criteria**:
-- Complete documentation website
-- Updated README.md
-- Clear usage examples
-
-## Phase 13: Testing and Validation
-**Priority**: High | **Dependencies**: All previous phases
-
-**Tasks**:
-- Create unit tests for each module
-- Create integration tests for full pipeline
-- Test CLI compatibility with original
-- Test with and without optional dependencies
-- Run performance regression testing
-- Verify all original functionality preserved
-- Test error handling paths
-- Validate code coverage maintained
-
-**Implementation Details**:
-- Comprehensive test suite
-- Mock external dependencies
-- Performance benchmarking
-- Error condition testing
-- CI/CD integration
-
-**Success Criteria**:
-- All tests passing
-- Code coverage > 80%
-- Performance maintained
-- Error handling verified
-
-## Phase 14: Final Cleanup and Documentation
-**Priority**: Medium | **Dependencies**: Phase 13
-
-**Tasks**:
-- Update documentation for new structure
-- Clean up old cereproc.py references
-- Update README.md with new usage
-- Update CHANGELOG.md with refactoring notes
-- Verify all imports work correctly
-- Run final integration tests
-- Clean up any temporary files
-
-**Implementation Details**:
-- Final documentation pass
-- Code cleanup
-- Integration verification
-- Release preparation
-
-**Success Criteria**:
-- Clean, documented codebase
-- All references updated
-- Ready for release
+### Performance Considerations
+- Efficient file discovery using pathlib
+- Appropriate worker pool sizing
+- Memory-efficient progress tracking
+- Minimal UI update frequency to reduce overhead
 
 ## Future Considerations
 
 ### Extensibility Points
-- Plugin system for chunking strategies
-- Configurable API backends
-- Custom tokenizer support
-- Additional metadata formats
+- Pluggable progress display implementations
+- Configurable worker pool types (thread vs process)
+- Custom glob pattern engines
+- Progress persistence for resume capability
 
 ### Performance Optimizations
-- Async API calls for parallel processing
-- Streaming file processing for large documents
-- Caching for repeated operations
-- Memory optimization for large chunks
+- Async/await for truly concurrent I/O
+- Memory-mapped file processing for large files
+- Intelligent worker pool auto-sizing
+- Progress batching for reduced UI overhead
 
 ### Maintenance Improvements
-- Better error messages and diagnostics
-- Configuration file support
-- Logging improvements
-- Metrics collection (optional)
+- Configuration file support for default options
+- Advanced logging with structured output
+- Metrics collection for performance analysis
+- Better error reporting with suggested fixes

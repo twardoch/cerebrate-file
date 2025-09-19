@@ -1,5 +1,5 @@
 
-# Task A
+## Task A
 
 Add very minimal 'rich' support.
 
@@ -10,5 +10,17 @@ Replace the progress bar with a setup where processing of each file gets visuali
 
 Make sure the text UI is extremely minimalistic, no borders etc. But color is OK. 
 
-# Task B
+## Task B
+
+If I give --recurse=GLOB_PATTERN
+
+- input_data path becomes the input FOLDER, not file
+
+- recurse pattern is the glob pattern which we apply to find files in the input_data
+
+- output_data path becomes the output FOLDER, not file. If not given, we overwrite input files. If given, we replicate the file and subfolder structure in output_data the same as the file and subfolder structure relative to input_data
+
+If --recurse is given, we also accept optional --workers defaulting to 4
+
+If --recurse is given, the files get processed (with the same prompt etc.) in a parallelized way using the specified number of workers. 
 

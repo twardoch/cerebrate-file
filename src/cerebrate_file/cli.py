@@ -19,7 +19,7 @@ from loguru import logger
 from .api_client import explain_metadata_with_llm
 from .cerebrate_file import calculate_completion_budget, prepare_chunk_messages, process_document
 from .chunking import create_chunks
-from .config import setup_logging, validate_environment, validate_inputs
+from .config import setup_logging, validate_environment, validate_inputs, validate_recursive_inputs
 from .constants import DEFAULT_CHUNK_SIZE
 from .file_utils import (
     build_base_prompt,
@@ -30,6 +30,7 @@ from .file_utils import (
 )
 from .models import ProcessingState, RateLimitStatus
 from .tokenizer import encode_text
+from .ui import FileProgressDisplay
 
 __all__ = ["run"]
 
@@ -49,12 +50,14 @@ def run(
     verbose: bool = False,
     explain: bool = False,
     dry_run: bool = False,
+    recurse: Optional[str] = None,
+    workers: int = 4,
 ) -> None:
     """Process large documents by chunking for Cerebras qwen-3-coder-480b.
 
     Args:
-        input_data: Path to input file to process
-        output_data: Output file path (default: overwrite input_data)
+        input_data: Path to input file to process, or directory when using --recurse
+        output_data: Output file path (default: overwrite input_data), or directory when using --recurse
         file_prompt: Path to file containing initial instructions
         prompt: Freeform instruction text to append after file_prompt
         chunk_size: Target maximum input chunk size in tokens (default: 32000)
@@ -67,6 +70,8 @@ def run(
         verbose: Enable debug logging (default: False)
         explain: Enable metadata processing with frontmatter parsing (default: False)
         dry_run: Perform chunking and display results without making API calls (default: False)
+        recurse: Glob pattern for recursive file processing (e.g., "*.md", "**/*.txt")
+        workers: Number of parallel workers for recursive processing (default: 4)
     """
     # Load environment variables
     load_dotenv()
@@ -86,6 +91,31 @@ def run(
 
     # Validate environment and inputs
     validate_environment()
+
+    # Check if we're in recursive mode
+    if recurse is not None:
+        # Recursive processing mode - validate recursive parameters
+        validate_recursive_inputs(input_data, recurse, workers, output_data)
+
+        # TODO: Implement recursive processing in Phase 4
+        from pathlib import Path
+        input_path = Path(input_data)
+
+        # For now, show a message about upcoming recursive processing
+        print(f"🔄 Recursive processing with pattern '{recurse}' will be implemented in Phase 4")
+        print(f"📁 Input directory: {input_path}")
+        print(f"👥 Workers: {workers}")
+
+        if output_data:
+            output_path = Path(output_data)
+            print(f"📁 Output directory: {output_path}")
+        else:
+            print(f"📁 Output: In-place (overwrite input files)")
+
+        logger.info(f"Recursive processing planned: {input_path} with pattern '{recurse}', {workers} workers")
+        return
+
+    # Single file processing mode - existing logic
     validate_inputs(input_data, chunk_size, sample_size, max_tokens_ratio, data_format)
 
     # Set output path
@@ -230,6 +260,19 @@ def run(
         logger.error(f"Failed to initialize Cerebras client: {e}")
         sys.exit(1)
 
+    # Set up progress display (only for non-verbose mode)
+    progress_display = None
+    progress_callback = None
+
+    if not verbose:
+        progress_display = FileProgressDisplay()
+        progress_display.start_file_processing(input_data, output_data, len(chunks))
+
+        def update_progress(chunks_completed: int, remaining_calls: int):
+            progress_display.update_progress(chunks_completed, remaining_calls)
+
+        progress_callback = update_progress
+
     # Process all chunks
     final_output, state = process_document(
         client=client,
@@ -243,7 +286,12 @@ def run(
         sample_size=sample_size,
         metadata=metadata if explain else None,
         verbose=verbose,
+        progress_callback=progress_callback,
     )
+
+    # Finish progress display
+    if progress_display:
+        progress_display.finish_file_processing()
 
     # Write output atomically
     print(f"💾 Saved: {output_data}")

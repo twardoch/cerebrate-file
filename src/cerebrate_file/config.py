@@ -26,6 +26,7 @@ __all__ = [
     "setup_logging",
     "validate_environment",
     "validate_inputs",
+    "validate_recursive_inputs",
     "validate_api_key",
     "get_environment_info",
     "EnvironmentConfig",
@@ -336,3 +337,95 @@ def validate_model_parameters(
             sys.exit(1)
         else:
             raise ValidationError(error_msg)
+
+def validate_recursive_inputs(
+    input_data: str,
+    recurse: str,
+    workers: int,
+    output_data: Optional[str] = None,
+    strict: bool = True,
+) -> None:
+    """Validate CLI parameters for recursive processing mode.
+
+    Args:
+        input_data: Path to input directory
+        recurse: Glob pattern for file matching
+        workers: Number of parallel workers
+        output_data: Optional output directory path
+        strict: If True, exit on validation errors
+
+    Raises:
+        ValidationError: If validation fails and strict=False
+    """
+    errors = []
+
+    # Check input directory existence and accessibility
+    try:
+        input_path = Path(input_data)
+        if not input_path.exists():
+            errors.append(f"Input directory not found: '{input_data}'")
+        elif not input_path.is_dir():
+            errors.append(f"When using --recurse, input_data must be a directory: '{input_data}'")
+        else:
+            # Check if directory is readable
+            try:
+                list(input_path.iterdir())
+            except PermissionError:
+                errors.append(f"Permission denied reading directory: '{input_data}'")
+            except Exception as e:
+                errors.append(f"Cannot read directory '{input_data}': {e}")
+    except Exception as e:
+        errors.append(f"Invalid input path '{input_data}': {e}")
+
+    # Validate glob pattern
+    if not recurse or not isinstance(recurse, str):
+        errors.append("recurse parameter must be a non-empty glob pattern (e.g., '*.md', '**/*.txt')")
+    else:
+        # Check for common pattern issues
+        try:
+            # Test if it's a valid glob pattern
+            if input_path and input_path.exists():
+                test_results = list(input_path.rglob(recurse))
+                if not test_results:
+                    logger.warning(f"No files found matching pattern '{recurse}' in '{input_data}'")
+        except Exception as e:
+            errors.append(f"Invalid glob pattern '{recurse}': {e}")
+
+    # Validate workers count
+    if not isinstance(workers, int) or workers <= 0:
+        errors.append(f"workers must be a positive integer, got: {workers}")
+    elif workers > 50:
+        logger.warning(f"High worker count ({workers}) may cause resource issues. Consider using <= 10.")
+
+    # Validate output directory if provided
+    if output_data:
+        try:
+            output_path = Path(output_data)
+            if output_path.exists() and not output_path.is_dir():
+                errors.append(f"When using --recurse, output_data must be a directory: '{output_data}'")
+            elif output_path.exists():
+                # Check if directory is writable
+                try:
+                    test_file = output_path / "test_write_access.tmp"
+                    test_file.touch()
+                    test_file.unlink()
+                except PermissionError:
+                    errors.append(f"Permission denied writing to output directory: '{output_data}'")
+                except Exception as e:
+                    errors.append(f"Cannot write to output directory '{output_data}': {e}")
+        except Exception as e:
+            errors.append(f"Invalid output path '{output_data}': {e}")
+
+    # Handle errors
+    if errors:
+        error_msg = "Recursive processing validation failed:\n" + "\n".join(f"  • {error}" for error in errors)
+
+        if strict:
+            print(f"❌ {error_msg}")
+            for error in errors:
+                logger.error(error)
+            sys.exit(1)
+        else:
+            raise ValidationError(error_msg)
+
+    logger.debug(f"Recursive validation passed for: {input_data} with pattern '{recurse}'")

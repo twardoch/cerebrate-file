@@ -104,11 +104,19 @@ def find_files_recursive(
     all_matching_files = set()
     for p in patterns:
         try:
-            pattern_matches = input_dir.rglob(p)
+            # Use rglob for recursive patterns (containing **), glob for non-recursive
+            if "**" in p:
+                pattern_matches = input_dir.rglob(p)
+            else:
+                pattern_matches = input_dir.glob(p)
+
+            file_count = 0
             for match in pattern_matches:
                 if match.is_file():  # Only include files, not directories
                     all_matching_files.add(match)
-            logger.debug(f"Pattern '{p}' found {len(list(input_dir.rglob(p)))} matches")
+                    file_count += 1
+
+            logger.debug(f"Pattern '{p}' found {file_count} file matches")
         except Exception as e:
             logger.warning(f"Error processing pattern '{p}': {e}")
             continue

@@ -1,149 +1,106 @@
+---
+this_file: README.md
+---
 # cereproc.py
 
-Process large documents by intelligently chunking them for Cerebras `qwen-3-coder-480b` processing with optimal performance and continuity.
-
-## TLDR
-
-**What it does**: Takes a large text file, splits it into model-sized chunks, sends each chunk to Cerebras for processing, and concatenates all responses into a single output file while maintaining logical continuity between chunks.
-
-**Why it's useful**: Allows processing of documents larger than the 32K token input limit while preserving context and narrative flow through intelligent chunking and continuity examples.
+`old/cereproc.py` is a single-file utility that splits oversized documents into
+Cerebras-friendly chunks, calls the `qwen-3-coder-480b` chat completion model
+for each chunk, and stitches the results back together while keeping context
+intact.
 
 ## Quick Start
 
 ```bash
-# Basic usage
-python cereproc.py --input_data document.txt
-
-# With custom prompt and chunking
-python cereproc.py \
-    --input_data large_doc.md \
-    --output_data processed_doc.md \
-    --file_prompt instructions.txt \
-    --data_format markdown \
-    --chunk_size 30000
+export CEREBRAS_API_KEY="csk-..."
+uv run old/cereproc.py --input_data document.md --output_data document.out.md
 ```
 
-## Code Structure
-
-### Single-File Architecture
-- **cereproc.py**: Complete implementation (~400-500 lines)
-  - CLI interface via Fire
-  - Chunking strategies (text/semantic/markdown/code)
-  - Continuity system for cross-chunk context
-  - Rate limit monitoring and adaptive backoff
-  - Streaming API interaction with Cerebras
-
-### Key Components
-
-#### 1. Chunking Engine
-```python
-# Four chunking strategies
-chunk_text_mode()      # Line-based greedy accumulation
-chunk_semantic_mode()  # Semantic boundaries via semantic-text-splitter
-chunk_markdown_mode()  # Markdown-aware splitting
-chunk_code_mode()      # Code-aware with blank line bias
-```
-
-#### 2. Continuity System
-```python
-# Maintains context between chunks
-extract_continuity_examples()  # Get last N tokens from prev input/output
-build_continuity_block()       # Format context template
-fit_continuity_to_budget()     # Truncate if needed for token limits
-```
-
-#### 3. Rate Limit Optimization
-```python
-parse_rate_limit_headers()    # Extract API quota info
-calculate_backoff_delay()     # Adaptive delays for max throughput
-process_chunk_with_streaming() # Streaming with rate monitoring
-```
-
-#### 4. Token Management
-```python
-# Precise token accounting throughout
-qwen_tokenizer.encode()       # All token counting
-calculate_completion_budget() # Per-chunk token allocation
-validate_token_limits()       # Enforce 32K input / 40K output limits
-```
-
-## Functionality
-
-### Core Features
-- **Intelligent Chunking**: 4 modes (text/semantic/markdown/code) with token-accurate splitting
-- **Continuity Preservation**: Last N tokens from previous chunks provide context
-- **Rate Limit Optimization**: Parse API headers and adapt delays for maximum throughput
-- **Streaming Processing**: Real-time output with progress tracking
-- **Atomic Output**: Safe file writing with temporary files
-
-### CLI Parameters
-```bash
---input_data FILE         # Input document to process
---output_data FILE        # Output file (default: overwrite input)
---file_prompt FILE        # Instructions from file
---text_prompt TEXT        # Additional instruction text
---chunk_size INT          # Target tokens per chunk (default: 32000)
---max_tokens_ratio INT    # Completion budget % (default: 100)
---data_format MODE        # text|semantic|markdown|code (default: text)
---example_size INT        # Continuity example tokens (default: 200)
---temp FLOAT             # Model temperature (default: 0.7)
---top_p FLOAT            # Model top-p (default: 0.8)
-```
-
-### Dependencies
-```python
-# Required packages
-cerebras-cloud-sdk-python  # API client
-semantic-text-splitter     # Intelligent text chunking
-qwen-tokenizer            # Token counting for Qwen models
-fire                      # CLI framework
-loguru                    # Simple logging
-tenacity                  # Retry mechanisms
-python-dotenv             # Environment management
-```
-
-## Performance Features
-
-### Rate Limit Intelligence
-- Monitors `x-ratelimit-remaining-requests` and `x-ratelimit-remaining-tokens` headers
-- Calculates optimal delays to maximize throughput within limits
-- Adaptive backoff when approaching quota limits
-
-### Memory Efficiency
-- Streams large files without loading entirely into memory
-- Clears processed chunks promptly
-- Caches tokenization results for repeated text
-
-### Error Resilience
-- Exponential backoff retry for transient failures
-- Graceful handling of oversized chunks
-- Continuity truncation when hitting token limits
-- Atomic file operations prevent data loss
-
-## Testing
+Add optional guidance by supplying an inline prompt or a separate instructions
+file:
 
 ```bash
-# Test with provided data
-cd testdata
-./test.sh
-
-# Manual testing
-python cereproc.py --input_data testdata/test1.md --output_data out.txt --verbose
+uv run old/cereproc.py \
+  --input_data huge.md \
+  --file_prompt prompts/style.md \
+  --prompt "Write concise technical summaries." \
+  --data_format code \
+  --chunk_size 28000 \
+  --sample_size 256 \
+  --verbose
 ```
 
-## Environment Setup
+## CLI Flags
 
-```bash
-export CEREBRAS_API_KEY="csk-..."  # Required
-export CEREPROC_LOG_LEVEL="INFO"  # Optional
-```
+- `--input_data PATH` (required) Text/Markdown/code file to process.
+- `--output_data PATH` Destination file (defaults to the input path).
+- `--file_prompt PATH` Load reusable instructions; appended before the inline prompt.
+- `--prompt TEXT` Freeform instructions appended after the file prompt.
+- `--chunk_size INT` Target chunk size in tokens (default `32000`).
+- `--data_format text|semantic|markdown|code` Chunking strategy (default `markdown`).
+- `--sample_size INT` Continuity example size in tokens (default `200`, use `0` to disable).
+- `--max_tokens_ratio INT` Completion budget as `%` of chunk tokens (default `100`).
+- `--temp FLOAT` and `--top_p FLOAT` Sampling controls (defaults `0.7` / `0.8`).
+- `--model TEXT` Cerebras model name override (default `qwen-3-coder-480b`).
+- `--verbose` Enable detailed logging and chunk previews.
+- `--dry_run` Inspect chunking and request envelopes without calling the API.
+- `--explain` Parse Markdown frontmatter, ensure required metadata fields, and
+  ask the model to fill gaps before processing.
 
-## Use Cases
+## Processing Pipeline
 
-- **Document Processing**: Transform large reports, articles, or books
-- **Code Analysis**: Process entire codebases with code-aware chunking
-- **Content Generation**: Create long-form content with consistent style
-- **Translation**: Translate large documents while preserving context
-- **Summarization**: Generate summaries of lengthy documents
+1. Load `.env` values and validate `CEREBRAS_API_KEY` plus CLI arguments.
+2. Build a base prompt from `--file_prompt` and `--prompt` (always separated by
+   two newlines) and count its tokens.
+3. Read the input file (frontmatter preserved) and optionally parse metadata
+   when `--explain` is active.
+4. Chunk the body using the selected strategy:
+   - `text`: greedy line-based splitting.
+   - `semantic`: paragraph-aware via `semantic-text-splitter`.
+   - `markdown`: structure-aware Markdown splitter.
+   - `code`: regex-guided boundaries for source files.
+5. For each chunk, optionally blend in continuity examples drawn from the
+   previous request/response pair (`--sample_size` tokens each way), truncated to
+   stay within the 131K-token context budget.
+6. Stream completions from Cerebras with adaptive rate-limit backoff and retry
+   (`tenacity`) on transient failures.
+7. Write the concatenated result atomically, preserving or updating frontmatter
+   when `--explain` metadata is present.
 
-The tool prioritizes simplicity and performance while providing sophisticated chunking and continuity features for high-quality results on large documents.
+## Explain Mode Metadata
+
+When `--explain` is set, the script expects frontmatter containing
+`title`, `author`, `id`, `type`, and `date`. Missing keys trigger a structured
+JSON request to the model that fills only the absent values. Dry-run mode skips
+this network call while still showing parsed metadata.
+
+## Dry-Run Workflow
+
+Use `--dry_run` to sanity-check chunk sizes, token budgets, and message shapes
+without spending quota. The script prints the first two chunk envelopes, token
+counts, and previews, then exits before creating the Cerebras client.
+
+## Dependencies
+
+Install requirements with `uv` (or your preferred tool):
+
+- `fire`
+- `loguru`
+- `python-dotenv`
+- `tenacity`
+- `cerebras-cloud-sdk`
+- `semantic-text-splitter`
+- `qwen-tokenizer`
+- `tqdm`
+- `python-frontmatter`
+
+## Environment
+
+Set `CEREBRAS_API_KEY` before running. The utility warns on placeholder keys
+and gently validates formatting. Use `--verbose` to surface additional runtime
+information and rate-limit headers.
+
+## Testing Tips
+
+Run with `--dry_run` for fast validation, then process a short sample file in
+`--verbose` mode to observe continuity handling and output statistics before you
+launch against larger documents.

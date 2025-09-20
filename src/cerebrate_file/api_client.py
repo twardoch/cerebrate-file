@@ -17,6 +17,7 @@ from tenacity import (
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
+    before_sleep_log,
 )
 
 from .constants import (
@@ -293,6 +294,12 @@ def calculate_backoff_delay(
     return 0.1
 
 
+@retry(
+    stop=stop_after_attempt(8),
+    wait=wait_exponential(multiplier=2, min=2, max=120),
+    retry=retry_if_exception_type((ConnectionError, TimeoutError, APIError)),
+    before_sleep=before_sleep_log(logger, "INFO"),
+)
 def explain_metadata_with_llm(
     client,
     existing_metadata: dict[str, Any],
@@ -315,6 +322,8 @@ def explain_metadata_with_llm(
         Dictionary with generated metadata fields
     """
     try:
+        import cerebras.cloud.sdk
+
         # Create explanation prompt
         existing_json = json.dumps(existing_metadata, separators=(",", ":"))
 
@@ -368,15 +377,28 @@ First chunk: {truncated_chunk}
         logger.info(f"Metadata explanation successful: {len(generated_metadata)} fields generated")
         return generated_metadata
 
+    except cerebras.cloud.sdk.RateLimitError as e:
+        logger.warning(f"Rate limit hit during metadata explanation: {e}")
+        raise APIError(f"Rate limit error: {e}") from e
+    except cerebras.cloud.sdk.APIStatusError as e:
+        logger.error(f"API error during metadata explanation {e.status_code}: {e.response}")
+        # Convert specific HTTP errors to retryable APIErrors
+        if e.status_code in (503, 502, 504, 429):
+            logger.warning(f"Retryable metadata explanation error {e.status_code}, will retry with backoff")
+            raise APIError(f"Error code: {e.status_code} - {e.response}") from e
+        else:
+            # Non-retryable errors should not retry
+            raise e
     except Exception as e:
         logger.error(f"Metadata explanation failed: {e}")
         return {}
 
 
 @retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=1, max=60),
-    retry=retry_if_exception_type((ConnectionError, TimeoutError)),
+    stop=stop_after_attempt(8),
+    wait=wait_exponential(multiplier=2, min=2, max=120),
+    retry=retry_if_exception_type((ConnectionError, TimeoutError, APIError)),
+    before_sleep=before_sleep_log(logger, "INFO"),
 )
 def make_cerebras_request(
     client,
@@ -452,10 +474,16 @@ def make_cerebras_request(
     except cerebras.cloud.sdk.RateLimitError as e:
         logger.warning(f"Rate limit hit: {e}")
         # For rate limits, we want to retry after a delay
-        raise e
+        raise APIError(f"Rate limit error: {e}") from e
     except cerebras.cloud.sdk.APIStatusError as e:
         logger.error(f"API error {e.status_code}: {e.response}")
-        raise e
+        # Convert specific HTTP errors to retryable APIErrors
+        if e.status_code in (503, 502, 504, 429):
+            logger.warning(f"Retryable error {e.status_code}, will retry with backoff")
+            raise APIError(f"Error code: {e.status_code} - {e.response}") from e
+        else:
+            # Non-retryable errors (400, 401, 403, etc.) should not retry
+            raise e
     except Exception as e:
         logger.error(f"Unexpected error in Cerebras request: {e}")
         raise e

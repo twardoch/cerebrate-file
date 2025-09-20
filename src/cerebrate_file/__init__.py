@@ -25,9 +25,9 @@ from .cli import run
 from .models import Chunk, ProcessingState, RateLimitStatus
 
 __all__ = [
-    "__version__",
-    "run",
     "Chunk",
     "ProcessingState",
     "RateLimitStatus",
+    "__version__",
+    "run",
 ]

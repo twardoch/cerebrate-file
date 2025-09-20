@@ -9,23 +9,29 @@ large documents and processes them through Cerebras AI models.
 
 import json
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from loguru import logger
 
 from .api_client import make_cerebras_request
-from .chunking import create_chunks
-from .config import validate_environment, validate_inputs
+
+# from .chunking import create_chunks  # unused
+# from .config import validate_environment, validate_inputs  # unused
 from .constants import MAX_CONTEXT_TOKENS, MAX_OUTPUT_TOKENS
-from .continuity import build_continuity_block, extract_continuity_examples, fit_continuity_to_budget
-from .error_recovery import RecoverableOperation, format_error_message
-from .file_utils import build_base_prompt, read_file_safely, write_output_atomically
+from .continuity import (
+    build_continuity_block,
+    extract_continuity_examples,
+    fit_continuity_to_budget,
+)
+from .error_recovery import format_error_message
+
+# from .file_utils import build_base_prompt, read_file_safely, write_output_atomically  # unused
 from .models import Chunk, ProcessingState, RateLimitStatus
 from .tokenizer import encode_text
 
 __all__ = [
-    "prepare_chunk_messages",
     "calculate_completion_budget",
+    "prepare_chunk_messages",
     "process_document",
 ]
 
@@ -59,8 +65,8 @@ def prepare_chunk_messages(
     chunk: Chunk,
     continuity_block: str,
     base_prompt_tokens: int,
-    metadata: Optional[Dict[str, Any]] = None,
-) -> Tuple[List[Dict[str, str]], int]:
+    metadata: dict[str, Any] | None = None,
+) -> tuple[list[dict[str, str]], int]:
     """Prepare chat messages for API call with token validation.
 
     Args:
@@ -129,7 +135,7 @@ def prepare_chunk_messages(
 
 def process_document(
     client,
-    chunks: List[Chunk],
+    chunks: list[Chunk],
     base_prompt: str,
     base_prompt_tokens: int,
     model: str,
@@ -137,10 +143,10 @@ def process_document(
     top_p: float,
     max_tokens_ratio: int,
     sample_size: int,
-    metadata: Optional[Dict[str, Any]] = None,
+    metadata: dict[str, Any] | None = None,
     verbose: bool = False,
-    progress_callback: Optional[callable] = None,
-) -> Tuple[str, ProcessingState]:
+    progress_callback: object | None = None,
+) -> tuple[str, ProcessingState]:
     """Process all chunks through the Cerebras API.
 
     Args:
@@ -173,23 +179,14 @@ def process_document(
     for i, chunk in enumerate(chunks):
         # Show progress differently based on verbose mode
         if verbose:
-            print(
-                f"[{i + 1}/{len(chunks)}] Processing chunk ({chunk.token_count} tokens)..."
-            )
+            print(f"[{i + 1}/{len(chunks)}] Processing chunk ({chunk.token_count} tokens)...")
 
-        logger.info(
-            f"Processing chunk {i + 1}/{len(chunks)} ({chunk.token_count} tokens)"
-        )
+        logger.info(f"Processing chunk {i + 1}/{len(chunks)} ({chunk.token_count} tokens)")
 
         try:
             # Build continuity block if this isn't the first chunk
             continuity_block = ""
-            if (
-                i > 0
-                and sample_size > 0
-                and state.prev_input_tokens
-                and state.prev_output_tokens
-            ):
+            if i > 0 and sample_size > 0 and state.prev_input_tokens and state.prev_output_tokens:
                 if verbose:
                     print(
                         f"  → Building continuity from previous {len(state.prev_input_tokens)} input + {len(state.prev_output_tokens)} output tokens"
@@ -203,14 +200,10 @@ def process_document(
                 )
 
                 if input_example and output_example:
-                    continuity_block = build_continuity_block(
-                        input_example, output_example
-                    )
+                    continuity_block = build_continuity_block(input_example, output_example)
                     # Fit within token budget
                     base_tokens = base_prompt_tokens + chunk.token_count
-                    continuity_block = fit_continuity_to_budget(
-                        continuity_block, base_tokens
-                    )
+                    continuity_block = fit_continuity_to_budget(continuity_block, base_tokens)
                     continuity_tokens = (
                         len(encode_text(continuity_block)) if continuity_block else 0
                     )
@@ -218,7 +211,7 @@ def process_document(
                     if verbose and continuity_block:
                         print(f"  → Continuity added: {continuity_tokens} tokens")
                     elif verbose:
-                        print(f"  → Continuity dropped (budget exceeded)")
+                        print("  → Continuity dropped (budget exceeded)")
 
             # Prepare messages
             messages, total_input_tokens = prepare_chunk_messages(
@@ -230,9 +223,7 @@ def process_document(
             )
 
             # Calculate completion budget
-            max_completion_tokens = calculate_completion_budget(
-                chunk.token_count, max_tokens_ratio
-            )
+            max_completion_tokens = calculate_completion_budget(chunk.token_count, max_tokens_ratio)
 
             if verbose:
                 print(
@@ -242,9 +233,7 @@ def process_document(
             # Apply rate limiting delay if needed
             if i > 0:  # Don't delay before first chunk
                 next_chunk_tokens = chunks[i].token_count if i < len(chunks) - 1 else 0
-                delay = calculate_backoff_delay(
-                    last_rate_status, next_chunk_tokens, state
-                )
+                delay = calculate_backoff_delay(last_rate_status, next_chunk_tokens, state)
                 if delay > 0:
                     if verbose:
                         print(f"  → Rate limit delay: {delay:.1f}s")
@@ -258,7 +247,7 @@ def process_document(
             )
 
             if verbose:
-                print(f"  → Calling Cerebras API...")
+                print("  → Calling Cerebras API...")
 
             response_text, rate_status = make_cerebras_request(
                 client, messages, model, max_completion_tokens, temp, top_p, verbose
@@ -289,7 +278,9 @@ def process_document(
 
             # Call progress callback if provided
             if progress_callback:
-                remaining_calls = rate_status.requests_remaining if rate_status.headers_parsed else 0
+                remaining_calls = (
+                    rate_status.requests_remaining if rate_status.headers_parsed else 0
+                )
                 progress_callback(i + 1, remaining_calls)
 
             logger.info(
@@ -304,12 +295,14 @@ def process_document(
 
             # Call progress callback even for failed chunks
             if progress_callback:
-                remaining_calls = last_rate_status.requests_remaining if last_rate_status.headers_parsed else 0
+                remaining_calls = (
+                    last_rate_status.requests_remaining if last_rate_status.headers_parsed else 0
+                )
                 progress_callback(i + 1, remaining_calls)
 
             logger.error(f"Failed to process chunk {i + 1}: {error_msg}")
             # For now, continue with remaining chunks rather than failing entirely
-            results.append(f"[ERROR: Chunk {i + 1} failed - {str(e)}]")
+            results.append(f"[ERROR: Chunk {i + 1} failed - {e!s}]")
 
     # Combine all results
     final_output = "".join(results)
@@ -319,4 +312,4 @@ def process_document(
     state.processing_time = processing_time
     state.last_rate_status = last_rate_status
 
-    return final_output, state 
+    return final_output, state

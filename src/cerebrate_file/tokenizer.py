@@ -7,17 +7,14 @@ This module handles text encoding and decoding with fallback mechanisms
 for when the qwen-tokenizer dependency is not available.
 """
 
-import sys
-from typing import List, Optional
-
 from loguru import logger
 
 from .constants import CHARS_PER_TOKEN_FALLBACK, TokenizationError
 
 __all__ = [
     "TokenizerManager",
-    "encode_text",
     "decode_tokens_safely",
+    "encode_text",
     "get_tokenizer_manager",
 ]
 
@@ -39,7 +36,7 @@ class TokenizerManager:
         """
         self.model_name = model_name
         self.strict = strict
-        self._tokenizer: Optional[object] = None
+        self._tokenizer: object | None = None
         self._initialized = False
         self._initialize_tokenizer()
 
@@ -83,7 +80,7 @@ class TokenizerManager:
         """Check if we're using fallback tokenization."""
         return self._tokenizer is None
 
-    def encode(self, text: str) -> List[int]:
+    def encode(self, text: str) -> list[int]:
         """Encode text to tokens with fallback handling.
 
         Args:
@@ -113,7 +110,7 @@ class TokenizerManager:
                 logger.warning(f"{error_msg}, using character fallback")
                 return list(range(len(text) // CHARS_PER_TOKEN_FALLBACK + 1))
 
-    def decode(self, tokens: List[int]) -> str:
+    def decode(self, tokens: list[int]) -> str:
         """Decode tokens back to text with fallback handling.
 
         Args:
@@ -177,7 +174,7 @@ class TokenizerManager:
 
 
 # Global tokenizer manager instance
-_global_tokenizer: Optional[TokenizerManager] = None
+_global_tokenizer: TokenizerManager | None = None
 
 
 def get_tokenizer_manager() -> TokenizerManager:
@@ -188,7 +185,7 @@ def get_tokenizer_manager() -> TokenizerManager:
     return _global_tokenizer
 
 
-def encode_text(text: str) -> List[int]:
+def encode_text(text: str) -> list[int]:
     """Encode text to tokens with fallback handling.
 
     This is a convenience function that uses the global tokenizer manager.
@@ -202,7 +199,7 @@ def encode_text(text: str) -> List[int]:
     return get_tokenizer_manager().encode(text)
 
 
-def decode_tokens_safely(tokens: List[int]) -> str:
+def decode_tokens_safely(tokens: list[int]) -> str:
     """Decode tokens back to text with fallback handling.
 
     This is a convenience function that uses the global tokenizer manager.

@@ -7,8 +7,6 @@ This module handles context preservation between chunks, ensuring smooth
 transitions and maintaining coherence across document boundaries.
 """
 
-from typing import List, Optional
-
 from loguru import logger
 
 from .constants import CONTINUITY_TEMPLATE, MAX_CONTEXT_TOKENS
@@ -16,8 +14,8 @@ from .tokenizer import decode_tokens_safely, encode_text
 
 __all__ = [
     "ContinuityManager",
-    "extract_continuity_examples",
     "build_continuity_block",
+    "extract_continuity_examples",
     "fit_continuity_to_budget",
 ]
 
@@ -34,15 +32,15 @@ class ContinuityManager:
         self.sample_size = sample_size
         self.prev_input_text = ""
         self.prev_output_text = ""
-        self.prev_input_tokens: List[int] = []
-        self.prev_output_tokens: List[int] = []
+        self.prev_input_tokens: list[int] = []
+        self.prev_output_tokens: list[int] = []
 
     def update(
         self,
         input_text: str,
         output_text: str,
-        input_tokens: Optional[List[int]] = None,
-        output_tokens: Optional[List[int]] = None,
+        input_tokens: list[int] | None = None,
+        output_tokens: list[int] | None = None,
     ) -> None:
         """Update continuity state after processing a chunk.
 
@@ -69,7 +67,7 @@ class ContinuityManager:
         """Check if continuity context is available."""
         return bool(self.prev_input_tokens and self.prev_output_tokens)
 
-    def get_continuity_block(self) -> Optional[str]:
+    def get_continuity_block(self) -> str | None:
         """Get the current continuity block.
 
         Returns:
@@ -107,9 +105,7 @@ class ContinuityManager:
         if not continuity_block:
             return ""
 
-        return fit_continuity_to_budget(
-            continuity_block, base_input_tokens, max_input_tokens
-        )
+        return fit_continuity_to_budget(continuity_block, base_input_tokens, max_input_tokens)
 
     def reset(self) -> None:
         """Reset continuity state."""
@@ -119,9 +115,7 @@ class ContinuityManager:
         self.prev_output_tokens = []
 
 
-def extract_continuity_examples(
-    prev_text: str, prev_tokens: List[int], sample_size: int
-) -> str:
+def extract_continuity_examples(prev_text: str, prev_tokens: list[int], sample_size: int) -> str:
     """Extract last N tokens from previous text as continuity example.
 
     Args:
@@ -145,12 +139,8 @@ def extract_continuity_examples(
     if decoded_text.startswith("[") and decoded_text.endswith("_FALLBACK]"):
         # Rough character approximation: assume ~4 chars per token average
         approx_chars = sample_size * 4
-        decoded_text = (
-            prev_text[-approx_chars:] if len(prev_text) > approx_chars else prev_text
-        )
-        logger.debug(
-            f"Using character approximation for continuity: {len(decoded_text)} chars"
-        )
+        decoded_text = prev_text[-approx_chars:] if len(prev_text) > approx_chars else prev_text
+        logger.debug(f"Using character approximation for continuity: {len(decoded_text)} chars")
 
     return decoded_text
 
@@ -165,9 +155,7 @@ def build_continuity_block(input_example: str, output_example: str) -> str:
     Returns:
         Formatted continuity block
     """
-    return CONTINUITY_TEMPLATE.format(
-        input_example=input_example, output_example=output_example
-    )
+    return CONTINUITY_TEMPLATE.format(input_example=input_example, output_example=output_example)
 
 
 def fit_continuity_to_budget(
@@ -197,15 +185,11 @@ def fit_continuity_to_budget(
         logger.warning("No token budget available for continuity, dropping entirely")
         return ""
 
-    logger.debug(
-        f"Continuity budget: {available_tokens} tokens (need {continuity_tokens})"
-    )
+    logger.debug(f"Continuity budget: {available_tokens} tokens (need {continuity_tokens})")
 
     # Simple truncation: reduce both examples proportionally
     # This is a simplified approach - we could be more sophisticated
-    reduction_factor = (
-        available_tokens / continuity_tokens * 0.9
-    )  # 90% to leave some buffer
+    reduction_factor = available_tokens / continuity_tokens * 0.9  # 90% to leave some buffer
 
     # Extract examples from continuity block and reduce them
     # For now, simple truncation of the whole block
@@ -217,9 +201,7 @@ def fit_continuity_to_budget(
         logger.warning("Continuity still too large after truncation, dropping entirely")
         return ""
 
-    logger.info(
-        f"Continuity truncated from {continuity_tokens} to {truncated_tokens} tokens"
-    )
+    logger.info(f"Continuity truncated from {continuity_tokens} to {truncated_tokens} tokens")
     return truncated_text
 
 

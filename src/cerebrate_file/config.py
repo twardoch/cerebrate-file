@@ -10,7 +10,6 @@ with user-friendly error messages and comprehensive checks.
 import os
 import sys
 from pathlib import Path
-from typing import List, Optional, Set
 
 from loguru import logger
 
@@ -23,13 +22,13 @@ from .constants import (
 )
 
 __all__ = [
+    "EnvironmentConfig",
+    "get_environment_info",
     "setup_logging",
+    "validate_api_key",
     "validate_environment",
     "validate_inputs",
     "validate_recursive_inputs",
-    "validate_api_key",
-    "get_environment_info",
-    "EnvironmentConfig",
 ]
 
 
@@ -37,7 +36,7 @@ class EnvironmentConfig:
     """Environment configuration manager."""
 
     def __init__(self) -> None:
-        self.api_key: Optional[str] = None
+        self.api_key: str | None = None
         self.validated = False
         self._load_environment()
 
@@ -84,7 +83,7 @@ class EnvironmentConfig:
         return self.api_key
 
 
-def setup_logging(verbose: bool = False, level: Optional[str] = None) -> None:
+def setup_logging(verbose: bool = False, level: str | None = None) -> None:
     """Configure Loguru logging with appropriate verbosity.
 
     Args:
@@ -93,10 +92,7 @@ def setup_logging(verbose: bool = False, level: Optional[str] = None) -> None:
     """
     logger.remove()  # Remove default handler
 
-    if level is not None:
-        log_level = level.upper()
-    else:
-        log_level = "DEBUG" if verbose else "WARNING"
+    log_level = level.upper() if level is not None else "DEBUG" if verbose else "WARNING"
 
     logger.add(sys.stderr, level=log_level, format=LOG_FORMAT, colorize=True)
     logger.debug(f"Logging configured with level: {log_level}")
@@ -215,7 +211,7 @@ def validate_inputs(
         else:
             # Check if file is readable
             try:
-                with open(input_path, "r", encoding="utf-8") as f:
+                with input_path.open(encoding="utf-8") as f:
                     f.read(1)  # Try reading one character
             except PermissionError:
                 errors.append(f"Permission denied reading file: '{input_data}'")
@@ -328,7 +324,9 @@ def validate_model_parameters(
         errors.append(f"model must be a non-empty string, got: {model}")
 
     if errors:
-        error_msg = "Model parameter validation failed:\n" + "\n".join(f"  • {error}" for error in errors)
+        error_msg = "Model parameter validation failed:\n" + "\n".join(
+            f"  • {error}" for error in errors
+        )
 
         if strict:
             print(f"❌ {error_msg}")
@@ -338,11 +336,12 @@ def validate_model_parameters(
         else:
             raise ValidationError(error_msg)
 
+
 def validate_recursive_inputs(
     input_data: str,
     recurse: str,
     workers: int,
-    output_data: Optional[str] = None,
+    output_data: str | None = None,
     strict: bool = True,
 ) -> None:
     """Validate CLI parameters for recursive processing mode.
@@ -379,7 +378,9 @@ def validate_recursive_inputs(
 
     # Validate glob pattern
     if not recurse or not isinstance(recurse, str):
-        errors.append("recurse parameter must be a non-empty glob pattern (e.g., '*.md', '**/*.txt')")
+        errors.append(
+            "recurse parameter must be a non-empty glob pattern (e.g., '*.md', '**/*.txt')"
+        )
     else:
         # Check for common pattern issues
         try:
@@ -395,14 +396,18 @@ def validate_recursive_inputs(
     if not isinstance(workers, int) or workers <= 0:
         errors.append(f"workers must be a positive integer, got: {workers}")
     elif workers > 50:
-        logger.warning(f"High worker count ({workers}) may cause resource issues. Consider using <= 10.")
+        logger.warning(
+            f"High worker count ({workers}) may cause resource issues. Consider using <= 10."
+        )
 
     # Validate output directory if provided
     if output_data:
         try:
             output_path = Path(output_data)
             if output_path.exists() and not output_path.is_dir():
-                errors.append(f"When using --recurse, output_data must be a directory: '{output_data}'")
+                errors.append(
+                    f"When using --recurse, output_data must be a directory: '{output_data}'"
+                )
             elif output_path.exists():
                 # Check if directory is writable
                 try:
@@ -418,7 +423,9 @@ def validate_recursive_inputs(
 
     # Handle errors
     if errors:
-        error_msg = "Recursive processing validation failed:\n" + "\n".join(f"  • {error}" for error in errors)
+        error_msg = "Recursive processing validation failed:\n" + "\n".join(
+            f"  • {error}" for error in errors
+        )
 
         if strict:
             print(f"❌ {error_msg}")

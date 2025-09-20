@@ -8,11 +8,10 @@ specifically designed for the two-row microtable progress display.
 No borders, minimal styling, colors allowed.
 """
 
-from typing import Optional
-from rich.console import Console
-from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn
-from rich.text import Text
 from loguru import logger
+from rich.console import Console
+from rich.progress import BarColumn, Progress, TextColumn
+from rich.text import Text
 
 __all__ = ["FileProgressDisplay"]
 
@@ -27,14 +26,14 @@ class FileProgressDisplay:
     No borders, minimal styling, colors allowed.
     """
 
-    def __init__(self, console: Optional[Console] = None):
+    def __init__(self, console: Console | None = None):
         """Initialize the progress display.
 
         Args:
             console: Optional Rich console instance. If None, creates a new one.
         """
         self.console = console or Console()
-        self.current_task_id: Optional[int] = None
+        self.current_task_id: int | None = None
         self.input_path: str = ""
         self.output_path: str = ""
         self.remaining_calls: int = 0
@@ -46,7 +45,7 @@ class FileProgressDisplay:
             TextColumn("{task.percentage:>3.0f}%", style="green"),
             console=self.console,
             expand=False,
-            transient=False
+            transient=False,
         )
 
     def start_file_processing(self, input_path: str, output_path: str, total_chunks: int) -> None:
@@ -66,10 +65,7 @@ class FileProgressDisplay:
 
         # Add task for this file
         task_description = f"📄 {input_path}"
-        self.current_task_id = self.progress.add_task(
-            task_description,
-            total=total_chunks
-        )
+        self.current_task_id = self.progress.add_task(task_description, total=total_chunks)
 
         # Show initial two-row display
         self._update_display()
@@ -99,7 +95,9 @@ class FileProgressDisplay:
         """Finish processing current file and clean up display."""
         if self.current_task_id is not None:
             # Mark task as complete
-            self.progress.update(self.current_task_id, completed=self.progress.tasks[self.current_task_id].total)
+            self.progress.update(
+                self.current_task_id, completed=self.progress.tasks[self.current_task_id].total
+            )
 
         # Stop progress tracking
         self.progress.stop()
@@ -142,7 +140,7 @@ class MultiFileProgressDisplay:
     Shows overall progress plus individual file progress.
     """
 
-    def __init__(self, console: Optional[Console] = None):
+    def __init__(self, console: Console | None = None):
         """Initialize multi-file progress display.
 
         Args:
@@ -185,7 +183,9 @@ class MultiFileProgressDisplay:
         self.file_displays[input_path] = display
         display.start_file_processing(input_path, output_path, total_chunks)
 
-    def update_file_progress(self, input_path: str, chunks_completed: int, remaining_calls: int = 0) -> None:
+    def update_file_progress(
+        self, input_path: str, chunks_completed: int, remaining_calls: int = 0
+    ) -> None:
         """Update progress for a specific file.
 
         Args:
@@ -210,7 +210,7 @@ class MultiFileProgressDisplay:
 
         # Show overall progress update
         progress_text = Text()
-        progress_text.append(f"📊 Progress: ", style="bold blue")
+        progress_text.append("📊 Progress: ", style="bold blue")
         progress_text.append(f"{self.completed_files}/{self.total_files}", style="bold yellow")
         progress_text.append(" files completed", style="bold blue")
 

@@ -4,7 +4,6 @@
 """Tests for brace pattern expansion in recursive processing."""
 
 import pytest
-from pathlib import Path
 
 from cerebrate_file.recursive import expand_brace_patterns
 

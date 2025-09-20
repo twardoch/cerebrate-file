@@ -7,10 +7,11 @@ This module handles file reading, writing, and frontmatter processing
 with atomic operations and error handling.
 """
 
+import contextlib
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import frontmatter
 from loguru import logger
@@ -19,14 +20,14 @@ from .constants import REQUIRED_METADATA_FIELDS, FileError
 from .tokenizer import encode_text
 
 __all__ = [
-    "read_file_safely",
-    "write_output_atomically",
-    "parse_frontmatter_content",
-    "check_metadata_completeness",
-    "ensure_parent_directory",
     "backup_file",
     "build_base_prompt",
+    "check_metadata_completeness",
+    "ensure_parent_directory",
     "output_file_exists",
+    "parse_frontmatter_content",
+    "read_file_safely",
+    "write_output_atomically",
 ]
 
 
@@ -83,7 +84,7 @@ def ensure_parent_directory(file_path: str | Path) -> None:
         raise FileError(f"Failed to create parent directory for {file_path}: {e}") from e
 
 
-def backup_file(file_path: str | Path, backup_suffix: str = ".bak") -> Optional[Path]:
+def backup_file(file_path: str | Path, backup_suffix: str = ".bak") -> Path | None:
     """Create a backup of an existing file.
 
     Args:
@@ -113,7 +114,7 @@ def backup_file(file_path: str | Path, backup_suffix: str = ".bak") -> Optional[
 def write_output_atomically(
     content: str,
     output_path: str | Path,
-    metadata: Optional[Dict[str, Any]] = None,
+    metadata: dict[str, Any] | None = None,
     create_backup: bool = False,
 ) -> None:
     """Write output using temporary file for atomicity.
@@ -163,14 +164,12 @@ def write_output_atomically(
     except Exception as e:
         # Clean up temp file if it exists
         if "temp_path" in locals() and temp_path.exists():
-            try:
+            with contextlib.suppress(Exception):
                 temp_path.unlink()
-            except Exception:
-                pass  # Best effort cleanup
         raise FileError(f"Failed to write output to {output_path}: {e}") from e
 
 
-def parse_frontmatter_content(content: str) -> Tuple[Dict[str, Any], str]:
+def parse_frontmatter_content(content: str) -> tuple[dict[str, Any], str]:
     """Parse frontmatter from content using python-frontmatter.
 
     Args:
@@ -195,7 +194,7 @@ def parse_frontmatter_content(content: str) -> Tuple[Dict[str, Any], str]:
         return {}, content
 
 
-def check_metadata_completeness(metadata: Dict[str, Any]) -> Tuple[bool, List[str]]:
+def check_metadata_completeness(metadata: dict[str, Any]) -> tuple[bool, list[str]]:
     """Check if metadata contains all required fields.
 
     Args:
@@ -245,7 +244,7 @@ def validate_file_path(file_path: str | Path, must_exist: bool = True) -> Path:
         raise FileError(f"Invalid file path {file_path}: {e}") from e
 
 
-def get_file_info(file_path: str | Path) -> Dict[str, Any]:
+def get_file_info(file_path: str | Path) -> dict[str, Any]:
     """Get information about a file.
 
     Args:
@@ -303,9 +302,7 @@ def output_file_exists(input_path: Path, output_path: Path) -> bool:
         return False
 
 
-def build_base_prompt(
-    file_prompt: Optional[str], text_prompt: Optional[str]
-) -> Tuple[str, int]:
+def build_base_prompt(file_prompt: str | None, text_prompt: str | None) -> tuple[str, int]:
     """Assemble base prompt from file and text components.
 
     Args:

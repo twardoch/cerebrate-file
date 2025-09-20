@@ -4,18 +4,16 @@
 """Tests for cerebrate_file.error_recovery module."""
 
 import json
-import os
 import tempfile
 import time
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
-
 from cerebrate_file.constants import APIError, ValidationError
 from cerebrate_file.error_recovery import (
-    RetryConfig,
     RecoverableOperation,
+    RetryConfig,
     check_optional_dependency,
     format_error_message,
     format_error_with_suggestions,
@@ -62,7 +60,9 @@ def test_with_retry_success_first_try():
 
 def test_with_retry_success_after_failures():
     """Test retry succeeds after transient failures."""
-    mock_func = Mock(side_effect=[APIError("Temporary error"), APIError("Another error"), "success"])
+    mock_func = Mock(
+        side_effect=[APIError("Temporary error"), APIError("Another error"), "success"]
+    )
 
     @with_retry(config=RetryConfig(max_attempts=3, base_delay=0.01))
     def test_func():
@@ -172,7 +172,7 @@ def test_load_checkpoint_expired():
         }
 
         checkpoint_path = Path(tmpdir) / "old.json"
-        with open(checkpoint_path, "w") as f:
+        with Path(checkpoint_path).open("w") as f:
             json.dump(checkpoint_data, f)
 
         # Try to load with 24 hour max age
@@ -237,7 +237,7 @@ def test_recoverable_operation_with_checkpoint():
         checkpoint_dir = Path(tmpdir) / ".cerebrate_checkpoints"
         checkpoint_dir.mkdir()
         checkpoint_path = checkpoint_dir / "test_op.json"
-        with open(checkpoint_path, "w") as f:
+        with Path(checkpoint_path).open("w") as f:
             json.dump(checkpoint_data, f)
 
         # Mock the checkpoint directory

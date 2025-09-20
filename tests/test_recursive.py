@@ -5,17 +5,17 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-import pytest
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+from cerebrate_file.models import ProcessingState
 from cerebrate_file.recursive import (
+    ProcessingResult,
     find_files_recursive,
-    replicate_directory_structure,
     process_files_parallel,
     process_single_file,
-    ProcessingResult,
+    replicate_directory_structure,
 )
-from cerebrate_file.models import ProcessingState
 
 
 class TestFindFilesRecursive:
@@ -184,9 +184,7 @@ class TestProcessSingleFile:
         progress_callback = Mock()
 
         # Process file
-        result = process_single_file(
-            input_path, output_path, processing_func, progress_callback
-        )
+        result = process_single_file(input_path, output_path, processing_func, progress_callback)
 
         assert result[0] == input_path
         assert result[1] == output_path
@@ -205,9 +203,7 @@ class TestProcessSingleFile:
         processing_func = Mock(side_effect=RuntimeError("Processing failed"))
 
         # Process file
-        result = process_single_file(
-            input_path, output_path, processing_func, None
-        )
+        result = process_single_file(input_path, output_path, processing_func, None)
 
         assert result[0] == input_path
         assert result[1] == output_path
@@ -235,9 +231,7 @@ class TestProcessFilesParallel:
             return state
 
         # Process files
-        result = process_files_parallel(
-            file_pairs, mock_process, workers=2
-        )
+        result = process_files_parallel(file_pairs, mock_process, workers=2)
 
         assert len(result.successful) == 2
         assert len(result.failed) == 0
@@ -266,9 +260,7 @@ class TestProcessFilesParallel:
             return state
 
         # Process files
-        result = process_files_parallel(
-            file_pairs, mock_process, workers=2
-        )
+        result = process_files_parallel(file_pairs, mock_process, workers=2)
 
         assert len(result.successful) == 2
         assert len(result.failed) == 1
@@ -278,9 +270,7 @@ class TestProcessFilesParallel:
 
     def test_parallel_processing_empty_list(self):
         """Test parallel processing with empty file list."""
-        result = process_files_parallel(
-            [], Mock(), workers=2
-        )
+        result = process_files_parallel([], Mock(), workers=2)
 
         assert len(result.successful) == 0
         assert len(result.failed) == 0
@@ -300,8 +290,7 @@ class TestProcessFilesParallel:
 
         # Process files
         process_files_parallel(
-            file_pairs, mock_process, workers=1,
-            progress_callback=progress_callback
+            file_pairs, mock_process, workers=1, progress_callback=progress_callback
         )
 
         # Progress callback should be called
@@ -353,16 +342,17 @@ class TestRecursiveIntegration:
             mock_executor_instance = MagicMock()
             mock_executor.return_value.__enter__.return_value = mock_executor_instance
             mock_executor_instance.submit.return_value.result.return_value = (
-                Path("input"), Path("output"), ProcessingState(), None
+                Path("input"),
+                Path("output"),
+                ProcessingState(),
+                None,
             )
 
             # Process files (mocked)
             def mock_process(input_path: Path, output_path: Path):
                 return ProcessingState()
 
-            result = process_files_parallel(
-                file_pairs, mock_process, workers=2
-            )
+            process_files_parallel(file_pairs, mock_process, workers=2)
 
             # Verify executor was used
             mock_executor.assert_called_once_with(max_workers=2)

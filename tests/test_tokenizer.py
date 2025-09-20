@@ -3,15 +3,16 @@
 
 """Tests for cerebrate_file.tokenizer module."""
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import Mock, patch
+from cerebrate_file.constants import TokenizationError
 from cerebrate_file.tokenizer import (
     TokenizerManager,
-    encode_text,
     decode_tokens_safely,
+    encode_text,
     get_tokenizer_manager,
 )
-from cerebrate_file.constants import TokenizationError
 
 
 def test_tokenizer_manager_initialization():
@@ -24,7 +25,7 @@ def test_tokenizer_manager_initialization():
 
 def test_tokenizer_manager_fallback_mode():
     """Test TokenizerManager works in fallback mode when qwen-tokenizer not available."""
-    with patch('cerebrate_file.tokenizer.logger') as mock_logger:
+    with patch("cerebrate_file.tokenizer.logger"):
         manager = TokenizerManager(strict=False)
         # Should work even without qwen-tokenizer
         tokens = manager.encode("Hello world")

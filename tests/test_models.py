@@ -3,15 +3,16 @@
 
 """Tests for cerebrate_file.models module."""
 
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
 from cerebrate_file.models import (
-    Chunk,
-    RateLimitStatus,
-    ProcessingState,
-    ProcessingResult,
-    ChunkingConfig,
     APIConfig,
+    Chunk,
+    ChunkingConfig,
+    ProcessingResult,
+    ProcessingState,
+    RateLimitStatus,
 )
 
 
@@ -99,9 +100,7 @@ def test_chunking_config():
 
 def test_api_config():
     """Test APIConfig dataclass."""
-    config = APIConfig(
-        model="test-model", temperature=0.98, top_p=0.9, max_tokens_ratio=100
-    )
+    config = APIConfig(model="test-model", temperature=0.98, top_p=0.9, max_tokens_ratio=100)
     assert config.model == "test-model"
     assert config.temperature == 0.98
     assert config.top_p == 0.9

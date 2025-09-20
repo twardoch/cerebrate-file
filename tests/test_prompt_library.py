@@ -6,16 +6,15 @@ Tests verify that the prompt library can load prompts from both
 user-specified paths and the built-in library.
 """
 
-import pytest
-import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
+from cerebrate_file.file_utils import build_base_prompt
 from cerebrate_file.prompt_library import (
     get_prompt_library_path,
     resolve_prompt_file,
 )
-from cerebrate_file.file_utils import build_base_prompt
 
 
 class TestPromptLibrary:
@@ -63,7 +62,7 @@ class TestPromptLibrary:
     def test_resolve_prompt_file_with_path_fallback(self):
         """Test that filename is tried if full path doesn't exist in library."""
         # Try with a path that doesn't exist, but filename might
-        with patch('cerebrate_file.prompt_library.get_prompt_library_path') as mock_get_path:
+        with patch("cerebrate_file.prompt_library.get_prompt_library_path") as mock_get_path:
             # Create a mock library with a test file
             mock_library = MagicMock()
             mock_library.exists.return_value = True
@@ -75,7 +74,7 @@ class TestPromptLibrary:
             mock_file.is_file.return_value = True
             mock_library.__truediv__ = MagicMock(return_value=mock_file)
 
-            resolved = resolve_prompt_file("some/path/test.xml")
+            resolve_prompt_file("some/path/test.xml")
 
             # Should have tried to find the file
             assert mock_library.__truediv__.called
@@ -83,10 +82,7 @@ class TestPromptLibrary:
     def test_build_base_prompt_with_library_file(self):
         """Test that build_base_prompt works with library files."""
         # Test with actual library file
-        prompt_text, token_count = build_base_prompt(
-            "fix-pdf-extracted-text.xml",
-            None
-        )
+        prompt_text, token_count = build_base_prompt("fix-pdf-extracted-text.xml", None)
 
         # Should have loaded content
         assert len(prompt_text) > 0
@@ -101,10 +97,7 @@ class TestPromptLibrary:
         test_prompt = tmp_path / "test_prompt.txt"
         test_prompt.write_text("Direct prompt content")
 
-        prompt_text, token_count = build_base_prompt(
-            str(test_prompt),
-            "Additional text"
-        )
+        prompt_text, token_count = build_base_prompt(str(test_prompt), "Additional text")
 
         # Should contain both file and text content
         assert "Direct prompt content" in prompt_text
@@ -114,10 +107,7 @@ class TestPromptLibrary:
     def test_build_base_prompt_with_missing_file(self):
         """Test that build_base_prompt fails gracefully with missing file."""
         with pytest.raises(SystemExit):
-            build_base_prompt(
-                "definitely_non_existent_file.txt",
-                None
-            )
+            build_base_prompt("definitely_non_existent_file.txt", None)
 
 
 class TestPromptLibraryIntegration:
@@ -130,10 +120,11 @@ class TestPromptLibraryIntegration:
         input_file.write_text("Test content to process")
 
         # Mock the necessary components to avoid actual API calls
-        with patch("cerebrate_file.config.validate_api_key", return_value=True), \
-             patch("cerebrate_file.config.validate_environment"), \
-             patch("cerebrate_file.cerebrate_file.process_document") as mock_process:
-
+        with (
+            patch("cerebrate_file.config.validate_api_key", return_value=True),
+            patch("cerebrate_file.config.validate_environment"),
+            patch("cerebrate_file.cerebrate_file.process_document") as mock_process,
+        ):
             # Configure mock
             mock_process.return_value = ("Processed", MagicMock())
 
@@ -149,7 +140,7 @@ class TestPromptLibraryIntegration:
                     file_prompt="fix-pdf-extracted-text.xml",
                     prompt="Additional instructions",
                     dry_run=True,  # Use dry-run to avoid actual processing
-                    verbose=False
+                    verbose=False,
                 )
             except SystemExit:
                 # Dry-run exits after showing info

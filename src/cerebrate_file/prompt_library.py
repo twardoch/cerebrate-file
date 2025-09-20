@@ -7,9 +7,7 @@ This module provides functionality for loading prompts from the built-in
 prompt library or from user-specified paths.
 """
 
-import sys
 from pathlib import Path
-from typing import Optional
 
 from loguru import logger
 
@@ -24,6 +22,7 @@ def get_prompt_library_path() -> Path:
     """
     # Get the path to the cerebrate_file package
     import cerebrate_file
+
     package_dir = Path(cerebrate_file.__file__).parent
     prompt_library = package_dir / "prompts"
 
@@ -33,7 +32,7 @@ def get_prompt_library_path() -> Path:
     return prompt_library
 
 
-def resolve_prompt_file(file_prompt: str) -> Optional[Path]:
+def resolve_prompt_file(file_prompt: str) -> Path | None:
     """Resolve a prompt file path, checking both absolute and library paths.
 
     Args:

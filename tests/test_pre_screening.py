@@ -6,12 +6,12 @@ Tests verify that files with existing outputs are properly filtered during
 pre-screening stage when --force is not provided.
 """
 
-import pytest
 from pathlib import Path
 from unittest.mock import patch
 
-from cerebrate_file.recursive import pre_screen_files
+import pytest
 from cerebrate_file.file_utils import output_file_exists
+from cerebrate_file.recursive import pre_screen_files
 
 
 class TestOutputFileExists:
@@ -55,7 +55,7 @@ class TestOutputFileExists:
         input_file.write_text("input content")
 
         # Mock path.exists() to raise PermissionError
-        with patch.object(Path, 'exists', side_effect=PermissionError("Access denied")):
+        with patch.object(Path, "exists", side_effect=PermissionError("Access denied")):
             result = output_file_exists(input_file, output_file)
             assert result is False  # Should default to False on error
 

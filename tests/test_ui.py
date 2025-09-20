@@ -6,8 +6,9 @@
 Tests the rich-based progress display components for single and multi-file processing.
 """
 
-import pytest
 from io import StringIO
+
+import pytest
 from rich.console import Console
 
 from cerebrate_file.ui import FileProgressDisplay, MultiFileProgressDisplay
@@ -262,7 +263,9 @@ class TestUIIntegration:
 
         # Test single file display
         single_display = FileProgressDisplay(console=console)
-        single_display.start_file_processing("long_filename_test.md", "output/long_filename_test_processed.md", 10)
+        single_display.start_file_processing(
+            "long_filename_test.md", "output/long_filename_test_processed.md", 10
+        )
 
         for i in range(1, 11):
             single_display.update_progress(i, 100 - i)
@@ -296,9 +299,11 @@ class TestUIIntegration:
         # Test with various path types
         edge_case_paths = [
             ("", "output.txt"),  # Empty input path
-            ("input.txt", ""),   # Empty output path
-            ("very/long/path/to/some/deeply/nested/file/with/long/name.md",
-             "equally/long/output/path/structure/processed_file.md"),  # Long paths
+            ("input.txt", ""),  # Empty output path
+            (
+                "very/long/path/to/some/deeply/nested/file/with/long/name.md",
+                "equally/long/output/path/structure/processed_file.md",
+            ),  # Long paths
             ("file with spaces.txt", "output with spaces.txt"),  # Spaces in names
             ("file-with-dashes.txt", "output_with_underscores.txt"),  # Special chars
         ]

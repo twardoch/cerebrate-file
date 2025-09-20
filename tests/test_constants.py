@@ -4,9 +4,8 @@
 """Tests for cerebrate_file.constants module."""
 
 import pytest
+
 from cerebrate_file.constants import (
-    APIError,
-    ChunkingError,
     CODE_BOUNDARY_PATTERNS,
     COMPILED_BOUNDARY_PATTERNS,
     DEFAULT_CHUNK_SIZE,
@@ -14,9 +13,11 @@ from cerebrate_file.constants import (
     MAX_OUTPUT_TOKENS,
     METADATA_SCHEMA,
     REQUIRED_METADATA_FIELDS,
+    APIError,
+    CerebrateError,
+    ChunkingError,
     TokenizationError,
     ValidationError,
-    CerebrateError,
 )
 
 
@@ -30,7 +31,7 @@ def test_constants_values():
 def test_required_metadata_fields():
     """Test required metadata fields."""
     expected_fields = {"title", "author", "id", "type", "date"}
-    assert REQUIRED_METADATA_FIELDS == expected_fields
+    assert expected_fields == REQUIRED_METADATA_FIELDS
 
 
 def test_metadata_schema():

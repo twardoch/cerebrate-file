@@ -9,20 +9,21 @@ with Cerebras AI models.
 """
 
 import re
-from typing import Any, Dict, List, Pattern, Set
+from re import Pattern
+from typing import Any
 
 __all__ = [
-    "MAX_CONTEXT_TOKENS",
-    "MAX_OUTPUT_TOKENS",
-    "DEFAULT_CHUNK_SIZE",
-    "REQUIRED_METADATA_FIELDS",
-    "METADATA_SCHEMA",
     "CODE_BOUNDARY_PATTERNS",
     "COMPILED_BOUNDARY_PATTERNS",
-    "CerebrateError",
-    "TokenizationError",
-    "ChunkingError",
+    "DEFAULT_CHUNK_SIZE",
+    "MAX_CONTEXT_TOKENS",
+    "MAX_OUTPUT_TOKENS",
+    "METADATA_SCHEMA",
+    "REQUIRED_METADATA_FIELDS",
     "APIError",
+    "CerebrateError",
+    "ChunkingError",
+    "TokenizationError",
     "ValidationError",
 ]
 
@@ -32,10 +33,10 @@ MAX_OUTPUT_TOKENS = 40000
 DEFAULT_CHUNK_SIZE = 32000  # Conservative chunk size for better processing
 
 # Required metadata fields for --explain mode
-REQUIRED_METADATA_FIELDS: Set[str] = {"title", "author", "id", "type", "date"}
+REQUIRED_METADATA_FIELDS: set[str] = {"title", "author", "id", "type", "date"}
 
 # JSON schema for metadata structured output
-METADATA_SCHEMA: Dict[str, Any] = {
+METADATA_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
         "title": {"type": "string"},
@@ -50,7 +51,7 @@ METADATA_SCHEMA: Dict[str, Any] = {
 
 # Code boundary patterns for intelligent chunking
 # These patterns identify good split points in code
-CODE_BOUNDARY_PATTERNS: List[str] = [
+CODE_BOUNDARY_PATTERNS: list[str] = [
     # Function/method definitions
     r"^(?:def |function |func |fn |public |private |protected |static ).*\{?\s*$",
     # Class definitions
@@ -66,7 +67,7 @@ CODE_BOUNDARY_PATTERNS: List[str] = [
 ]
 
 # Compiled patterns for efficiency
-COMPILED_BOUNDARY_PATTERNS: List[Pattern[str]] = [
+COMPILED_BOUNDARY_PATTERNS: list[Pattern[str]] = [
     re.compile(pattern, re.MULTILINE) for pattern in CODE_BOUNDARY_PATTERNS
 ]
 
@@ -93,7 +94,7 @@ DEFAULT_MAX_TOKENS_RATIO = 100
 DEFAULT_SAMPLE_SIZE = 200
 
 # Valid data formats for chunking
-VALID_DATA_FORMATS: Set[str] = {"text", "semantic", "markdown", "code"}
+VALID_DATA_FORMATS: set[str] = {"text", "semantic", "markdown", "code"}
 
 # Continuity template for chunk processing
 CONTINUITY_TEMPLATE = """Our current input text chunk is the immediate continuation of this input text chunk:
@@ -114,34 +115,27 @@ Please process our current input text analogically, and maintain logical and sty
 # Exception Classes
 class CerebrateError(Exception):
     """Base exception class for cerebrate_file package."""
-    pass
 
 
 class TokenizationError(CerebrateError):
     """Exception raised when tokenization fails."""
-    pass
 
 
 class ChunkingError(CerebrateError):
     """Exception raised when chunking fails."""
-    pass
 
 
 class APIError(CerebrateError):
     """Exception raised when API calls fail."""
-    pass
 
 
 class ValidationError(CerebrateError):
     """Exception raised when input validation fails."""
-    pass
 
 
 class ConfigurationError(CerebrateError):
     """Exception raised when configuration is invalid."""
-    pass
 
 
 class FileError(CerebrateError):
     """Exception raised when file operations fail."""
-    pass

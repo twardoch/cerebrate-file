@@ -9,7 +9,7 @@ retries, and structured output generation.
 
 import json
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from loguru import logger
 from tenacity import (
@@ -20,23 +20,22 @@ from tenacity import (
 )
 
 from .constants import (
-    APIError,
     DEFAULT_MODEL,
     DEFAULT_TEMPERATURE,
     DEFAULT_TOP_P,
     METADATA_SCHEMA,
     REQUESTS_SAFETY_MARGIN,
     TOKENS_SAFETY_MARGIN,
+    APIError,
 )
-from .error_recovery import format_error_with_suggestions, with_retry, RetryConfig
 from .models import RateLimitStatus
 
 __all__ = [
     "CerebrasClient",
-    "parse_rate_limit_headers",
     "calculate_backoff_delay",
     "explain_metadata_with_llm",
     "make_cerebras_request",
+    "parse_rate_limit_headers",
 ]
 
 
@@ -59,24 +58,22 @@ class CerebrasClient:
         """Get or create the Cerebras client instance."""
         if self._client is None:
             try:
-                import cerebras.cloud.sdk as cerebras
                 from cerebras.cloud.sdk import Cerebras
 
                 self._client = Cerebras(api_key=self.api_key)
             except ImportError:
                 raise APIError(
                     "cerebras-cloud-sdk not available. Install with: uv add cerebras-cloud-sdk"
-                )
+                ) from None
         return self._client
 
     def chat_completion(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         max_completion_tokens: int,
         temperature: float = DEFAULT_TEMPERATURE,
         top_p: float = DEFAULT_TOP_P,
-        stream: bool = True,
-    ) -> Tuple[str, RateLimitStatus]:
+    ) -> tuple[str, RateLimitStatus]:
         """Make a chat completion request.
 
         Args:
@@ -84,7 +81,6 @@ class CerebrasClient:
             max_completion_tokens: Max tokens for completion
             temperature: Sampling temperature
             top_p: Nucleus sampling parameter
-            stream: Whether to stream response
 
         Returns:
             Tuple of (response text, rate limit status)
@@ -97,11 +93,11 @@ class CerebrasClient:
 
     def explain_metadata(
         self,
-        existing_metadata: Dict[str, Any],
+        existing_metadata: dict[str, Any],
         first_chunk_text: str,
         temperature: float = DEFAULT_TEMPERATURE,
         top_p: float = DEFAULT_TOP_P,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate missing metadata fields using structured output.
 
         Args:
@@ -135,7 +131,7 @@ class CerebrasClient:
         return calculate_backoff_delay(self.rate_status, next_chunk_tokens)
 
 
-def parse_rate_limit_headers(headers: Dict[str, str], verbose: bool = False) -> RateLimitStatus:
+def parse_rate_limit_headers(headers: dict[str, str], verbose: bool = False) -> RateLimitStatus:
     """Extract rate limit info from response headers.
 
     Args:
@@ -151,7 +147,9 @@ def parse_rate_limit_headers(headers: Dict[str, str], verbose: bool = False) -> 
 
         # In verbose mode, log all x-ratelimit-* headers
         if verbose:
-            ratelimit_headers = {k: v for k, v in headers.items() if k.lower().startswith('x-ratelimit')}
+            ratelimit_headers = {
+                k: v for k, v in headers.items() if k.lower().startswith("x-ratelimit")
+            }
             if ratelimit_headers:
                 logger.info(f"All x-ratelimit headers: {ratelimit_headers}")
             else:
@@ -168,9 +166,7 @@ def parse_rate_limit_headers(headers: Dict[str, str], verbose: bool = False) -> 
 
         # Parse remaining requests (daily limit)
         if "x-ratelimit-remaining-requests-day" in headers:
-            status.requests_remaining = int(
-                headers["x-ratelimit-remaining-requests-day"]
-            )
+            status.requests_remaining = int(headers["x-ratelimit-remaining-requests-day"])
             found_any_headers = True
 
         # Parse remaining tokens (per-minute limit)
@@ -194,9 +190,7 @@ def parse_rate_limit_headers(headers: Dict[str, str], verbose: bool = False) -> 
             reset_value = headers["x-ratelimit-reset-requests-day"]
             try:
                 seconds_until_reset = float(reset_value)
-                status.requests_reset_time = datetime.now() + timedelta(
-                    seconds=seconds_until_reset
-                )
+                status.requests_reset_time = datetime.now() + timedelta(seconds=seconds_until_reset)
                 found_any_headers = True
             except ValueError:
                 logger.debug(f"Could not parse request reset time: {reset_value}")
@@ -221,14 +215,12 @@ def parse_rate_limit_headers(headers: Dict[str, str], verbose: bool = False) -> 
 def calculate_backoff_delay(
     rate_status: RateLimitStatus,
     next_chunk_tokens: int,
-    processing_state: Optional[object] = None,
 ) -> float:
     """Calculate optimal delay based on rate limit status.
 
     Args:
         rate_status: Current rate limit status
         next_chunk_tokens: Estimated tokens for next request
-        processing_state: Optional processing state for rate tracking
 
     Returns:
         Delay in seconds
@@ -241,10 +233,8 @@ def calculate_backoff_delay(
         return 0.1
 
     # Rate-based safety thresholds
-    TOKENS_PER_MINUTE_LIMIT = (
-        rate_status.tokens_limit if rate_status.tokens_limit > 0 else 400000
-    )
-    TOKENS_PER_SECOND_LIMIT = TOKENS_PER_MINUTE_LIMIT / 60.0
+    tokens_per_minute_limit = rate_status.tokens_limit if rate_status.tokens_limit > 0 else 400000
+    tokens_per_second_limit = tokens_per_minute_limit / 60.0
 
     # Critical shortage - immediate wait until reset
     if rate_status.tokens_remaining < next_chunk_tokens:
@@ -271,13 +261,11 @@ def calculate_backoff_delay(
     # Rate-based pacing - don't consume faster than sustainable rate
     if rate_status.tokens_limit > 0:
         time_since_update = (
-            (now - rate_status.last_updated).total_seconds()
-            if rate_status.last_updated
-            else 0
+            (now - rate_status.last_updated).total_seconds() if rate_status.last_updated else 0
         )
         if time_since_update < 1.0:  # Recent update, check consumption rate
             # Conservative pacing: don't exceed 80% of max rate
-            safe_tokens_per_second = TOKENS_PER_SECOND_LIMIT * 0.8
+            safe_tokens_per_second = tokens_per_second_limit * 0.8
 
             # If next request would exceed safe rate, add small delay
             if next_chunk_tokens > safe_tokens_per_second:
@@ -307,12 +295,12 @@ def calculate_backoff_delay(
 
 def explain_metadata_with_llm(
     client,
-    existing_metadata: Dict[str, Any],
+    existing_metadata: dict[str, Any],
     first_chunk_text: str,
     model: str,
     temp: float,
     top_p: float,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Use structured outputs to generate missing metadata fields.
 
     Args:
@@ -377,9 +365,7 @@ First chunk: {truncated_chunk}
         response_content = response.choices[0].message.content
         generated_metadata = json.loads(response_content)
 
-        logger.info(
-            f"Metadata explanation successful: {len(generated_metadata)} fields generated"
-        )
+        logger.info(f"Metadata explanation successful: {len(generated_metadata)} fields generated")
         return generated_metadata
 
     except Exception as e:
@@ -394,13 +380,13 @@ First chunk: {truncated_chunk}
 )
 def make_cerebras_request(
     client,
-    messages: List[Dict[str, str]],
+    messages: list[dict[str, str]],
     model: str,
     max_completion_tokens: int,
     temperature: float,
     top_p: float,
     verbose: bool = False,
-) -> Tuple[str, RateLimitStatus]:
+) -> tuple[str, RateLimitStatus]:
     """Make streaming request to Cerebras API with retry logic.
 
     Args:
@@ -442,16 +428,20 @@ def make_cerebras_request(
             if hasattr(stream, "response") and hasattr(stream.response, "headers"):
                 headers_dict = dict(stream.response.headers)
                 rate_status = parse_rate_limit_headers(headers_dict, verbose=verbose)
-                logger.debug(f"Rate limit headers parsed from stream response")
+                logger.debug("Rate limit headers parsed from stream response")
 
             # If we have a last chunk with response headers, try to get updated headers
-            if last_chunk and hasattr(last_chunk, "_raw_response") and hasattr(last_chunk._raw_response, "headers"):
+            if (
+                last_chunk
+                and hasattr(last_chunk, "_raw_response")
+                and hasattr(last_chunk._raw_response, "headers")
+            ):
                 final_headers_dict = dict(last_chunk._raw_response.headers)
                 updated_rate_status = parse_rate_limit_headers(final_headers_dict, verbose=verbose)
                 # Use updated headers if they were successfully parsed
                 if updated_rate_status.headers_parsed:
                     rate_status = updated_rate_status
-                    logger.debug(f"Rate limit headers updated from final chunk")
+                    logger.debug("Rate limit headers updated from final chunk")
 
         except Exception as e:
             logger.debug(f"Could not parse rate limit headers: {e}")

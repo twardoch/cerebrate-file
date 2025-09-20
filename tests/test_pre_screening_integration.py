@@ -6,10 +6,9 @@ Tests verify that pre-screening works correctly when integrated with
 the recursive processing CLI interface.
 """
 
-import pytest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
 from cerebrate_file.cli import run
 
 
@@ -34,9 +33,9 @@ class TestPreScreeningIntegration:
         (output_dir / "file3.md").write_text("existing output 3")
 
         # Mock the environment and processing to avoid actual API calls
-        with patch.dict('os.environ', {'CEREBRAS_API_KEY': 'csk-test-key-12345678'}):
-            with patch('cerebrate_file.config.validate_environment'):
-                with patch('cerebrate_file.recursive.process_files_parallel') as mock_process:
+        with patch.dict("os.environ", {"CEREBRAS_API_KEY": "csk-test-key-12345678"}):
+            with patch("cerebrate_file.config.validate_environment"):
+                with patch("cerebrate_file.recursive.process_files_parallel") as mock_process:
                     # Configure mock to return empty result
                     mock_result = MagicMock()
                     mock_result.successful = []
@@ -53,7 +52,7 @@ class TestPreScreeningIntegration:
                         recurse="*.md",
                         force=False,
                         dry_run=False,
-                        verbose=True
+                        verbose=True,
                     )
 
                     # Check that only file2.md was scheduled for processing
@@ -68,7 +67,10 @@ class TestPreScreeningIntegration:
 
         # Check console output
         captured = capsys.readouterr()
-        assert "Found 3 candidates, 1 will be processed (2 skipped - use --force to include)" in captured.out
+        assert (
+            "Found 3 candidates, 1 will be processed (2 skipped - use --force to include)"
+            in captured.out
+        )
 
     def test_recursive_pre_screening_with_force_true(self, tmp_path, capsys):
         """Test that force=True bypasses pre-screening in recursive mode."""
@@ -87,9 +89,9 @@ class TestPreScreeningIntegration:
         (output_dir / "file2.md").write_text("existing output 2")
 
         # Mock the environment and processing to avoid actual API calls
-        with patch.dict('os.environ', {'CEREBRAS_API_KEY': 'csk-test-key-12345678'}):
-            with patch('cerebrate_file.config.validate_environment'):
-                with patch('cerebrate_file.recursive.process_files_parallel') as mock_process:
+        with patch.dict("os.environ", {"CEREBRAS_API_KEY": "csk-test-key-12345678"}):
+            with patch("cerebrate_file.config.validate_environment"):
+                with patch("cerebrate_file.recursive.process_files_parallel") as mock_process:
                     # Configure mock to return empty result
                     mock_result = MagicMock()
                     mock_result.successful = []
@@ -106,7 +108,7 @@ class TestPreScreeningIntegration:
                         recurse="*.md",
                         force=True,
                         dry_run=False,
-                        verbose=True
+                        verbose=True,
                     )
 
                     # Check that all files were scheduled for processing
@@ -137,8 +139,8 @@ class TestPreScreeningIntegration:
         (output_dir / "file2.md").write_text("existing output 2")
 
         # Mock the environment to avoid validation
-        with patch.dict('os.environ', {'CEREBRAS_API_KEY': 'csk-test-key-12345678'}):
-            with patch('cerebrate_file.config.validate_environment'):
+        with patch.dict("os.environ", {"CEREBRAS_API_KEY": "csk-test-key-12345678"}):
+            with patch("cerebrate_file.config.validate_environment"):
                 # Run with recursive mode, no force
                 run(
                     input_data=str(input_dir),
@@ -146,12 +148,15 @@ class TestPreScreeningIntegration:
                     recurse="*.md",
                     force=False,
                     dry_run=False,
-                    verbose=True
+                    verbose=True,
                 )
 
         # Check console output
         captured = capsys.readouterr()
-        assert "Found 2 candidates, 0 will be processed (2 skipped - use --force to include)" in captured.out
+        assert (
+            "Found 2 candidates, 0 will be processed (2 skipped - use --force to include)"
+            in captured.out
+        )
         assert "All files have existing outputs. Use --force to overwrite." in captured.out
 
     def test_recursive_pre_screening_dry_run_mode(self, tmp_path, capsys):
@@ -170,8 +175,8 @@ class TestPreScreeningIntegration:
         (output_dir / "file1.md").write_text("existing output 1")
 
         # Mock the environment to avoid validation
-        with patch.dict('os.environ', {'CEREBRAS_API_KEY': 'csk-test-key-12345678'}):
-            with patch('cerebrate_file.config.validate_environment'):
+        with patch.dict("os.environ", {"CEREBRAS_API_KEY": "csk-test-key-12345678"}):
+            with patch("cerebrate_file.config.validate_environment"):
                 # Run with dry-run mode
                 run(
                     input_data=str(input_dir),
@@ -179,12 +184,15 @@ class TestPreScreeningIntegration:
                     recurse="*.md",
                     force=False,
                     dry_run=True,
-                    verbose=True
+                    verbose=True,
                 )
 
         # Check console output
         captured = capsys.readouterr()
-        assert "Found 2 candidates, 1 will be processed (1 skipped - use --force to include)" in captured.out
+        assert (
+            "Found 2 candidates, 1 will be processed (1 skipped - use --force to include)"
+            in captured.out
+        )
         assert "DRY-RUN MODE" in captured.out
         assert "file2.md" in captured.out  # Should show the one file that would be processed
 
@@ -199,9 +207,9 @@ class TestPreScreeningIntegration:
         (input_dir / "file2.md").write_text("content 2")
 
         # Mock the environment and processing to avoid actual API calls
-        with patch.dict('os.environ', {'CEREBRAS_API_KEY': 'csk-test-key-12345678'}):
-            with patch('cerebrate_file.config.validate_environment'):
-                with patch('cerebrate_file.recursive.process_files_parallel') as mock_process:
+        with patch.dict("os.environ", {"CEREBRAS_API_KEY": "csk-test-key-12345678"}):
+            with patch("cerebrate_file.config.validate_environment"):
+                with patch("cerebrate_file.recursive.process_files_parallel") as mock_process:
                     # Configure mock to return empty result
                     mock_result = MagicMock()
                     mock_result.successful = []
@@ -218,7 +226,7 @@ class TestPreScreeningIntegration:
                         recurse="*.md",
                         force=False,
                         dry_run=False,
-                        verbose=True
+                        verbose=True,
                     )
 
                     # Check that all files were scheduled for processing (in-place doesn't get filtered)

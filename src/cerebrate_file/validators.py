@@ -7,19 +7,19 @@ This module provides comprehensive validation for all user inputs
 to ensure safe and reliable operation.
 """
 
+import contextlib
 import os
 from pathlib import Path
-from typing import Any, Optional
 
 from .constants import MAX_CONTEXT_TOKENS, ValidationError
 
 __all__ = [
     "validate_chunk_size",
-    "validate_temperature",
-    "validate_top_p",
+    "validate_file_path_safe",
     "validate_file_size",
     "validate_model_parameters",
-    "validate_file_path_safe",
+    "validate_temperature",
+    "validate_top_p",
 ]
 
 # Validation constants
@@ -80,14 +80,10 @@ def validate_temperature(temperature: float) -> float:
         raise ValidationError(f"Temperature must be a number, got {temperature}") from e
 
     if temp < MIN_TEMPERATURE:
-        raise ValidationError(
-            f"Temperature {temp} is too low. Minimum is {MIN_TEMPERATURE}."
-        )
+        raise ValidationError(f"Temperature {temp} is too low. Minimum is {MIN_TEMPERATURE}.")
 
     if temp > MAX_TEMPERATURE:
-        raise ValidationError(
-            f"Temperature {temp} is too high. Maximum is {MAX_TEMPERATURE}."
-        )
+        raise ValidationError(f"Temperature {temp} is too high. Maximum is {MAX_TEMPERATURE}.")
 
     return temp
 
@@ -127,10 +123,11 @@ def validate_file_size(file_path: str) -> None:
     Raises:
         ValidationError: If file is too large
     """
-    if not os.path.exists(file_path):
+    path = Path(file_path)
+    if not path.exists():
         return  # Let other validators handle missing files
 
-    file_size = os.path.getsize(file_path)
+    file_size = path.stat().st_size
     file_size_mb = file_size / (1024 * 1024)
 
     if file_size > MAX_FILE_SIZE_BYTES:
@@ -158,11 +155,8 @@ def validate_file_path_safe(file_path: str) -> Path:
         raise ValidationError(f"Invalid file path: {file_path}") from e
 
     # Check for path traversal attempts
-    try:
+    with contextlib.suppress(ValueError):
         path.relative_to(Path.cwd())
-    except ValueError:
-        # File is outside current directory - warn but allow
-        pass
 
     # Check file exists and is readable
     if not path.exists():
@@ -211,8 +205,6 @@ def validate_model_parameters(
         raise ValidationError(f"max_tokens_ratio must be at least 1%, got {max_tokens_ratio}%")
 
     if max_tokens_ratio > 200:
-        raise ValidationError(
-            f"max_tokens_ratio {max_tokens_ratio}% is too high. Maximum is 200%."
-        )
+        raise ValidationError(f"max_tokens_ratio {max_tokens_ratio}% is too high. Maximum is 200%.")
 
     return chunk_size, temperature, top_p, max_tokens_ratio

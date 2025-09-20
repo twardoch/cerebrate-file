@@ -7,16 +7,14 @@ These tests verify that all components work together correctly
 in realistic usage scenarios.
 """
 
-import os
+import pytest
 import tempfile
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
-
 from cerebrate_file.cerebrate_file import process_document
 from cerebrate_file.chunking import create_chunks
-from cerebrate_file.config import validate_inputs, setup_logging
+from cerebrate_file.config import setup_logging, validate_inputs
 from cerebrate_file.file_utils import read_file_safely, write_output_atomically
 from cerebrate_file.models import APIConfig, ChunkingConfig
 
@@ -41,8 +39,8 @@ Additional nested content for testing hierarchical structure.
         temp_path = f.name
     yield temp_path
     # Cleanup
-    if os.path.exists(temp_path):
-        os.unlink(temp_path)
+    if Path(temp_path):
+        Path(temp_path)
 
 
 @pytest.fixture
@@ -92,8 +90,8 @@ def test_file_io_operations(sample_text_file):
         assert "Added content" in new_content
         assert "Test Document" in new_content
     finally:
-        if os.path.exists(output_file):
-            os.unlink(output_file)
+        if Path(output_file):
+            Path(output_file)
 
 
 def test_chunking_pipeline():
@@ -182,8 +180,8 @@ This is the main content of the document.
         full_text = "".join(chunk.text for chunk in chunks)
         assert "Main Content" in full_text
     finally:
-        if os.path.exists(temp_path):
-            os.unlink(temp_path)
+        if Path(temp_path):
+            Path(temp_path)
 
 
 def test_code_chunking_integration():
@@ -280,8 +278,8 @@ def test_cli_environment_integration():
             # Dry run completes without error
             assert result is None
     finally:
-        if os.path.exists(temp_path):
-            os.unlink(temp_path)
+        if Path(temp_path):
+            Path(temp_path)
 
 
 def test_explain_mode_integration():
@@ -311,10 +309,8 @@ The research focuses on key areas.
     try:
         # Test explain mode processing
         with patch("cerebrate_file.config.validate_api_key", return_value=True):
-            result = cli_run(
-                input_data=temp_path, explain=True, dry_run=True, verbose=False
-            )
+            result = cli_run(input_data=temp_path, explain=True, dry_run=True, verbose=False)
             assert result is None  # Dry run
     finally:
-        if os.path.exists(temp_path):
-            os.unlink(temp_path)
+        if Path(temp_path):
+            Path(temp_path)

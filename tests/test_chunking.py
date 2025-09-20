@@ -4,12 +4,13 @@
 """Tests for cerebrate_file.chunking module."""
 
 import pytest
+
 from cerebrate_file.chunking import (
     ChunkingStrategy,
-    TextChunker,
-    SemanticChunker,
-    MarkdownChunker,
     CodeChunker,
+    MarkdownChunker,
+    SemanticChunker,
+    TextChunker,
     create_chunks,
     get_chunking_strategy,
 )
@@ -64,11 +65,7 @@ if __name__ == "__main__":
 @pytest.fixture
 def chunking_config():
     """Basic chunking configuration."""
-    return ChunkingConfig(
-        chunk_size=100,
-        data_format="text",
-        sample_size=20
-    )
+    return ChunkingConfig(chunk_size=100, data_format="text", sample_size=20)
 
 
 def test_text_chunker_creation():

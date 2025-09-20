@@ -3,12 +3,11 @@
 
 """Tests for cerebrate_file.validators module."""
 
-import os
+import pytest
 import tempfile
 from pathlib import Path
 
 import pytest
-
 from cerebrate_file.constants import ValidationError
 from cerebrate_file.validators import (
     validate_chunk_size,
@@ -109,7 +108,7 @@ def test_validate_file_size_small_file():
         # Should not raise for small files
         validate_file_size(temp_path)
     finally:
-        os.unlink(temp_path)
+        Path(temp_path)
 
 
 def test_validate_file_size_nonexistent_file():
@@ -130,7 +129,7 @@ def test_validate_file_path_safe_valid():
         assert path.exists()
         assert path.is_file()
     finally:
-        os.unlink(temp_path)
+        Path(temp_path)
 
 
 def test_validate_file_path_safe_nonexistent():

@@ -3,26 +3,20 @@
 
 """Tests for issues identified in #104."""
 
-import json
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+import tempfile
 
-from src.cerebrate_file.models import RateLimitStatus, ProcessingState, Chunk
+import pytest
 from src.cerebrate_file.api_client import parse_rate_limit_headers
 from src.cerebrate_file.file_utils import write_output_atomically
-import tempfile
-import os
+from src.cerebrate_file.models import Chunk, ProcessingState, RateLimitStatus
 
 
 def test_call_counting_bug():
     """Test that call counting decreases properly between requests."""
     # Mock headers showing decreasing call counts
-    headers_first = {
-        "x-ratelimit-remaining-requests-day": "172799"
-    }
-    headers_second = {
-        "x-ratelimit-remaining-requests-day": "172798"
-    }
+    headers_first = {"x-ratelimit-remaining-requests-day": "172799"}
+    headers_second = {"x-ratelimit-remaining-requests-day": "172798"}
 
     status1 = parse_rate_limit_headers(headers_first)
     status2 = parse_rate_limit_headers(headers_second)
@@ -34,42 +28,42 @@ def test_call_counting_bug():
 
 def test_frontmatter_missing_when_metadata_empty():
     """Test that frontmatter is still written even when metadata is empty."""
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.md') as f:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".md") as f:
         test_file = f.name
 
     try:
         # Test with empty metadata in explain mode
         write_output_atomically("test content", test_file, {})
 
-        with open(test_file, 'r') as f:
+        with open(test_file) as f:
             content = f.read()
 
         # Should have frontmatter even with empty metadata
-        assert content.startswith('---\n')
-        assert 'test content' in content
+        assert content.startswith("---\n")
+        assert "test content" in content
 
     finally:
-        os.unlink(test_file)
+        Path(test_file)
 
 
 def test_frontmatter_not_written_when_metadata_none():
     """Test that frontmatter is not written when metadata is None."""
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.md') as f:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".md") as f:
         test_file = f.name
 
     try:
         # Test with None metadata (normal mode)
         write_output_atomically("test content", test_file, None)
 
-        with open(test_file, 'r') as f:
+        with open(test_file) as f:
             content = f.read()
 
         # Should not have frontmatter
-        assert not content.startswith('---\n')
-        assert content == 'test content'
+        assert not content.startswith("---\n")
+        assert content == "test content"
 
     finally:
-        os.unlink(test_file)
+        Path(test_file)
 
 
 def test_chunk_processing_double_processing_issue():
@@ -80,7 +74,7 @@ def test_chunk_processing_double_processing_issue():
     chunks = [
         Chunk(text="First chunk content", token_count=100),
         Chunk(text="Second chunk content", token_count=100),
-        Chunk(text="Third chunk content", token_count=100)
+        Chunk(text="Third chunk content", token_count=100),
     ]
 
     # Mock the explain mode workflow
@@ -100,7 +94,7 @@ def test_chunk_processing_double_processing_issue():
 
     # Simulate the current buggy behavior
     # 1. First chunk used for metadata
-    metadata_result = mock_llm_call(chunks[0].text)
+    mock_llm_call(chunks[0].text)
     metadata_processed = True
 
     # 2. All chunks (including first) processed for content - THIS IS THE BUG
@@ -140,7 +134,7 @@ def test_progress_callback_uses_correct_remaining_count():
 
     # Each remaining count should be less than the previous
     for i in range(1, len(callback_calls)):
-        assert callback_calls[i][1] < callback_calls[i-1][1]
+        assert callback_calls[i][1] < callback_calls[i - 1][1]
 
 
 def test_call_counting_issue_debug():
@@ -185,7 +179,7 @@ def test_explain_mode_metadata_completeness_check():
         "author": "Test Author",
         "id": "test-id",
         "type": "test-type",
-        "date": "2023-01-01"
+        "date": "2023-01-01",
     }
 
     is_complete, missing = check_metadata_completeness(complete_metadata)
@@ -193,10 +187,7 @@ def test_explain_mode_metadata_completeness_check():
     assert missing == []
 
     # Incomplete metadata
-    incomplete_metadata = {
-        "title": "Test Title",
-        "author": "Test Author"
-    }
+    incomplete_metadata = {"title": "Test Title", "author": "Test Author"}
 
     is_complete, missing = check_metadata_completeness(incomplete_metadata)
     assert is_complete is False

@@ -9,23 +9,24 @@ and recovery strategies for transient failures.
 
 import functools
 import json
-import os
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, TypeVar
 
-from .constants import APIError, ChunkingError, ValidationError
+from .constants import APIError, ValidationError
 
 __all__ = [
-    "with_retry",
-    "format_error_message",
-    "save_checkpoint",
-    "load_checkpoint",
-    "check_optional_dependency",
     "RetryConfig",
+    "check_optional_dependency",
+    "format_error_message",
+    "load_checkpoint",
+    "save_checkpoint",
+    "with_retry",
 ]
 
 T = TypeVar("T")
+
 
 class RetryConfig:
     """Configuration for retry behavior."""
@@ -62,19 +63,20 @@ class RetryConfig:
         Returns:
             Delay in seconds
         """
-        delay = min(self.base_delay * (self.exponential_base ** attempt), self.max_delay)
+        delay = min(self.base_delay * (self.exponential_base**attempt), self.max_delay)
         if self.jitter:
             import random
-            delay *= (0.5 + random.random())  # Add 0-50% jitter
+
+            delay *= 0.5 + random.random()  # Add 0-50% jitter
         return delay
 
 
 def with_retry(
-    func: Optional[Callable] = None,
+    func: Callable | None = None,
     *,
-    config: Optional[RetryConfig] = None,
+    config: RetryConfig | None = None,
     retryable_errors: tuple = (APIError, ConnectionError, TimeoutError),
-    on_retry: Optional[Callable[[Exception, int], None]] = None,
+    on_retry: Callable[[Exception, int], None] | None = None,
 ) -> Callable:
     """Decorator to add retry logic to functions.
 
@@ -113,7 +115,7 @@ def with_retry(
                         time.sleep(delay)
                     else:
                         # Final attempt failed
-                        raise format_error_with_suggestions(e)
+                        raise format_error_with_suggestions(e) from e
 
             # Should not reach here, but handle it
             if last_error:
@@ -135,63 +137,77 @@ def format_error_with_suggestions(error: Exception) -> Exception:
     Returns:
         Enhanced exception with suggestions
     """
-    error_type = type(error).__name__
+    _ = type(error).__name__  # Store for potential future use
     original_msg = str(error)
 
     suggestions = []
 
     # API-related errors
     if isinstance(error, APIError) or "API" in original_msg:
-        suggestions.extend([
-            "Check your CEREBRAS_API_KEY environment variable is set correctly",
-            "Verify your internet connection is stable",
-            "Try again in a few moments (API might be temporarily unavailable)",
-            "Check if you have sufficient API credits/quota",
-        ])
+        suggestions.extend(
+            [
+                "Check your CEREBRAS_API_KEY environment variable is set correctly",
+                "Verify your internet connection is stable",
+                "Try again in a few moments (API might be temporarily unavailable)",
+                "Check if you have sufficient API credits/quota",
+            ]
+        )
 
     # File-related errors
     elif isinstance(error, FileNotFoundError):
-        suggestions.extend([
-            "Verify the file path is correct",
-            "Check if the file exists: use 'ls' to list files",
-            "Ensure you have read permissions for the file",
-        ])
+        suggestions.extend(
+            [
+                "Verify the file path is correct",
+                "Check if the file exists: use 'ls' to list files",
+                "Ensure you have read permissions for the file",
+            ]
+        )
 
     # Permission errors
     elif isinstance(error, PermissionError):
-        suggestions.extend([
-            "Check file permissions with 'ls -la'",
-            "Try running with appropriate permissions",
-            "Verify the output directory is writable",
-        ])
+        suggestions.extend(
+            [
+                "Check file permissions with 'ls -la'",
+                "Try running with appropriate permissions",
+                "Verify the output directory is writable",
+            ]
+        )
 
     # Validation errors
     elif isinstance(error, ValidationError):
         if "chunk_size" in original_msg.lower():
-            suggestions.extend([
-                "Use a chunk size between 10 and 130000 tokens",
-                "Try the default chunk size: --chunk-size 32000",
-            ])
+            suggestions.extend(
+                [
+                    "Use a chunk size between 10 and 130000 tokens",
+                    "Try the default chunk size: --chunk-size 32000",
+                ]
+            )
         elif "temperature" in original_msg.lower():
-            suggestions.extend([
-                "Use a temperature between 0.0 and 2.0",
-                "Try the default temperature: --temperature 0.7",
-            ])
+            suggestions.extend(
+                [
+                    "Use a temperature between 0.0 and 2.0",
+                    "Try the default temperature: --temperature 0.7",
+                ]
+            )
         elif "file size" in original_msg.lower():
-            suggestions.extend([
-                "Split large files into smaller parts",
-                "Use a text editor to extract relevant sections",
-                "Consider increasing the file size limit if needed",
-            ])
+            suggestions.extend(
+                [
+                    "Split large files into smaller parts",
+                    "Use a text editor to extract relevant sections",
+                    "Consider increasing the file size limit if needed",
+                ]
+            )
 
     # Connection errors
     elif isinstance(error, (ConnectionError, TimeoutError)):
-        suggestions.extend([
-            "Check your internet connection",
-            "Try using a different network",
-            "Verify firewall/proxy settings",
-            "Wait a few moments and try again",
-        ])
+        suggestions.extend(
+            [
+                "Check your internet connection",
+                "Try using a different network",
+                "Verify firewall/proxy settings",
+                "Wait a few moments and try again",
+            ]
+        )
 
     # Format the enhanced error message
     if suggestions:
@@ -248,7 +264,7 @@ def save_checkpoint(
 
     # Save atomically
     temp_path = file_path.with_suffix(".tmp")
-    with open(temp_path, "w") as f:
+    with temp_path.open("w") as f:
         json.dump(checkpoint_data, f, indent=2)
 
     temp_path.replace(file_path)
@@ -259,7 +275,7 @@ def load_checkpoint(
     checkpoint_dir: str = ".cerebrate_checkpoints",
     checkpoint_name: str = "checkpoint",
     max_age_hours: float = 24,
-) -> Optional[dict]:
+) -> dict | None:
     """Load processing checkpoint if available and recent.
 
     Args:
@@ -276,7 +292,7 @@ def load_checkpoint(
         return None
 
     try:
-        with open(checkpoint_path) as f:
+        with checkpoint_path.open() as f:
             checkpoint_data = json.load(f)
 
         # Check age
@@ -285,15 +301,15 @@ def load_checkpoint(
             return None
 
         return checkpoint_data["data"]
-    except (json.JSONDecodeError, KeyError, IOError):
+    except (json.JSONDecodeError, KeyError, OSError):
         return None
 
 
 def check_optional_dependency(
     module_name: str,
-    package_name: Optional[str] = None,
-    feature_name: Optional[str] = None,
-) -> tuple[bool, Optional[str]]:
+    package_name: str | None = None,
+    feature_name: str | None = None,
+) -> tuple[bool, str | None]:
     """Check if optional dependency is available with helpful message.
 
     Args:
@@ -347,9 +363,7 @@ class RecoverableOperation:
     def __enter__(self):
         """Enter context and load any existing checkpoint."""
         if self.enable_checkpoints:
-            self.checkpoint_data = load_checkpoint(
-                checkpoint_name=self.operation_name
-            ) or {}
+            self.checkpoint_data = load_checkpoint(checkpoint_name=self.operation_name) or {}
             if self.checkpoint_data:
                 self.processed_count = self.checkpoint_data.get("processed_count", 0)
                 print(f"Resuming from checkpoint: {self.processed_count} items already processed")

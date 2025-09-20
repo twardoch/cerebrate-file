@@ -10,15 +10,15 @@ and API responses.
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 __all__ = [
-    "Chunk",
-    "RateLimitStatus",
-    "ProcessingState",
-    "ProcessingResult",
-    "ChunkingConfig",
     "APIConfig",
+    "Chunk",
+    "ChunkingConfig",
+    "ProcessingResult",
+    "ProcessingState",
+    "RateLimitStatus",
 ]
 
 
@@ -37,7 +37,7 @@ class Chunk:
 
     text: str
     token_count: int
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
     def __len__(self) -> int:
         """Return the token count for convenient length checking."""
@@ -68,14 +68,14 @@ class RateLimitStatus:
 
     requests_remaining: int = 0
     tokens_remaining: int = 0
-    reset_time: Optional[datetime] = None
+    reset_time: datetime | None = None
     headers_parsed: bool = False  # Track if we successfully parsed headers
 
     # Additional tracking for rate management
     tokens_limit: int = 0  # Max tokens per minute
     requests_limit: int = 0  # Max requests per day
-    requests_reset_time: Optional[datetime] = None
-    last_updated: Optional[datetime] = None
+    requests_reset_time: datetime | None = None
+    last_updated: datetime | None = None
 
     def __post_init__(self) -> None:
         """Initialize default values for reset times."""
@@ -128,8 +128,8 @@ class ProcessingState:
         last_rate_status: Last rate limit status from API response
     """
 
-    prev_input_tokens: List[int] = field(default_factory=list)
-    prev_output_tokens: List[int] = field(default_factory=list)
+    prev_input_tokens: list[int] = field(default_factory=list)
+    prev_output_tokens: list[int] = field(default_factory=list)
     prev_input_text: str = ""
     prev_output_text: str = ""
     total_input_tokens: int = 0
@@ -141,9 +141,9 @@ class ProcessingState:
     def update_from_chunk(
         self,
         input_text: str,
-        input_tokens: List[int],
+        input_tokens: list[int],
         output_text: str,
-        output_tokens: List[int],
+        output_tokens: list[int],
         total_input_tokens: int,
     ) -> None:
         """Update state after processing a chunk."""
@@ -192,7 +192,7 @@ class ProcessingResult:
     total_input_tokens: int
     total_output_tokens: int
     processing_time: float
-    errors: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
 
     def add_error(self, error: str) -> None:
         """Add an error to the result."""

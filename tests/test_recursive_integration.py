@@ -3,19 +3,17 @@
 
 """Integration tests for recursive file processing functionality."""
 
-import os
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
-import pytest
 
-from cerebrate_file.recursive import (
-    find_files_recursive,
-    replicate_directory_structure,
-    process_files_parallel,
-    ProcessingResult,
-)
+import pytest
 from cerebrate_file.models import ProcessingState
+from cerebrate_file.recursive import (
+    ProcessingResult,
+    find_files_recursive,
+    process_files_parallel,
+    replicate_directory_structure,
+)
 
 
 class TestRecursiveIntegration:
@@ -271,7 +269,7 @@ class TestRecursiveIntegration:
             return ProcessingState()
 
         # Process files with progress callback
-        result = process_files_parallel(
+        process_files_parallel(
             file_pairs, mock_processing_func, workers=2, progress_callback=progress_callback
         )
 
@@ -325,4 +323,6 @@ class TestRecursiveIntegration:
             assert len(result.failed) == 0
             assert result.total_input_tokens == 200  # 20 * 10
             assert result.total_output_tokens == 300  # 20 * 15
-            assert abs(result.total_time - 2.0) < 0.01  # 20 * 0.1 (allow for floating point precision)
+            assert (
+                abs(result.total_time - 2.0) < 0.01
+            )  # 20 * 0.1 (allow for floating point precision)

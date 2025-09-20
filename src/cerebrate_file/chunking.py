@@ -8,21 +8,18 @@ smaller chunks that fit within model context windows while preserving
 semantic and structural boundaries.
 """
 
-import re
-from typing import List, Optional
-
 from loguru import logger
 
-from .constants import COMPILED_BOUNDARY_PATTERNS, CHARS_PER_TOKEN_FALLBACK, ChunkingError
+from .constants import CHARS_PER_TOKEN_FALLBACK, COMPILED_BOUNDARY_PATTERNS, ChunkingError
 from .models import Chunk
 from .tokenizer import encode_text
 
 __all__ = [
     "ChunkingStrategy",
-    "TextChunker",
-    "SemanticChunker",
-    "MarkdownChunker",
     "CodeChunker",
+    "MarkdownChunker",
+    "SemanticChunker",
+    "TextChunker",
     "create_chunks",
     "get_chunking_strategy",
 ]
@@ -41,7 +38,7 @@ class ChunkingStrategy:
             raise ChunkingError("chunk_size must be positive")
         self.chunk_size = chunk_size
 
-    def chunk(self, content: str) -> List[Chunk]:
+    def chunk(self, content: str) -> list[Chunk]:
         """Split content into chunks.
 
         Args:
@@ -67,7 +64,7 @@ class ChunkingStrategy:
         tokens = encode_text(text)
         return Chunk(text=text, token_count=len(tokens))
 
-    def _handle_overlong_line(self, line: str, chunks: List[Chunk]) -> None:
+    def _handle_overlong_line(self, line: str, chunks: list[Chunk]) -> None:
         """Handle lines that exceed chunk size.
 
         Args:
@@ -86,7 +83,7 @@ class ChunkingStrategy:
 class TextChunker(ChunkingStrategy):
     """Line-based greedy accumulation respecting token limits."""
 
-    def chunk(self, content: str) -> List[Chunk]:
+    def chunk(self, content: str) -> list[Chunk]:
         """Split content using line-based chunking.
 
         Args:
@@ -131,7 +128,7 @@ class TextChunker(ChunkingStrategy):
 class SemanticChunker(ChunkingStrategy):
     """Use semantic-text-splitter with token callback."""
 
-    def chunk(self, content: str) -> List[Chunk]:
+    def chunk(self, content: str) -> list[Chunk]:
         """Split content using semantic boundaries.
 
         Args:
@@ -164,7 +161,7 @@ class SemanticChunker(ChunkingStrategy):
 class MarkdownChunker(ChunkingStrategy):
     """Use MarkdownSplitter with token callback."""
 
-    def chunk(self, content: str) -> List[Chunk]:
+    def chunk(self, content: str) -> list[Chunk]:
         """Split content respecting Markdown structure.
 
         Args:
@@ -206,8 +203,9 @@ class CodeChunker(ChunkingStrategy):
         super().__init__(chunk_size)
         self.boundary_patterns = COMPILED_BOUNDARY_PATTERNS
 
-    def _is_good_split_point(self, line_idx: int, line: str, brace_depth: int,
-                            paren_depth: int, in_string: bool) -> bool:
+    def _is_good_split_point(
+        self, line_idx: int, line: str, brace_depth: int, paren_depth: int, in_string: bool
+    ) -> bool:
         """Determine if this is a good place to split chunks.
 
         Args:
@@ -240,7 +238,7 @@ class CodeChunker(ChunkingStrategy):
 
         return False
 
-    def _track_code_structure(self, line: str) -> tuple[int, int, bool, Optional[str]]:
+    def _track_code_structure(self, line: str) -> tuple[int, int, bool, str | None]:
         """Track code structure depth for better splitting decisions.
 
         Args:
@@ -276,7 +274,7 @@ class CodeChunker(ChunkingStrategy):
 
         return brace_change, paren_change, in_string, string_delimiter
 
-    def chunk(self, content: str) -> List[Chunk]:
+    def chunk(self, content: str) -> list[Chunk]:
         """Split content using code-aware chunking.
 
         Args:
@@ -341,11 +339,15 @@ class CodeChunker(ChunkingStrategy):
                                 chunk_after = current_chunk[back_idx:]
 
                                 if chunk_before:
-                                    before_tokens = sum(len(encode_text(l)) for l in chunk_before)
+                                    before_tokens = sum(
+                                        len(encode_text(line)) for line in chunk_before
+                                    )
                                     chunks.append(Chunk("".join(chunk_before), before_tokens))
 
-                                current_chunk = chunk_after + [line]
-                                current_tokens = sum(len(encode_text(l)) for l in current_chunk)
+                                current_chunk = [*chunk_after, line]
+                                current_tokens = sum(
+                                    len(encode_text(line)) for line in current_chunk
+                                )
                                 break
                         else:
                             # No good split found, force split here
@@ -405,14 +407,13 @@ def get_chunking_strategy(data_format: str, chunk_size: int) -> ChunkingStrategy
 
     if data_format not in strategies:
         raise ChunkingError(
-            f"Unknown data_format: {data_format}. "
-            f"Must be one of: {list(strategies.keys())}"
+            f"Unknown data_format: {data_format}. Must be one of: {list(strategies.keys())}"
         )
 
     return strategies[data_format](chunk_size)
 
 
-def create_chunks(content: str, data_format: str, chunk_size: int) -> List[Chunk]:
+def create_chunks(content: str, data_format: str, chunk_size: int) -> list[Chunk]:
     """Create chunks using the specified strategy.
 
     Args:

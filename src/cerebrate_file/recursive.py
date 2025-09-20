@@ -7,23 +7,22 @@ This module provides functionality for discovering files recursively using glob 
 replicating directory structures, and coordinating parallel file processing.
 """
 
-import os
 import re
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Callable, Any
 
 from loguru import logger
 
 from .models import ProcessingState
 
 __all__ = [
-    "find_files_recursive",
-    "replicate_directory_structure",
-    "process_files_parallel",
     "ProcessingResult",
     "expand_brace_patterns",
+    "find_files_recursive",
     "pre_screen_files",
+    "process_files_parallel",
+    "replicate_directory_structure",
 ]
 
 
@@ -32,17 +31,14 @@ class ProcessingResult:
 
     def __init__(self) -> None:
         """Initialize processing result container."""
-        self.successful: List[Tuple[Path, Path]] = []
-        self.failed: List[Tuple[Path, str]] = []
+        self.successful: list[tuple[Path, Path]] = []
+        self.failed: list[tuple[Path, str]] = []
         self.total_input_tokens: int = 0
         self.total_output_tokens: int = 0
         self.total_time: float = 0.0
 
 
-def pre_screen_files(
-    file_pairs: List[Tuple[Path, Path]],
-    force: bool
-) -> List[Tuple[Path, Path]]:
+def pre_screen_files(file_pairs: list[tuple[Path, Path]], force: bool) -> list[tuple[Path, Path]]:
     """Pre-screen file pairs, removing those with existing outputs if force=False.
 
     Args:
@@ -82,7 +78,7 @@ def pre_screen_files(
     return filtered_pairs
 
 
-def expand_brace_patterns(pattern: str) -> List[str]:
+def expand_brace_patterns(pattern: str) -> list[str]:
     """Expand brace patterns like '*.{md,py,js}' into separate patterns.
 
     Args:
@@ -97,16 +93,16 @@ def expand_brace_patterns(pattern: str) -> List[str]:
         expand_brace_patterns('*.md') -> ['*.md']
     """
     # Find brace pattern like {ext1,ext2,ext3}
-    brace_match = re.search(r'\{([^}]+)\}', pattern)
+    brace_match = re.search(r"\{([^}]+)\}", pattern)
 
     if not brace_match:
         return [pattern]
 
     # Extract the options inside braces
-    options = [opt.strip() for opt in brace_match.group(1).split(',')]
+    options = [opt.strip() for opt in brace_match.group(1).split(",")]
 
     # Create base pattern with placeholder
-    base_pattern = pattern[:brace_match.start()] + '{}' + pattern[brace_match.end():]
+    base_pattern = pattern[: brace_match.start()] + "{}" + pattern[brace_match.end() :]
 
     # Generate all expanded patterns
     expanded = [base_pattern.format(opt) for opt in options if opt]
@@ -117,10 +113,8 @@ def expand_brace_patterns(pattern: str) -> List[str]:
 
 
 def find_files_recursive(
-    input_dir: Path,
-    pattern: str,
-    output_dir: Optional[Path] = None
-) -> List[Tuple[Path, Path]]:
+    input_dir: Path, pattern: str, output_dir: Path | None = None
+) -> list[tuple[Path, Path]]:
     """Find files matching glob pattern and generate output paths.
 
     Args:
@@ -149,10 +143,7 @@ def find_files_recursive(
     for p in patterns:
         try:
             # Use rglob for recursive patterns (containing **), glob for non-recursive
-            if "**" in p:
-                pattern_matches = input_dir.rglob(p)
-            else:
-                pattern_matches = input_dir.glob(p)
+            pattern_matches = input_dir.rglob(p) if "**" in p else input_dir.glob(p)
 
             file_count = 0
             for match in pattern_matches:
@@ -174,18 +165,13 @@ def find_files_recursive(
     logger.info(f"Found {len(matching_files)} files matching '{pattern}'")
 
     # Generate input/output path pairs
-    file_pairs: List[Tuple[Path, Path]] = []
+    file_pairs: list[tuple[Path, Path]] = []
 
     for input_file in matching_files:
         # Calculate relative path from input_dir
         relative_path = input_file.relative_to(input_dir)
 
-        if output_dir:
-            # Create corresponding output path
-            output_file = output_dir / relative_path
-        else:
-            # In-place processing - output is same as input
-            output_file = input_file
+        output_file = output_dir / relative_path if output_dir else input_file
 
         file_pairs.append((input_file, output_file))
         logger.debug(f"Mapped: {input_file} -> {output_file}")
@@ -193,9 +179,7 @@ def find_files_recursive(
     return file_pairs
 
 
-def replicate_directory_structure(
-    file_pairs: List[Tuple[Path, Path]]
-) -> None:
+def replicate_directory_structure(file_pairs: list[tuple[Path, Path]]) -> None:
     """Create output directory structure for all file pairs.
 
     Args:
@@ -232,8 +216,8 @@ def process_single_file(
     input_path: Path,
     output_path: Path,
     processing_func: Callable[[Path, Path], ProcessingState],
-    progress_callback: Optional[Callable[[str, int], None]] = None
-) -> Tuple[Path, Path, ProcessingState, Optional[Exception]]:
+    progress_callback: Callable[[str, int], None] | None = None,
+) -> tuple[Path, Path, ProcessingState, Exception | None]:
     """Process a single file with error handling.
 
     Args:
@@ -272,10 +256,10 @@ def process_single_file(
 
 
 def process_files_parallel(
-    file_pairs: List[Tuple[Path, Path]],
+    file_pairs: list[tuple[Path, Path]],
     processing_func: Callable[[Path, Path], ProcessingState],
     workers: int = 4,
-    progress_callback: Optional[Callable[[str, int], None]] = None
+    progress_callback: Callable[[str, int], None] | None = None,
 ) -> ProcessingResult:
     """Process multiple files in parallel with progress tracking.
 
@@ -301,18 +285,14 @@ def process_files_parallel(
         # Submit all tasks
         futures = {
             executor.submit(
-                process_single_file,
-                input_path,
-                output_path,
-                processing_func,
-                progress_callback
+                process_single_file, input_path, output_path, processing_func, progress_callback
             ): (input_path, output_path)
             for input_path, output_path in file_pairs
         }
 
         # Process completed tasks
         for future in as_completed(futures):
-            input_path, output_path = futures[future]
+            input_path, _output_path = futures[future]
 
             try:
                 in_path, out_path, state, exception = future.result()
@@ -332,8 +312,7 @@ def process_files_parallel(
 
     # Log summary
     logger.info(
-        f"Processing complete: {len(result.successful)} successful, "
-        f"{len(result.failed)} failed"
+        f"Processing complete: {len(result.successful)} successful, {len(result.failed)} failed"
     )
 
     if result.successful:

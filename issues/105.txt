@@ -1,1 +1,0 @@
-In --verbose mode, print the content of all x-ratelimit-* headers

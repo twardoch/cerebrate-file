@@ -116,6 +116,3 @@ Cerebrate File is distributed under the Apache 2.0 License. See the [LICENSE](ht
 
 ---
 
-<div class="text-delta">
-  Last updated: {% last_modified_at %}
-</div>

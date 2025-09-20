@@ -24,7 +24,7 @@ from cerebrate_file.models import APIConfig, ChunkingConfig
 @pytest.fixture
 def sample_text_file():
     """Create a temporary text file for testing."""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
         f.write("""# Test Document
 
 This is a test document for integration testing.
@@ -50,11 +50,7 @@ def mock_api_response():
     """Mock successful API response."""
     return {
         "content": "Processed content",
-        "usage": {
-            "prompt_tokens": 100,
-            "completion_tokens": 50,
-            "total_tokens": 150
-        }
+        "usage": {"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150},
     }
 
 
@@ -64,7 +60,7 @@ def test_full_pipeline_dry_run(sample_text_file):
     from cerebrate_file.cli import run as cli_run
 
     # Call the function directly with parameters
-    with patch('cerebrate_file.cli.sys.exit'):
+    with patch("cerebrate_file.cli.sys.exit"):
         # Should complete without errors in dry-run mode
         try:
             cli_run(
@@ -72,7 +68,7 @@ def test_full_pipeline_dry_run(sample_text_file):
                 dry_run=True,
                 chunk_size=1000,
                 data_format="markdown",
-                verbose=False
+                verbose=False,
             )
         except SystemExit:
             pass  # Expected in dry-run mode
@@ -108,11 +104,7 @@ def test_chunking_pipeline():
     strategies = ["text", "semantic", "markdown", "code"]
 
     for strategy in strategies:
-        chunks = create_chunks(
-            content=test_text,
-            data_format=strategy,
-            chunk_size=100
-        )
+        chunks = create_chunks(content=test_text, data_format=strategy, chunk_size=100)
 
         assert len(chunks) > 0
         assert all(chunk.text for chunk in chunks)
@@ -123,32 +115,25 @@ def test_configuration_validation():
     """Test configuration validation and setup."""
     # Test API config
     api_config = APIConfig(
-        model="qwen-3-coder-480b",
-        temperature=0.7,
-        top_p=0.8,
-        max_tokens_ratio=100
+        model="qwen-3-coder-480b", temperature=0.98, top_p=0.8, max_tokens_ratio=100
     )
     assert api_config.model == "qwen-3-coder-480b"
-    assert api_config.temperature == 0.7
+    assert api_config.temperature == 0.98
 
     # Test chunking config
-    chunk_config = ChunkingConfig(
-        chunk_size=1000,
-        data_format="text",
-        sample_size=200
-    )
+    chunk_config = ChunkingConfig(chunk_size=1000, data_format="text", sample_size=200)
     assert chunk_config.chunk_size == 1000
     assert chunk_config.data_format == "text"
 
 
-@patch('cerebrate_file.api_client.CerebrasClient')
+@patch("cerebrate_file.api_client.CerebrasClient")
 def test_api_client_integration(mock_client_class, sample_text_file):
     """Test API client integration with processing pipeline."""
     # Setup mock client
     mock_client = Mock()
     mock_client.process_chunk.return_value = {
         "content": "Processed text",
-        "usage": {"prompt_tokens": 50, "completion_tokens": 25}
+        "usage": {"prompt_tokens": 50, "completion_tokens": 25},
     }
     mock_client_class.return_value = mock_client
 
@@ -166,10 +151,7 @@ def test_error_handling_pipeline():
 
     # Test with non-existent file
     with pytest.raises((FileNotFoundError, SystemExit)):
-        cli_run(
-            input_data="nonexistent_file_that_does_not_exist.txt",
-            dry_run=True
-        )
+        cli_run(input_data="nonexistent_file_that_does_not_exist.txt", dry_run=True)
 
     # Test chunking with empty content
     empty_chunks = create_chunks("", "text", 100)
@@ -178,7 +160,7 @@ def test_error_handling_pipeline():
 
 def test_markdown_with_frontmatter():
     """Test processing markdown files with frontmatter."""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
         f.write("""---
 title: Test Document
 author: Test Author
@@ -286,19 +268,15 @@ def test_cli_environment_integration():
     """Test CLI integration with environment variables."""
     from cerebrate_file.cli import run as cli_run
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
         f.write("Test content for environment integration")
         temp_path = f.name
 
     try:
         # Test that CLI picks up environment variables
         # Mock the API key validation since we're in dry-run mode
-        with patch('cerebrate_file.config.validate_api_key', return_value=True):
-            result = cli_run(
-                input_data=temp_path,
-                dry_run=True,
-                verbose=False
-            )
+        with patch("cerebrate_file.config.validate_api_key", return_value=True):
+            result = cli_run(input_data=temp_path, dry_run=True, verbose=False)
             # Dry run completes without error
             assert result is None
     finally:
@@ -326,18 +304,15 @@ This paper discusses important findings.
 The research focuses on key areas.
 """
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
         f.write(text_with_metadata)
         temp_path = f.name
 
     try:
         # Test explain mode processing
-        with patch('cerebrate_file.config.validate_api_key', return_value=True):
+        with patch("cerebrate_file.config.validate_api_key", return_value=True):
             result = cli_run(
-                input_data=temp_path,
-                explain=True,
-                dry_run=True,
-                verbose=False
+                input_data=temp_path, explain=True, dry_run=True, verbose=False
             )
             assert result is None  # Dry run
     finally:

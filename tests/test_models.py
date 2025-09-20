@@ -50,7 +50,7 @@ def test_rate_limit_status():
     rate_limit = RateLimitStatus(
         requests_remaining=100,
         tokens_remaining=50000,
-        reset_time=now + timedelta(minutes=1)
+        reset_time=now + timedelta(minutes=1),
     )
     assert rate_limit.requests_remaining == 100
     assert rate_limit.tokens_remaining == 50000
@@ -64,7 +64,7 @@ def test_processing_state():
         prev_output_text="Previous output",
         total_input_tokens=1000,
         total_output_tokens=500,
-        chunks_processed=5
+        chunks_processed=5,
     )
     assert state.prev_input_text == "Previous input"
     assert state.prev_output_text == "Previous output"
@@ -80,7 +80,7 @@ def test_processing_result():
         chunks_processed=1,
         total_input_tokens=100,
         total_output_tokens=50,
-        processing_time=1.5
+        processing_time=1.5,
     )
     assert result.output_text == "Processed content"
     assert result.chunks_processed == 1
@@ -91,11 +91,7 @@ def test_processing_result():
 
 def test_chunking_config():
     """Test ChunkingConfig dataclass."""
-    config = ChunkingConfig(
-        chunk_size=1000,
-        data_format="text",
-        sample_size=200
-    )
+    config = ChunkingConfig(chunk_size=1000, data_format="text", sample_size=200)
     assert config.chunk_size == 1000
     assert config.data_format == "text"
     assert config.sample_size == 200
@@ -104,12 +100,9 @@ def test_chunking_config():
 def test_api_config():
     """Test APIConfig dataclass."""
     config = APIConfig(
-        model="test-model",
-        temperature=0.7,
-        top_p=0.9,
-        max_tokens_ratio=100
+        model="test-model", temperature=0.98, top_p=0.9, max_tokens_ratio=100
     )
     assert config.model == "test-model"
-    assert config.temperature == 0.7
+    assert config.temperature == 0.98
     assert config.top_p == 0.9
     assert config.max_tokens_ratio == 100

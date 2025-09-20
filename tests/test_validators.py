@@ -101,7 +101,7 @@ def test_validate_top_p_too_high():
 
 def test_validate_file_size_small_file():
     """Test file size validation with small file."""
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
         f.write("Small content")
         temp_path = f.name
 
@@ -120,7 +120,7 @@ def test_validate_file_size_nonexistent_file():
 
 def test_validate_file_path_safe_valid():
     """Test file path validation with valid file."""
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
         f.write("Test content")
         temp_path = f.name
 
@@ -151,10 +151,7 @@ def test_validate_file_path_safe_directory():
 def test_validate_model_parameters_valid():
     """Test combined model parameter validation with valid values."""
     chunk_size, temp, top_p, ratio = validate_model_parameters(
-        chunk_size=1000,
-        temperature=0.7,
-        top_p=0.9,
-        max_tokens_ratio=100
+        chunk_size=1000, temperature=0.98, top_p=0.9, max_tokens_ratio=100
     )
     assert chunk_size == 1000
     assert temp == 0.7
@@ -167,9 +164,9 @@ def test_validate_model_parameters_invalid_ratio():
     with pytest.raises(ValidationError) as exc:
         validate_model_parameters(
             chunk_size=1000,
-            temperature=0.7,
+            temperature=0.98,
             top_p=0.9,
-            max_tokens_ratio=300  # Too high
+            max_tokens_ratio=300,  # Too high
         )
     assert "too high" in str(exc.value)
 
@@ -182,6 +179,6 @@ def test_validate_model_parameters_multiple_invalid():
             chunk_size=5,  # Too small
             temperature=3.0,  # Too high
             top_p=1.5,  # Too high
-            max_tokens_ratio=0  # Too low
+            max_tokens_ratio=0,  # Too low
         )
     assert "too small" in str(exc.value)  # Fails on chunk_size first

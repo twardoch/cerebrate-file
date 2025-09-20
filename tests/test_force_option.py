@@ -100,7 +100,8 @@ def test_force_option_when_output_exists_force_true(sample_input_file, existing_
     with patch("cerebrate_file.config.validate_api_key", return_value=True), \
          patch("cerebrate_file.config.validate_environment"), \
          patch("cerebrate_file.chunking.create_chunks") as mock_chunks, \
-         patch("cerebrate_file.cerebrate_file.process_document") as mock_process:
+         patch("cerebrate_file.cerebrate_file.process_document") as mock_process, \
+         patch("cerebras.cloud.sdk.Cerebras"):
 
         # Setup mocks
         mock_chunks.return_value = []  # Empty chunks to skip processing
@@ -134,7 +135,8 @@ def test_force_option_when_input_equals_output(sample_input_file):
     # Mock to avoid actual processing
     with patch("cerebrate_file.config.validate_api_key", return_value=True), \
          patch("cerebrate_file.config.validate_environment"), \
-         patch("cerebrate_file.chunking.create_chunks", return_value=[]):
+         patch("cerebrate_file.chunking.create_chunks", return_value=[]), \
+         patch("cerebras.cloud.sdk.Cerebras"):
 
         # When input_data == output_data, force check should not apply
         cli_run(
@@ -160,7 +162,8 @@ def test_force_option_when_output_does_not_exist(sample_input_file):
         # Mock to avoid actual processing
         with patch("cerebrate_file.config.validate_api_key", return_value=True), \
              patch("cerebrate_file.config.validate_environment"), \
-             patch("cerebrate_file.chunking.create_chunks", return_value=[]):
+             patch("cerebrate_file.chunking.create_chunks", return_value=[]), \
+             patch("cerebras.cloud.sdk.Cerebras"):
 
             # Should proceed normally since output doesn't exist
             cli_run(
@@ -277,26 +280,22 @@ def test_force_option_parameter_validation():
                 os.unlink(input_path)
 
 
-def test_force_option_logged_messages(sample_input_file, existing_output_file, caplog):
-    """Test that appropriate log messages are generated for force option."""
-    import logging
-    caplog.set_level(logging.INFO)
-
+def test_force_option_logged_messages(sample_input_file, existing_output_file, capsys):
+    """Test that appropriate messages are generated for force option."""
     # Mock to avoid actual processing
     with patch("cerebrate_file.config.validate_api_key", return_value=True), \
          patch("cerebrate_file.config.validate_environment"), \
          patch("cerebrate_file.chunking.create_chunks", return_value=[]):
 
-        # Test that skip message is logged when force=False and output exists
+        # Use verbose mode to enable INFO logging level
         cli_run(
             input_data=sample_input_file,
             output_data=existing_output_file,
             force=False,
             dry_run=False,
-            verbose=False
+            verbose=True  # Enable verbose to capture INFO logs
         )
 
-        # Check that appropriate log message was generated
-        log_messages = [record.message for record in caplog.records]
-        skip_messages = [msg for msg in log_messages if "exists and --force not provided" in msg]
-        assert len(skip_messages) > 0
+        # Check that appropriate warning message was displayed
+        captured = capsys.readouterr()
+        assert "already exists. Use --force to overwrite" in captured.out

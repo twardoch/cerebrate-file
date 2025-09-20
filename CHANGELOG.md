@@ -9,6 +9,15 @@ All notable changes to cerebrate-file will be documented in this file.
 ## [Unreleased] - 2025-09-20
 
 ### Added
+- **Force Option**: New `--force` boolean CLI flag for overwrite control
+  - Prevents accidental overwriting of existing output files by default
+  - Check occurs before any LLM API calls to save quota and processing time
+  - Works in both single-file and recursive processing modes
+  - Clear user messaging when files are skipped: "⚠️ Output file already exists. Use --force to overwrite."
+  - Smart logic: only applies when input and output paths differ (in-place editing unaffected)
+  - Comprehensive test suite with 8 test cases covering all scenarios
+  - Backward compatible: default is False, existing usage unchanged
+
 - **Comprehensive GitHub Pages Documentation**: Full Jekyll-based documentation site
   - Complete documentation site using Just-the-Docs theme
   - 10+ detailed documentation pages covering all aspects

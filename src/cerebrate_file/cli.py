@@ -114,6 +114,7 @@ def run(
             find_files_recursive,
             replicate_directory_structure,
             process_files_parallel,
+            pre_screen_files,
         )
         from .ui import MultiFileProgressDisplay
 
@@ -136,7 +137,19 @@ def run(
             print("⚠️  No files found matching the pattern")
             return
 
-        print(f"📊 Found {len(file_pairs)} files to process")
+        # Pre-screen files to remove those with existing outputs (unless force=True)
+        original_count = len(file_pairs)
+        file_pairs = pre_screen_files(file_pairs, force)
+        skipped_count = original_count - len(file_pairs)
+
+        if skipped_count > 0:
+            print(f"📊 Found {original_count} candidates, {len(file_pairs)} will be processed ({skipped_count} skipped - use --force to include)")
+        else:
+            print(f"📊 Found {len(file_pairs)} files to process")
+
+        if not file_pairs:
+            print("⚠️  All files have existing outputs. Use --force to overwrite.")
+            return
 
         # Create output directory structure if needed
         if output_path:
@@ -166,13 +179,7 @@ def run(
             from .models import ProcessingState
 
             try:
-                # Check if output path exists and force is not provided
-                if str(input_file) != str(output_file) and output_file.exists() and not force:
-                    if verbose:
-                        print(f"⚠️  Skipping {input_file}: output file {output_file} already exists. Use --force to overwrite.")
-                    logger.info(f"Skipping {input_file}: output file {output_file} exists and --force not provided")
-                    return ProcessingState()
-                # Read file content
+                # Read file content (pre-screening already handled file existence checks)
                 input_content = read_file_safely(str(input_file))
 
                 # Handle frontmatter parsing and metadata processing for --explain mode

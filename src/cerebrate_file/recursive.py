@@ -23,6 +23,7 @@ __all__ = [
     "process_files_parallel",
     "ProcessingResult",
     "expand_brace_patterns",
+    "pre_screen_files",
 ]
 
 
@@ -36,6 +37,49 @@ class ProcessingResult:
         self.total_input_tokens: int = 0
         self.total_output_tokens: int = 0
         self.total_time: float = 0.0
+
+
+def pre_screen_files(
+    file_pairs: List[Tuple[Path, Path]],
+    force: bool
+) -> List[Tuple[Path, Path]]:
+    """Pre-screen file pairs, removing those with existing outputs if force=False.
+
+    Args:
+        file_pairs: List of (input_path, output_path) tuples
+        force: If True, return all pairs; if False, filter existing outputs
+
+    Returns:
+        Filtered list of file pairs
+    """
+    if force:
+        logger.debug("Force mode enabled, skipping pre-screening")
+        return file_pairs
+
+    if not file_pairs:
+        return file_pairs
+
+    from .file_utils import output_file_exists
+
+    original_count = len(file_pairs)
+    filtered_pairs = []
+    skipped_count = 0
+
+    logger.debug(f"Starting pre-screening of {original_count} file pairs")
+
+    for input_path, output_path in file_pairs:
+        if output_file_exists(input_path, output_path):
+            logger.debug(f"Skipping {input_path} -> {output_path}: output file exists")
+            skipped_count += 1
+        else:
+            filtered_pairs.append((input_path, output_path))
+
+    logger.info(
+        f"Pre-screening complete: {len(filtered_pairs)} files to process, "
+        f"{skipped_count} skipped (existing outputs)"
+    )
+
+    return filtered_pairs
 
 
 def expand_brace_patterns(pattern: str) -> List[str]:

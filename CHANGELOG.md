@@ -9,6 +9,15 @@ All notable changes to cerebrate-file will be documented in this file.
 ## [Unreleased] - 2025-09-20
 
 ### Added
+- **Pre-Screening for Recursive Processing**: Improved efficiency and user experience (#201)
+  - Pre-screens files before starting progress reporting to show accurate counts
+  - Filters out files with existing outputs when `--force=False` before processing begins
+  - Clear messaging: "Found X candidates, Y will be processed (Z skipped - use --force to include)"
+  - Accurate progress bars that only show files that will actually be processed
+  - Minimal performance overhead with early file existence checks
+  - Comprehensive test coverage with unit and integration tests
+  - Consistent behavior between single-file and recursive modes
+
 - **Force Option**: New `--force` boolean CLI flag for overwrite control
   - Prevents accidental overwriting of existing output files by default
   - Check occurs before any LLM API calls to save quota and processing time

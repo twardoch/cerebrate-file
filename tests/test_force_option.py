@@ -210,6 +210,8 @@ def test_force_option_recursive_mode(temp_directory):
         mock_process_parallel.return_value = mock_result
 
         # Test recursive processing without force
+        # Since temp_directory fixture creates existing output files,
+        # pre-screening should filter them all out and process_files_parallel should NOT be called
         cli_run(
             input_data=str(input_dir),
             output_data=str(output_dir),
@@ -219,9 +221,10 @@ def test_force_option_recursive_mode(temp_directory):
             verbose=True
         )
 
-        # Verify that recursive processing was attempted
+        # Verify that find_files was called but process_files_parallel was NOT called
+        # due to pre-screening filtering out all files with existing outputs
         mock_find_files.assert_called_once()
-        mock_process_parallel.assert_called_once()
+        mock_process_parallel.assert_not_called()  # This is the new expected behavior
 
 
 def test_force_option_dry_run_mode(sample_input_file, existing_output_file):

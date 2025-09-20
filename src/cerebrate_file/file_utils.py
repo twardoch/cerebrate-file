@@ -26,6 +26,7 @@ __all__ = [
     "ensure_parent_directory",
     "backup_file",
     "build_base_prompt",
+    "output_file_exists",
 ]
 
 
@@ -276,6 +277,30 @@ def get_file_info(file_path: str | Path) -> Dict[str, Any]:
         raise
     except Exception as e:
         raise FileError(f"Failed to get file info for {file_path}: {e}") from e
+
+
+def output_file_exists(input_path: Path, output_path: Path) -> bool:
+    """Check if output file exists and needs to be considered for pre-screening.
+
+    Args:
+        input_path: Input file path
+        output_path: Output file path
+
+    Returns:
+        True if output file exists and should be screened, False otherwise
+    """
+    try:
+        # If input and output are the same (in-place processing), don't screen
+        if input_path == output_path:
+            return False
+
+        # Check if output file exists
+        return output_path.exists()
+
+    except Exception as e:
+        # On any error, log warning and return False (include in processing)
+        logger.warning(f"Error checking output file existence {output_path}: {e}")
+        return False
 
 
 def build_base_prompt(

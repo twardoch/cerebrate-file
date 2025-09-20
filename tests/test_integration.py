@@ -7,11 +7,10 @@ These tests verify that all components work together correctly
 in realistic usage scenarios.
 """
 
+import os
 import pytest
 import tempfile
 from unittest.mock import Mock, patch
-
-import pytest
 from cerebrate_file.cerebrate_file import process_document
 from cerebrate_file.chunking import create_chunks
 from cerebrate_file.config import setup_logging, validate_inputs

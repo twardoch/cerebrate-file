@@ -310,20 +310,25 @@ def build_base_prompt(
 
     Args:
         file_prompt: Path to file containing initial instructions
+            Can be an absolute path, relative path, or a name in the prompt library
         text_prompt: Freeform instruction text to append after file_prompt
 
     Returns:
         Tuple of (prompt_text, token_count)
     """
+    from .prompt_library import resolve_prompt_file
+
     base_prompt = ""
 
     # Read file prompt if provided
     if file_prompt:
-        if not Path(file_prompt).exists():
+        # Use the new resolve_prompt_file function to find the file
+        prompt_path = resolve_prompt_file(file_prompt)
+        if not prompt_path:
             logger.error(f"Prompt file not found: {file_prompt}")
             sys.exit(1)
-        base_prompt += read_file_safely(file_prompt)
-        logger.debug(f"Loaded file prompt from: {file_prompt}")
+        base_prompt += read_file_safely(str(prompt_path))
+        logger.debug(f"Loaded file prompt from: {prompt_path}")
 
     # Add separator (always two newlines per spec)
     base_prompt += "\n\n"

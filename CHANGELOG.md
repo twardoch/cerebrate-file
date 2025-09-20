@@ -9,6 +9,15 @@ All notable changes to cerebrate-file will be documented in this file.
 ## [Unreleased] - 2025-09-20
 
 ### Added
+- **Prompt Library Feature**: Built-in prompt library for common use cases (#202)
+  - Added `prompts/` folder inside the package with pre-configured prompts
+  - First prompt: `fix-pdf-extracted-text.xml` for cleaning up poorly extracted PDF text
+  - Smart prompt resolution: checks direct paths first, then falls back to library
+  - Simple usage: `--file-prompt fix-pdf-extracted-text.xml` loads from library
+  - Extensible: prompts can have any extension (XML, TXT, MD, JSON, etc.)
+  - Helpful error messages list available prompts when file not found
+  - Full test coverage with 10 passing tests
+
 - **Pre-Screening for Recursive Processing**: Improved efficiency and user experience (#201)
   - Pre-screens files before starting progress reporting to show accurate counts
   - Filters out files with existing outputs when `--force=False` before processing begins

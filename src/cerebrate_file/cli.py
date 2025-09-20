@@ -61,6 +61,7 @@ def run(
     dry_run: bool = False,
     recurse: Optional[str] = None,
     workers: int = 4,
+    force: bool = False,
 ) -> None:
     """Process large documents by chunking for Cerebras qwen-3-coder-480b.
 
@@ -81,6 +82,7 @@ def run(
         dry_run: Perform chunking and display results without making API calls (default: False)
         recurse: Glob pattern for recursive file processing (e.g., "*.md", "**/*.txt")
         workers: Number of parallel workers for recursive processing (default: 4)
+        force: Overwrite existing output files without confirmation (default: False)
     """
     # Load environment variables
     load_dotenv()
@@ -164,6 +166,12 @@ def run(
             from .models import ProcessingState
 
             try:
+                # Check if output path exists and force is not provided
+                if str(input_file) != str(output_file) and output_file.exists() and not force:
+                    if verbose:
+                        print(f"⚠️  Skipping {input_file}: output file {output_file} already exists. Use --force to overwrite.")
+                    logger.info(f"Skipping {input_file}: output file {output_file} exists and --force not provided")
+                    return ProcessingState()
                 # Read file content
                 input_content = read_file_safely(str(input_file))
 
@@ -331,6 +339,12 @@ def run(
         )
     else:
         logger.info(f"Output will be written to: {output_data}")
+
+        # Check if output path exists and force is not provided
+        if input_data != output_data and os.path.exists(output_data) and not force:
+            print(f"⚠️  Output file {output_data} already exists. Use --force to overwrite.")
+            logger.info(f"Skipping processing: output file {output_data} exists and --force not provided")
+            return
 
     # Build base prompt
     if verbose:

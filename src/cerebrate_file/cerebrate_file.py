@@ -233,7 +233,7 @@ def process_document(
             # Apply rate limiting delay if needed
             if i > 0:  # Don't delay before first chunk
                 next_chunk_tokens = chunks[i].token_count if i < len(chunks) - 1 else 0
-                delay = calculate_backoff_delay(last_rate_status, next_chunk_tokens, state)
+                delay = calculate_backoff_delay(last_rate_status, next_chunk_tokens)
                 if delay > 0:
                     if verbose:
                         print(f"  → Rate limit delay: {delay:.1f}s")

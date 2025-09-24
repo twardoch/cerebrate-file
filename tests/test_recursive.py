@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+
 from cerebrate_file.models import ProcessingState
 from cerebrate_file.recursive import (
     ProcessingResult,

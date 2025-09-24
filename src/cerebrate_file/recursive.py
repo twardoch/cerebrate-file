@@ -142,8 +142,7 @@ def find_files_recursive(
     all_matching_files = set()
     for p in patterns:
         try:
-            # Use rglob for recursive patterns (containing **), glob for non-recursive
-            pattern_matches = input_dir.rglob(p) if "**" in p else input_dir.glob(p)
+            pattern_matches = input_dir.rglob(p)
 
             file_count = 0
             for match in pattern_matches:

@@ -175,21 +175,22 @@ def format_error_with_suggestions(error: Exception) -> Exception:
 
     # Validation errors
     elif isinstance(error, ValidationError):
-        if "chunk_size" in original_msg.lower():
+        lower_msg = original_msg.lower()
+        if "chunk_size" in lower_msg or "chunk size" in lower_msg:
             suggestions.extend(
                 [
                     "Use a chunk size between 10 and 130000 tokens",
                     "Try the default chunk size: --chunk-size 32000",
                 ]
             )
-        elif "temperature" in original_msg.lower():
+        elif "temperature" in lower_msg:
             suggestions.extend(
                 [
                     "Use a temperature between 0.0 and 2.0",
                     "Try the default temperature: --temperature 0.7",
                 ]
             )
-        elif "file size" in original_msg.lower():
+        elif "file size" in lower_msg:
             suggestions.extend(
                 [
                     "Split large files into smaller parts",
@@ -199,7 +200,7 @@ def format_error_with_suggestions(error: Exception) -> Exception:
             )
 
     # Connection errors
-    elif isinstance(error, (ConnectionError, TimeoutError)):
+    elif isinstance(error, ConnectionError | TimeoutError):
         suggestions.extend(
             [
                 "Check your internet connection",

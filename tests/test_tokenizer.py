@@ -6,6 +6,7 @@
 from unittest.mock import patch
 
 import pytest
+
 from cerebrate_file.constants import TokenizationError
 from cerebrate_file.tokenizer import (
     TokenizerManager,

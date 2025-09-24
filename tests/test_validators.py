@@ -3,11 +3,11 @@
 
 """Tests for cerebrate_file.validators module."""
 
-import pytest
 import tempfile
 from pathlib import Path
 
 import pytest
+
 from cerebrate_file.constants import ValidationError
 from cerebrate_file.validators import (
     validate_chunk_size,

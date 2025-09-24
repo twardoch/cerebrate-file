@@ -3,10 +3,12 @@
 
 """Tests for API retry functionality."""
 
-import pytest
 from unittest.mock import Mock, patch
-from cerebrate_file.constants import APIError
+
+import pytest
+
 from cerebrate_file.api_client import make_cerebras_request
+from cerebrate_file.constants import APIError
 
 
 class MockAPIStatusError(Exception):
@@ -28,18 +30,13 @@ def test_503_error_triggers_retry():
 
         # Configure mock to raise 503 error
         mock_client.chat.completions.create.side_effect = MockAPIStatusError(
-            503, {'message': "Service unavailable"}
+            503, {"message": "Service unavailable"}
         )
 
         # Test that the function raises APIError (which is retryable)
         with pytest.raises(APIError) as exc_info:
             make_cerebras_request(
-                mock_client,
-                [{"role": "user", "content": "test"}],
-                "llama3.1-8b",
-                1000,
-                0.7,
-                0.9
+                mock_client, [{"role": "user", "content": "test"}], "llama3.1-8b", 1000, 0.7, 0.9
             )
 
         # Verify the error message contains the status code
@@ -55,18 +52,13 @@ def test_non_retryable_errors_not_converted():
         mock_cerebras.cloud.sdk.APIStatusError = MockAPIStatusError
 
         # Configure mock to raise 400 error (bad request - not retryable)
-        error = MockAPIStatusError(400, {'message': "Bad request"})
+        error = MockAPIStatusError(400, {"message": "Bad request"})
         mock_client.chat.completions.create.side_effect = error
 
         # Test that the function raises the original error (not APIError)
         with pytest.raises(MockAPIStatusError) as exc_info:
             make_cerebras_request(
-                mock_client,
-                [{"role": "user", "content": "test"}],
-                "llama3.1-8b",
-                1000,
-                0.7,
-                0.9
+                mock_client, [{"role": "user", "content": "test"}], "llama3.1-8b", 1000, 0.7, 0.9
             )
 
         # Verify it's the original error type, not converted to APIError
@@ -84,7 +76,7 @@ def test_retryable_status_codes():
         for status_code in retryable_codes:
             # Configure mock to raise the error
             mock_client.chat.completions.create.side_effect = MockAPIStatusError(
-                status_code, {'message': f"Error {status_code}"}
+                status_code, {"message": f"Error {status_code}"}
             )
 
             # Test that the function raises APIError (which is retryable)
@@ -95,7 +87,7 @@ def test_retryable_status_codes():
                     "llama3.1-8b",
                     1000,
                     0.7,
-                    0.9
+                    0.9,
                 )
 
             # Verify the error message contains the status code
@@ -111,7 +103,10 @@ def test_successful_request():
     mock_chunk.choices = [Mock()]
     mock_chunk.choices[0].delta.content = "Test response"
 
-    mock_stream = [mock_chunk]
+    class DummyStream(list):
+        """List subclass that allows attaching metadata attributes."""
+
+    mock_stream = DummyStream([mock_chunk])
     mock_stream.response = Mock()
     mock_stream.response.headers = {}
 
@@ -120,12 +115,7 @@ def test_successful_request():
     # Import required modules for the test
     with patch("cerebrate_file.api_client.cerebras"):
         result = make_cerebras_request(
-            mock_client,
-            [{"role": "user", "content": "test"}],
-            "llama3.1-8b",
-            1000,
-            0.7,
-            0.9
+            mock_client, [{"role": "user", "content": "test"}], "llama3.1-8b", 1000, 0.7, 0.9
         )
 
     # Verify successful response

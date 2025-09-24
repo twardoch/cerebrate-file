@@ -10,6 +10,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+
 from cerebrate_file.constants import APIError, ValidationError
 from cerebrate_file.error_recovery import (
     RecoverableOperation,

@@ -43,8 +43,19 @@ def read_file_safely(file_path: str | Path) -> str:
     Raises:
         FileError: If file cannot be read
     """
+    file_str = str(file_path)
+
+    # Support stdin streaming when the path marker is '-'
+    if file_str == "-":
+        try:
+            content = sys.stdin.read()
+            logger.debug("Read {} characters from stdin", len(content))
+            return content
+        except Exception as exc:  # pragma: no cover - defensive guard
+            raise FileError(f"Failed to read from stdin: {exc}") from exc
+
     try:
-        path = Path(file_path)
+        path = Path(file_str)
         if not path.exists():
             raise FileError(f"File not found: {file_path}")
 
@@ -128,8 +139,26 @@ def write_output_atomically(
     Raises:
         FileError: If writing fails
     """
+    path_str = str(output_path)
+
+    # Stream to stdout when the destination marker is '-'
+    if path_str == "-":
+        try:
+            if metadata is not None:
+                post = frontmatter.Post(content, **metadata)
+                final_content = frontmatter.dumps(post)
+            else:
+                final_content = content
+
+            sys.stdout.write(final_content)
+            sys.stdout.flush()
+            logger.info("Output streamed to stdout")
+            return
+        except Exception as exc:  # pragma: no cover - defensive guard
+            raise FileError(f"Failed to write output to stdout: {exc}") from exc
+
     try:
-        output_path_obj = Path(output_path)
+        output_path_obj = Path(path_str)
         temp_dir = output_path_obj.parent
 
         # Ensure parent directory exists

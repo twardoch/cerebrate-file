@@ -6,6 +6,7 @@
 import sys
 from unittest.mock import Mock, patch
 
+
 # Test the retry mechanism by simulating 503 errors
 def test_503_retry():
     """Test that 503 errors are properly retried."""
@@ -18,7 +19,7 @@ def test_503_retry():
     from cerebrate_file.constants import APIError
 
     def side_effect(*args, **kwargs):
-        if not hasattr(side_effect, 'call_count'):
+        if not hasattr(side_effect, "call_count"):
             side_effect.call_count = 0
         side_effect.call_count += 1
 
@@ -26,7 +27,12 @@ def test_503_retry():
             # First call: simulate 503 error
             mock_error = Mock()
             mock_error.status_code = 503
-            mock_error.response = {'message': "We're experiencing high traffic right now! Please try again soon.", 'type': 'too_many_requests_error', 'param': 'queue', 'code': 'queue_exceeded'}
+            mock_error.response = {
+                "message": "We're experiencing high traffic right now! Please try again soon.",
+                "type": "too_many_requests_error",
+                "param": "queue",
+                "code": "queue_exceeded",
+            }
             raise APIError(f"Error code: 503 - {mock_error.response}")
         else:
             # Second call: success
@@ -46,14 +52,7 @@ def test_503_retry():
         from cerebrate_file.api_client import make_cerebras_request
 
         messages = [{"role": "user", "content": "test"}]
-        result = make_cerebras_request(
-            mock_client,
-            messages,
-            "llama3.1-8b",
-            1000,
-            0.7,
-            0.9
-        )
+        result = make_cerebras_request(mock_client, messages, "llama3.1-8b", 1000, 0.7, 0.9)
 
         print("✓ Retry mechanism worked! Got result:", result[0])
         return True
@@ -61,6 +60,7 @@ def test_503_retry():
     except Exception as e:
         print(f"✗ Retry mechanism failed: {e}")
         return False
+
 
 if __name__ == "__main__":
     success = test_503_retry()

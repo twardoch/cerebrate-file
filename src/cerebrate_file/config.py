@@ -200,25 +200,29 @@ def validate_inputs(
         ValidationError: If validation fails and strict=False
     """
     errors = []
+    input_path: Path | None = None
 
-    # Check file existence and accessibility
-    try:
-        input_path = Path(input_data)
-        if not input_path.exists():
-            errors.append(f"Input file not found: '{input_data}'")
-        elif not input_path.is_file():
-            errors.append(f"Path is not a file: '{input_data}'")
-        else:
-            # Check if file is readable
-            try:
-                with input_path.open(encoding="utf-8") as f:
-                    f.read(1)  # Try reading one character
-            except PermissionError:
-                errors.append(f"Permission denied reading file: '{input_data}'")
-            except Exception as e:
-                errors.append(f"Cannot read file '{input_data}': {e}")
-    except Exception as e:
-        errors.append(f"Invalid input path '{input_data}': {e}")
+    is_stream_input = input_data == "-"
+
+    # Check file existence and accessibility when not streaming from stdin
+    if not is_stream_input:
+        try:
+            input_path = Path(input_data)
+            if not input_path.exists():
+                errors.append(f"Input file not found: '{input_data}'")
+            elif not input_path.is_file():
+                errors.append(f"Path is not a file: '{input_data}'")
+            else:
+                # Check if file is readable
+                try:
+                    with input_path.open(encoding="utf-8") as handle:
+                        handle.read(1)  # Try reading one character
+                except PermissionError:
+                    errors.append(f"Permission denied reading file: '{input_data}'")
+                except Exception as exc:
+                    errors.append(f"Cannot read file '{input_data}': {exc}")
+        except Exception as exc:
+            errors.append(f"Invalid input path '{input_data}': {exc}")
 
     # Validate chunk_size
     if chunk_size <= 0:

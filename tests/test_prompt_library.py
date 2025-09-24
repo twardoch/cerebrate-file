@@ -10,6 +10,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from cerebrate_file.file_utils import build_base_prompt
 from cerebrate_file.prompt_library import (
     get_prompt_library_path,

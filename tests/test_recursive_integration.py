@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+
 from cerebrate_file.models import ProcessingState
 from cerebrate_file.recursive import (
     ProcessingResult,

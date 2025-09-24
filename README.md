@@ -100,6 +100,15 @@ FLAGS
 
 NOTES
     You can also use flags syntax for POSITIONAL ARGUMENTS
+
+### Streaming via STDIN/STDOUT
+
+Use `-` to read from standard input or write to standard output. This makes it
+easy to compose `cerebrate-file` with other tools:
+
+```bash
+cat huge.md | uv run cerebrate_file --input_data - --output_data - > processed.md
+```
 ```
 
 ## Processing Pipeline

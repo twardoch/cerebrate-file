@@ -9,6 +9,7 @@ the recursive processing CLI interface.
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from cerebrate_file.cli import run
 
 

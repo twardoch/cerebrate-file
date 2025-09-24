@@ -9,6 +9,12 @@ All notable changes to cerebrate-file will be documented in this file.
 ## [Unreleased] - 2025-09-20
 
 ### Added
+- **STDIN/STDOUT Streaming (Issue #203)**
+  - CLI now accepts `--input_data -` to read from standard input and `--output_data -` to write to standard output.
+  - Validation prevents incompatible use with `--recurse` to avoid ambiguous batch semantics.
+  - CLI messaging and overwrite logic updated to clarify streaming destinations.
+  - Added unit coverage for stdin/stdout helpers and integration coverage for end-to-end streaming.
+  - Documentation updated with piping example in `README.md`.
 - **Prompt Library Feature**: Built-in prompt library for common use cases (#202)
   - Added `prompts/` folder inside the package with pre-configured prompts
   - First prompt: `fix-pdf-extracted-text.xml` for cleaning up poorly extracted PDF text

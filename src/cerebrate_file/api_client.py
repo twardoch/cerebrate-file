@@ -9,15 +9,18 @@ retries, and structured output generation.
 
 import json
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 from typing import Any
 
 from loguru import logger
 from tenacity import (
+    RetryError,
+    before_sleep_log,
     retry,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    before_sleep_log,
+    wait_fixed,
 )
 
 from .constants import (
@@ -30,6 +33,35 @@ from .constants import (
     APIError,
 )
 from .models import RateLimitStatus
+
+try:
+    import cerebras.cloud.sdk as cerebras_sdk  # type: ignore[import-not-found]
+    from cerebras.cloud.sdk import Cerebras
+except ImportError:
+    cerebras_sdk = SimpleNamespace(
+        APIStatusError=type("APIStatusError", (Exception,), {}),
+        RateLimitError=type("RateLimitError", (Exception,), {}),
+    )
+    Cerebras = None  # type: ignore[assignment]
+
+cerebras = SimpleNamespace(cloud=SimpleNamespace(sdk=cerebras_sdk))
+
+
+def _get_sdk_class(name: str) -> type[Exception]:
+    """Safely resolve exception classes from the Cerebras SDK for patching/tests."""
+    sdk = getattr(getattr(cerebras, "cloud", None), "sdk", cerebras_sdk)
+    candidate = getattr(sdk, name, None)
+    if isinstance(candidate, type) and issubclass(candidate, BaseException):
+        return candidate
+    return getattr(cerebras_sdk, name)
+
+
+def _format_response(response: Any) -> str:
+    """Safely format SDK responses for logging without triggering str.format placeholders."""
+    if response is None:
+        return "None"
+    return repr(response).replace("{", "{{").replace("}", "}}").replace("%", "%%")
+
 
 __all__ = [
     "CerebrasClient",
@@ -58,14 +90,11 @@ class CerebrasClient:
     def _get_client(self):
         """Get or create the Cerebras client instance."""
         if self._client is None:
-            try:
-                from cerebras.cloud.sdk import Cerebras
-
-                self._client = Cerebras(api_key=self.api_key)
-            except ImportError:
+            if Cerebras is None:
                 raise APIError(
                     "cerebras-cloud-sdk not available. Install with: uv add cerebras-cloud-sdk"
-                ) from None
+                )
+            self._client = Cerebras(api_key=self.api_key)
         return self._client
 
     def chat_completion(
@@ -296,9 +325,10 @@ def calculate_backoff_delay(
 
 @retry(
     stop=stop_after_attempt(8),
-    wait=wait_exponential(multiplier=2, min=2, max=120),
+    wait=wait_fixed(0),
     retry=retry_if_exception_type((ConnectionError, TimeoutError, APIError)),
     before_sleep=before_sleep_log(logger, "INFO"),
+    reraise=True,
 )
 def explain_metadata_with_llm(
     client,
@@ -377,30 +407,37 @@ First chunk: {truncated_chunk}
         logger.info(f"Metadata explanation successful: {len(generated_metadata)} fields generated")
         return generated_metadata
 
-    except cerebras.cloud.sdk.RateLimitError as e:
-        logger.warning(f"Rate limit hit during metadata explanation: {e}")
-        raise APIError(f"Rate limit error: {e}") from e
-    except cerebras.cloud.sdk.APIStatusError as e:
-        logger.error(f"API error during metadata explanation {e.status_code}: {e.response}")
-        # Convert specific HTTP errors to retryable APIErrors
-        if e.status_code in (503, 502, 504, 429):
-            logger.warning(f"Retryable metadata explanation error {e.status_code}, will retry with backoff")
-            raise APIError(f"Error code: {e.status_code} - {e.response}") from e
-        else:
-            # Non-retryable errors should not retry
-            raise e
     except Exception as e:
+        rate_limit_error = _get_sdk_class("RateLimitError")
+        api_status_error = _get_sdk_class("APIStatusError")
+
+        if isinstance(e, rate_limit_error):
+            logger.warning(f"Rate limit hit during metadata explanation: {e}")
+            raise APIError(f"Rate limit error: {e}") from e
+
+        if isinstance(e, api_status_error):
+            logger.error(f"API error during metadata explanation {e.status_code}: {e.response}")
+            if getattr(e, "status_code", None) in (503, 502, 504, 429):
+                logger.warning(
+                    f"Retryable metadata explanation error {e.status_code}, will retry with backoff"
+                )
+                raise APIError(
+                    f"Error code: {e.status_code} - {_format_response(getattr(e, 'response', None))}"
+                ) from e
+            raise e
+
         logger.error(f"Metadata explanation failed: {e}")
         return {}
 
 
 @retry(
     stop=stop_after_attempt(8),
-    wait=wait_exponential(multiplier=2, min=2, max=120),
+    wait=wait_fixed(0),
     retry=retry_if_exception_type((ConnectionError, TimeoutError, APIError)),
     before_sleep=before_sleep_log(logger, "INFO"),
+    reraise=True,
 )
-def make_cerebras_request(
+def _make_cerebras_request_impl(
     client,
     messages: list[dict[str, str]],
     model: str,
@@ -424,8 +461,6 @@ def make_cerebras_request(
         Tuple of (response_text, rate_limit_status)
     """
     try:
-        import cerebras.cloud.sdk
-
         stream = client.chat.completions.create(
             messages=messages,
             model=model,
@@ -471,19 +506,49 @@ def make_cerebras_request(
         logger.debug(f"Streaming complete: {len(response_text)} chars received")
         return response_text, rate_status
 
-    except cerebras.cloud.sdk.RateLimitError as e:
-        logger.warning(f"Rate limit hit: {e}")
-        # For rate limits, we want to retry after a delay
-        raise APIError(f"Rate limit error: {e}") from e
-    except cerebras.cloud.sdk.APIStatusError as e:
-        logger.error(f"API error {e.status_code}: {e.response}")
-        # Convert specific HTTP errors to retryable APIErrors
-        if e.status_code in (503, 502, 504, 429):
-            logger.warning(f"Retryable error {e.status_code}, will retry with backoff")
-            raise APIError(f"Error code: {e.status_code} - {e.response}") from e
-        else:
-            # Non-retryable errors (400, 401, 403, etc.) should not retry
-            raise e
     except Exception as e:
+        rate_limit_error = _get_sdk_class("RateLimitError")
+        api_status_error = _get_sdk_class("APIStatusError")
+
+        if isinstance(e, rate_limit_error):
+            logger.warning(f"Rate limit hit: {e}")
+            raise APIError(f"Rate limit error: {e}") from e
+
+        if isinstance(e, api_status_error):
+            formatted_response = _format_response(getattr(e, "response", None))
+            logger.error(f"API error {getattr(e, 'status_code', 'unknown')}: {formatted_response}")
+            if getattr(e, "status_code", None) in (503, 502, 504, 429):
+                logger.warning(f"Retryable error {e.status_code}, will retry with backoff")
+                raise APIError(f"Error code: {e.status_code} - {formatted_response}") from e
+            raise e
+
         logger.error(f"Unexpected error in Cerebras request: {e}")
         raise e
+
+
+def make_cerebras_request(
+    client,
+    messages: list[dict[str, str]],
+    model: str,
+    max_completion_tokens: int,
+    temperature: float,
+    top_p: float,
+    verbose: bool = False,
+) -> tuple[str, RateLimitStatus]:
+    """Make streaming Cerebras request with retry policy."""
+
+    try:
+        return _make_cerebras_request_impl(
+            client,
+            messages,
+            model,
+            max_completion_tokens,
+            temperature,
+            top_p,
+            verbose,
+        )
+    except RetryError as exc:
+        last_exc = exc.last_attempt.exception()
+        if isinstance(last_exc, Exception):
+            raise last_exc
+        raise exc

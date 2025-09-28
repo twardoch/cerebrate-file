@@ -1,26 +1,10 @@
----
-layout: default
-title: API Reference
-nav_order: 7
----
-
 # API Reference
-{: .no_toc }
 
-Python API documentation for programmatic usage
-{: .fs-6 .fw-300 }
-
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
-
----
+Python API documentation for programmatic usage.
 
 ## Overview
 
-While Cerebrate File is primarily a CLI tool, it can also be used programmatically in Python scripts. This reference covers the main modules and functions available.
+Cerebrate File works as a CLI tool but can also be used programmatically. This reference covers the main modules and functions available.
 
 ## Installation for API Use
 

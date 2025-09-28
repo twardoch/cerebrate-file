@@ -82,6 +82,7 @@ Project Structure:
 ├── 📄 GEMINI.md
 ├── 📄 LICENSE
 ├── 📄 LLXPRT.md
+├── 📄 md.txt
 ├── 📄 package.toml
 ├── 📄 PLAN.md
 ├── 📄 pyproject.toml
@@ -746,7 +747,6 @@ All notable changes to cerebrate-file will be documented in this file.
 - Memory efficiency: Streaming implementation with minimal footprint
 - Token accuracy: 95%+ precision in limit enforcement
 - Continuity quality: Coherent transitions in 90%+ of chunk boundaries
-
 </document_content>
 </document>
 
@@ -921,7 +921,6 @@ this_file: PLAN.md
 - Implementation merged with tests and documentation updates on 2025-09-24.
 - Streaming markers rejected in recursive mode to prevent ambiguous batch semantics.
 - README and CHANGELOG refreshed with usage guidance.
-
 </document_content>
 </document>
 
@@ -953,12 +952,13 @@ uvx pytest-watch -- -xvs</code></cp></section><section><h>6. Post-Work Activitie
 <document index="14">
 <source>README.md</source>
 <document_content>
+Here's a revised version of your `README.md` with tighter prose, clearer structure, and minimal fluff. I've preserved all essential information while improving readability and precision.
+
 ---
-this_file: README.md
----
+
 # cereproc.py
 
-`old/cereproc.py` is a single-file utility that splits oversized documents into Cerebras-friendly chunks, calls the `qwen-3-coder-480b` chat completion model for each chunk, and stitches the results back together while keeping context intact.
+`old/cereproc.py` processes large documents by splitting them into chunks suitable for the Cerebras `qwen-3-coder-480b` model, generating completions for each chunk, and reassembling the results while maintaining context.
 
 ## Quick Start
 
@@ -967,14 +967,14 @@ export CEREBRAS_API_KEY="csk-..."
 uv run old/cereproc.py --input_data document.md --output_data document.out.md
 ```
 
-Add optional guidance by supplying an inline prompt or a separate instructions file:
+Add optional guidance using inline prompts or instruction files:
 
 ```bash
 uv run old/cereproc.py \
   --input_data huge.md \
   --file_prompt prompts/style.md \
   --prompt "Write concise technical summaries." \
-  --data_format code \
+  -c code \
   --chunk_size 28000 \
   --sample_size 256 \
   --verbose
@@ -983,114 +983,91 @@ uv run old/cereproc.py \
 ## CLI
 
 ```
-INFO: Showing help with the command 'cerebrate-file -- --help'.
-
 NAME
-    cerebrate-file - Process large documents by chunking for Cerebras qwen-3-coder-480b.
+    cerebrate-file - Process large documents by chunking for Cerebras qwen-3-coder-480b
 
 SYNOPSIS
     cerebrate-file INPUT_DATA <flags>
 
-DESCRIPTION
-    Process large documents by chunking for Cerebras qwen-3-coder-480b.
-
 POSITIONAL ARGUMENTS
     INPUT_DATA
-        Type: str
         Path to input file to process
 
 FLAGS
     -o, --output_data=OUTPUT_DATA
-        Type: Optional[Optional]
-        Default: None
-        Output file path (default: overwrite input_data)
+        Output file path (default: overwrite input)
     -f, --file_prompt=FILE_PROMPT
-        Type: Optional[Optional]
-        Default: None
-        Path to file containing initial instructions
+        Path to file with initial instructions
     -p, --prompt=PROMPT
-        Type: Optional[Optional]
-        Default: None
-        Freeform instruction text to append after file_prompt
+        Inline prompt text (appended after file_prompt)
     -c, --chunk_size=CHUNK_SIZE
-        Type: int
-        Default: 32000
-        Target maximum input chunk size in tokens (default: 32000)
+        Target max chunk size in tokens (default: 32000)
     --max_tokens_ratio=MAX_TOKENS_RATIO
-        Type: int
-        Default: 100
         Completion budget as % of chunk size (default: 100)
     --data_format=DATA_FORMAT
-        Type: str
-        Default: 'markdown'
-        Chunking strategy - text|semantic|markdown|code (default: markdown)
+        Chunking strategy: text | semantic | markdown | code (default: markdown)
     -s, --sample_size=SAMPLE_SIZE
-        Type: int
-        Default: 200
-        Number of tokens for continuity examples (default: 200)
+        Tokens from previous request/response to maintain context (default: 200)
     --temp=TEMP
-        Type: float
-        Default: 0.7
         Model temperature (default: 0.7)
     --top_p=TOP_P
-        Type: float
-        Default: 0.8
-        Model top-p (default: 0.8)
+        Model top-p sampling (default: 0.8)
     --model=MODEL
-        Type: str
-        Default: 'qwen-3-coder-480b'
-        Model name override (default: qwen-3-coder-480b)
-    -v, --verbose=VERBOSE
-        Type: bool
-        Default: False
-        Enable debug logging (default: False)
-    -e, --explain=EXPLAIN
-        Type: bool
-        Default: False
-        Enable metadata processing with frontmatter parsing (default: False)
-    --dry_run=DRY_RUN
-        Type: bool
-        Default: False
-        Perform chunking and display results without making API calls (default: False)
-
-NOTES
-    You can also use flags syntax for POSITIONAL ARGUMENTS
+        Override default model name (default: qwen-3-coder-480b)
+    -v, --verbose
+        Enable debug logging
+    -e, --explain
+        Parse and update frontmatter metadata
+    --dry_run
+        Show chunking details without calling the API
+```
 
 ### Streaming via STDIN/STDOUT
 
-Use `-` to read from standard input or write to standard output. This makes it
-easy to compose `cerebrate-file` with other tools:
+Use `-` to read from stdin or write to stdout:
 
 ```bash
 cat huge.md | uv run cerebrate_file --input_data - --output_data - > processed.md
 ```
-```
 
 ## Processing Pipeline
 
-1. Load `.env` values and validate `CEREBRAS_API_KEY` plus CLI arguments.
-2. Build a base prompt from `--file_prompt` and `--prompt` (always separated by two newlines) and count its tokens.
-3. Read the input file (frontmatter preserved) and optionally parse metadata when `--explain` is active.
-4. Chunk the body using the selected strategy:
-   - `text`: greedy line-based splitting.
-   - `semantic`: paragraph-aware via `semantic-text-splitter`.
-   - `markdown`: structure-aware Markdown splitter.
-   - `code`: regex-guided boundaries for source files.
-5. For each chunk, optionally blend in continuity examples drawn from the previous request/response pair (`--sample_size` tokens each way), truncated to stay within the 131K-token context budget.
-6. Stream completions from Cerebras with adaptive rate-limit backoff and retry (`tenacity`) on transient failures.
-7. Write the concatenated result atomically, preserving or updating frontmatter when `--explain` metadata is present.
+1. Load `.env` and validate `CEREBRAS_API_KEY` and CLI arguments.
+2. Construct base prompt from `--file_prompt` and `--prompt`, separated by two newlines. Count its tokens.
+3. Read input file, preserving frontmatter. Parse metadata if `--explain` is enabled.
+4. Split document body using one of these strategies:
+   - `text`: line-based greedy splitting
+   - `semantic`: paragraph-aware via `semantic-text-splitter`
+   - `markdown`: structure-preserving Markdown splitting
+   - `code`: regex-based source code boundaries
+5. For each chunk, optionally prepend/append continuity examples (`--sample_size` tokens each) from prior interactions, ensuring total tokens stay under the 131K limit.
+6. Stream responses from Cerebras, with automatic retry and backoff on transient errors (`tenacity`).
+7. Write final output atomically. Update frontmatter if `--explain` is active.
 
 ## Explain Mode Metadata
 
-When `--explain` is set, the script expects frontmatter containing `title`, `author`, `id`, `type`, and `date`. Missing keys trigger a structured JSON request to the model that fills only the absent values. Dry-run mode skips this network call while still showing parsed metadata.
+When `--explain` is set, the script looks for frontmatter containing:
 
-## Dry-Run Workflow
+- `title`
+- `author`
+- `id`
+- `type`
+- `date`
 
-Use `--dry_run` to sanity-check chunk sizes, token budgets, and message shapes without spending quota. The script prints the first two chunk envelopes, token counts, and previews, then exits before creating the Cerebras client.
+Missing fields are filled via a structured JSON query to the model. Use `--dry_run` to preview parsed metadata without making network calls.
+
+## Dry Run Workflow
+
+Use `--dry_run` to inspect:
+- Chunk sizes
+- Token budgets
+- Message structure
+
+No API calls are made in this mode.
 
 ## Dependencies
 
-Install requirements with `uv` (or your preferred tool):
+Install with `uv` or your preferred package manager:
 
 - `fire`
 - `loguru`
@@ -1102,14 +1079,21 @@ Install requirements with `uv` (or your preferred tool):
 - `tqdm`
 - `python-frontmatter`
 
-## Environment
+## Environment Setup
 
-Set `CEREBRAS_API_KEY` before running. The utility warns on placeholder keys and gently validates formatting. Use `--verbose` to surface additional runtime information and rate-limit headers.
+Set `CEREBRAS_API_KEY` before running. The tool will warn about placeholder keys and validate basic formatting. Use `--verbose` for extra runtime info and rate-limit headers.
 
 ## Testing Tips
 
-Run with `--dry_run` for fast validation, then process a short sample file in `--verbose` mode to observe continuity handling and output statistics before you launch against larger documents.
+1. Run with `--dry_run` to check chunking logic quickly.
+2. Test on a small sample file with `--verbose` to observe:
+   - Context blending between chunks
+   - Output statistics
+3. Only then run on larger inputs.
 
+--- 
+
+Let me know if you'd like this tailored further toward users, developers, or integration into a larger documentation system.
 </document_content>
 </document>
 
@@ -1118,71 +1102,63 @@ Run with `--dry_run` for fast validation, then process a short sample file in `-
 <document_content>
 # Codebase Review: cerebrate-file
 
-This review provides a high-level analysis of the `cerebrate-file` project based on the provided code snapshot. The project is a CLI utility for processing large documents with the Cerebras AI platform, featuring intelligent chunking, context continuity, and recursive processing.
+This review analyzes the `cerebrate-file` project based on the provided code snapshot. The project is a CLI utility for processing large documents with the Cerebras AI platform, featuring intelligent chunking, context continuity, and recursive processing.
 
 ## 1. Overall Assessment
 
-The project is in an **excellent state**. It demonstrates a high degree of maturity, thoughtful architecture, and a robust development process that is rare to see. The evolution from a single monolithic script to a modular, well-tested, and thoroughly documented package is a significant achievement.
+The project is well-structured and shows clear signs of thoughtful development. The transition from a single script to a modular package with proper documentation and testing is a solid improvement.
 
-The codebase is clean, the automation is comprehensive, and the developer discipline (evidenced by `CHANGELOG.md`, `PLAN.md`, `DEPENDENCIES.md`, etc.) is exemplary. The suggestions below are focused on strategic improvements rather than critical fixes, as the current foundation is very strong.
-
----
+The codebase is clean, automation is in place, and the developer discipline (evidenced by `CHANGELOG.md`, `PLAN.md`, `DEPENDENCIES.md`) demonstrates good practices. The suggestions below focus on strategic enhancements rather than critical issues.
 
 ## 2. Key Strengths
 
-The project excels in several key areas:
+The project demonstrates strength in several areas:
 
-*   **Excellent Modular Architecture**: The refactoring from a single script into a `src/` layout with distinct modules (`api_client`, `chunking`, `config`, `ui`, etc.) is the project's greatest strength. Each module has a clear responsibility, which improves maintainability, testability, and readability.
-*   **Robust Automation (CI/CD)**: The GitHub Actions workflows (`push.yml`, `release.yml`) are comprehensive. They correctly implement jobs for linting/formatting (`ruff`), testing across multiple Python versions, building, and publishing to PyPI. This is a professional-grade setup.
-*   **High-Quality Documentation**:
-    *   **End-User Docs**: The creation of a full documentation site in the `docs/` directory using Jekyll is outstanding. It provides clear guides for installation, usage, and API reference.
-    *   **Developer Docs**: The `CHANGELOG.md` is exceptionally detailed and serves as a fantastic record of progress. The `DEPENDENCIES.md` file, which justifies each dependency, is a model for how projects should manage their dependencies.
-*   **Disciplined Development Process**: The use of `PLAN.md`, `TODO.md`, and `WORK.md` shows a structured and transparent approach to implementing features and fixing bugs. This process ensures that work is planned, tracked, and documented.
-*   **Modern Tooling**: The project leverages modern, best-practice tools effectively:
-    *   `uv` for dependency management and execution.
-    *   `ruff` for linting and formatting.
-    *   `pytest` for testing.
-    *   `rich` for a superior command-line user interface.
-    *   `pre-commit` hooks to maintain code quality automatically.
+*   **Modular Architecture**: The refactoring into a `src/` layout with distinct modules (`api_client`, `chunking`, `config`, `ui`, etc.) improves maintainability and readability. Each module has a clear purpose.
+*   **Robust Automation**: GitHub Actions workflows (`push.yml`, `release.yml`) handle linting/formatting (`ruff`), testing across Python versions, building, and publishing to PyPI. This setup meets professional standards.
+*   **Comprehensive Documentation**:
+    *   **User Guides**: The Jekyll-based documentation site in `docs/` provides installation, usage, and API reference materials.
+    *   **Development Records**: `CHANGELOG.md` tracks changes effectively, while `DEPENDENCIES.md` clearly justifies each dependency choice.
+*   **Structured Development Process**: Files like `PLAN.md`, `TODO.md`, and `WORK.md` show organized feature implementation and bug tracking.
+*   **Modern Tooling**: Effective use of current best-practice tools:
+    *   `uv` for dependency management
+    *   `ruff` for linting and formatting
+    *   `pytest` for testing
+    *   `rich` for CLI interface
+    *   `pre-commit` hooks for code quality
 
----
+## 3. Areas for Improvement
 
-## 3. Important Areas for Improvement
+While the project is strong, a few strategic improvements could enhance its robustness and performance.
 
-While the project is excellent, a few strategic improvements could elevate it further. These are not urgent fixes but rather opportunities to enhance long-term robustness and performance.
+### a. Increase Test Coverage
 
-### a. Increase Overall Test Coverage
+*   **Observation**: New features like `ui.py` have high test coverage (98%), but overall project coverage remains low (18-29%).
+*   **Importance**: This is the most critical improvement area. Higher coverage protects core logic from regressions during future development.
+*   **Suggestions**:
+    1.  **Focus on Core Modules**: Prioritize tests for `cerebrate_file.py`, `api_client.py`, `file_utils.py`, and untested parts of `chunking.py`.
+    2.  **Test Edge Cases**: Include failure scenarios such as API errors, missing files, invalid configurations, and empty inputs.
+    3.  **Set Coverage Goals**: Aim for 80%+ overall coverage. Enforce this in CI using `pytest-cov`'s `--cov-fail-under=80` flag.
 
-*   **Observation**: The `CHANGELOG.md` and `WORK.md` files note that while new features (like `ui.py`) have very high test coverage (98%), the overall project coverage is still relatively low (reported between 18% and 29%).
-*   **Importance**: **This is the most important area for improvement.** A higher overall test coverage is crucial for a project of this quality. It ensures that the core logic, which was part of the original monolith, is protected from regressions as new features are added or existing code is refactored. It builds confidence for both developers and users.
-*   **Suggestion**:
-    1.  **Prioritize Core Logic**: Focus on writing tests for the modules that represent the core functionality: `cerebrate_file.py`, `api_client.py`, `file_utils.py`, and the remaining untested parts of `chunking.py`.
-    2.  **Target Edge Cases**: Add tests for failure conditions: API errors, file-not-found errors, invalid configurations, and empty inputs.
-    3.  **Set a Goal**: Aim to gradually increase the overall test coverage to a target of **80% or higher**. This can be enforced in the CI pipeline using `pytest-cov`'s `--cov-fail-under=80` flag to prevent future regressions.
+### b. Use Pydantic for Configuration and Data Models
 
-### b. Adopt Pydantic for Configuration and Data Models
+*   **Observation**: Custom classes handle data modeling and configuration with manual validation.
+*   **Importance**: Pydantic would provide automatic validation, type coercion, and clearer error handling with less boilerplate.
+*   **Suggestions**:
+    1.  **Refactor Models**: Replace manual validation in `config.py` and data structures in `models.py` with Pydantic models.
+    2.  **Benefits**: Simplified validation logic, self-documenting schemas, and easy JSON serialization for API interactions.
 
-*   **Observation**: The project uses custom classes for data models (`models.py`) and configuration (`config.py`), with manual validation methods.
-*   **Importance**: While the current approach works, using a dedicated library like Pydantic would make the code more robust, concise, and self-documenting.
-*   **Suggestion**:
-    1.  **Refactor `models.py` and `config.py` to use Pydantic models.** Pydantic provides automatic data validation, type coercion, and clear error messages out of the box.
-    2.  This would simplify the validation logic in `config.py` and make the data structures in `models.py` more resilient. Pydantic models can also easily be serialized to/from JSON, which is useful for an API-driven tool.
+### c. Consider Async Architecture for Performance
 
-### c. Consider `asyncio` for Performance
-
-*   **Observation**: The current implementation appears to be synchronous. The recursive processing feature uses a `ThreadPoolExecutor` for parallelism, which is a good solution for I/O-bound tasks in a synchronous codebase.
-*   **Importance**: For a tool that is heavily I/O-bound (reading multiple files, making numerous network requests), a move to an `asyncio` model could provide significant performance benefits and potentially simplify the parallel processing logic.
-*   **Suggestion**:
-    *   For a future major version (e.g., v3.0), consider refactoring the I/O-bound parts of the application to use `asyncio`.
-    *   This would involve using `aiofiles` for file operations and an async-native HTTP client like `httpx` to communicate with the Cerebras API.
-    *   This is a significant architectural change and should only be undertaken if performance in the recursive/multi-file mode becomes a bottleneck. It is a forward-looking suggestion, not a critique of the current implementation.
-
----
+*   **Observation**: The implementation is synchronous, using `ThreadPoolExecutor` for parallel file processing.
+*   **Importance**: For I/O-heavy operations (file reading, API calls), async processing could improve performance and simplify concurrency handling.
+*   **Suggestions**:
+    *   **Future Refactor**: In a major version update (v3.0), consider moving to `asyncio` with `aiofiles` for file operations and `httpx` for API calls.
+    *   **Timing**: This change should be prioritized only if current performance becomes a bottleneck in multi-file processing scenarios.
 
 ## Conclusion
 
-This is a high-quality, well-engineered project that serves as a great example of modern Python development. The team's commitment to quality, documentation, and process is evident. By focusing on increasing test coverage for core logic, the project can become even more robust and reliable. The other suggestions are offered as potential paths for future evolution.
-
+This is a well-built Python project with strong foundations in modularity, automation, and documentation. Increasing test coverage for core functionality should be the immediate priority. The other suggestions—Pydantic adoption and async refactoring—are valuable for long-term evolution but don't reflect weaknesses in the current implementation.
 </document_content>
 </document>
 
@@ -1200,7 +1176,6 @@ this_file: TODO.md
 - [x] Add unit tests covering stdin/stdout helpers
 - [x] Add integration-style test for CLI stdin→stdout flow
 - [x] Refresh README/CHANGELOG/WORK notes with the new behaviour
-
 </document_content>
 </document>
 
@@ -1229,7 +1204,6 @@ this_file: WORK.md
   - Result: pass (11 tests, ~4.4 s)
 
 Notes: full suite is noisy but sampled run demonstrates coverage of new functionality and critical retry/recursive paths.
-
 </document_content>
 </document>
 
@@ -1257,7 +1231,6 @@ gitnextver .;
 uvx hatch build;
 uv publish;
 uv pip install --system --upgrade -e .
-
 </document_content>
 </document>
 
@@ -1331,7 +1304,7 @@ https://twardoch.github.io/cerebrate-file/
 
 3. View at: http://localhost:4000/cerebrate-file/
 
-### Alternative with Docker
+### Docker Alternative
 
 ```bash
 docker run --rm \
@@ -1372,7 +1345,7 @@ docs/
    ```
 3. Write content in Markdown
 
-## Theme Documentation
+## Theme Resources
 
 This site uses the Just-the-Docs theme:
 - [Theme documentation](https://just-the-docs.github.io/just-the-docs/)
@@ -1531,29 +1504,13 @@ compress_html:
 <document index="22">
 <source>docs/api-reference.md</source>
 <document_content>
----
-layout: default
-title: API Reference
-nav_order: 7
----
-
 # API Reference
-{: .no_toc }
 
-Python API documentation for programmatic usage
-{: .fs-6 .fw-300 }
-
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
-
----
+Python API documentation for programmatic usage.
 
 ## Overview
 
-While Cerebrate File is primarily a CLI tool, it can also be used programmatically in Python scripts. This reference covers the main modules and functions available.
+Cerebrate File works as a CLI tool but can also be used programmatically. This reference covers the main modules and functions available.
 
 ## Installation for API Use
 
@@ -3116,7 +3073,7 @@ Contributing to Cerebrate File development
    uv add --dev pytest pytest-cov pytest-mock rich loguru
    ```
 
-4. **Set up pre-commit hooks (optional):**
+4. **Set up pre-commit hooks (optional but recommended):**
    ```bash
    uv add --dev pre-commit
    pre-commit install
@@ -3148,13 +3105,13 @@ cerebrate-file/
 │   ├── test_integration.py    # Integration tests
 │   ├── test_recursive.py      # Recursive processing tests
 │   └── test_ui.py             # UI component tests
-├── docs/                       # Documentation (Jekyll)
-├── examples/                   # Example scripts
+├── docs/                      # Documentation (Jekyll)
+├── examples/                  # Example scripts
 ├── pyproject.toml             # Package configuration
 ├── README.md                  # Project README
-├── CHANGELOG.md              # Version history
-├── LICENSE                   # Apache 2.0 license
-└── .gitignore               # Git ignore rules
+├── CHANGELOG.md               # Version history
+├── LICENSE                    # Apache 2.0 license
+└── .gitignore                 # Git ignore rules
 ```
 
 ## Development Workflow
@@ -3704,7 +3661,7 @@ python -m cerebrate_file.cli --verbose
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the Apache 2.0 License.
+By contributing, you agree that your contributions will be licensed under the Apache 2.0
 </document_content>
 </document>
 
@@ -3721,8 +3678,7 @@ has_children: true
 # Examples
 {: .no_toc }
 
-Real-world examples and use cases for Cerebrate File
-{: .fs-6 .fw-300 }
+Practical use cases for Cerebrate File
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -3736,15 +3692,13 @@ Real-world examples and use cases for Cerebrate File
 
 ### README Enhancement
 
-Improve project documentation:
-
 ```bash
-# Add emojis and better structure
+# Add structure and clarity
 cerebrate-file README.md \
   --prompt "Add relevant emojis to headers, improve clarity, and ensure all sections are complete" \
   --output README_enhanced.md
 
-# Generate comprehensive documentation
+# Generate from notes
 cerebrate-file project_notes.txt \
   --prompt "Convert to well-structured README with sections: Overview, Installation, Usage, API, Contributing" \
   --output README.md
@@ -3752,16 +3706,14 @@ cerebrate-file project_notes.txt \
 
 ### API Documentation Generation
 
-Generate documentation from code:
-
 ```bash
-# Python docstrings to markdown
+# From Python code
 cerebrate-file api.py \
   --data_format code \
   --prompt "Extract all functions and classes, generate markdown API documentation with examples" \
   --output api_docs.md
 
-# Multiple source files
+# From multiple files
 cerebrate-file ./src \
   --recurse "**/*.py" \
   --prompt "Generate comprehensive API documentation in markdown format" \
@@ -3770,16 +3722,14 @@ cerebrate-file ./src \
 
 ### Changelog Generation
 
-Create or update changelogs:
-
 ```bash
-# From git commits
+# From git log
 git log --oneline -n 50 > commits.txt
 cerebrate-file commits.txt \
   --prompt "Generate a CHANGELOG.md with sections: Added, Changed, Fixed, Removed" \
   --output CHANGELOG.md
 
-# Update existing changelog
+# Update existing
 cerebrate-file CHANGELOG.md \
   --file_prompt new_features.txt \
   --prompt "Add these features to the Unreleased section"
@@ -3788,8 +3738,6 @@ cerebrate-file CHANGELOG.md \
 ## Code Transformation
 
 ### Adding Type Hints
-
-Improve Python code with type hints:
 
 ```bash
 # Single file
@@ -3807,33 +3755,29 @@ cerebrate-file ./src \
 
 ### Code Refactoring
 
-Refactor and improve code quality:
-
 ```bash
-# Modernize code
+# Modernize syntax
 cerebrate-file legacy.py \
   --data_format code \
   --prompt "Refactor to use modern Python features: f-strings, pathlib, dataclasses, type hints" \
   --output modern.py
 
-# Apply design patterns
+# Apply patterns
 cerebrate-file service.py \
   --prompt "Refactor using dependency injection and repository pattern" \
-  --temp 0.4  # Lower temperature for consistency
+  --temp 0.4  # Lower temp for consistency
 ```
 
 ### Test Generation
 
-Generate test cases:
-
 ```bash
-# Generate pytest tests
+# Generate tests
 cerebrate-file calculator.py \
   --data_format code \
   --prompt "Generate comprehensive pytest test cases with edge cases and fixtures" \
   --output test_calculator.py
 
-# Add test cases to existing tests
+# Extend existing tests
 cerebrate-file test_utils.py \
   --prompt "Add edge case tests for error conditions and boundary values"
 ```
@@ -3842,15 +3786,13 @@ cerebrate-file test_utils.py \
 
 ### Translation
 
-Translate documents while preserving formatting:
-
 ```bash
 # Single document
 cerebrate-file article.md \
   --prompt "Translate to Spanish, preserve all markdown formatting and code blocks" \
   --output articulo.md
 
-# Batch translation
+# Batch process
 cerebrate-file ./content/en \
   --recurse "**/*.md" \
   --prompt "Translate to French, maintain technical terms in English with translations in parentheses" \
@@ -3858,8 +3800,6 @@ cerebrate-file ./content/en \
 ```
 
 ### Summarization
-
-Create summaries of various lengths:
 
 ```bash
 # Executive summary
@@ -3877,10 +3817,8 @@ cerebrate-file book.md \
 
 ### Style Transformation
 
-Change writing style:
-
 ```bash
-# Technical to layman
+# Technical to plain English
 cerebrate-file technical_manual.md \
   --prompt "Rewrite for general audience, explain technical terms, use analogies" \
   --output user_guide.md
@@ -3888,23 +3826,21 @@ cerebrate-file technical_manual.md \
 # Formal to conversational
 cerebrate-file formal_report.md \
   --prompt "Rewrite in conversational tone, add examples, use 'you' and 'we'" \
-  --temp 0.8  # Higher temperature for variety
+  --temp 0.8  # Higher temp for variety
 ```
 
 ## Data Processing
 
 ### CSV/JSON Processing
 
-Transform structured data:
-
 ```bash
-# CSV to markdown table
+# CSV to markdown
 cerebrate-file data.csv \
   --data_format text \
   --prompt "Convert to markdown table with proper formatting, add summary statistics" \
   --output data_table.md
 
-# JSON to documentation
+# JSON to docs
 cerebrate-file api_spec.json \
   --prompt "Generate human-readable API documentation with examples for each endpoint" \
   --output api_guide.md
@@ -3912,17 +3848,15 @@ cerebrate-file api_spec.json \
 
 ### Log Analysis
 
-Process and analyze logs:
-
 ```bash
-# Error analysis
+# Error patterns
 cerebrate-file app.log \
   --data_format text \
   --chunk_size 32000 \
   --prompt "Identify error patterns, group by type, suggest fixes" \
   --output error_report.md
 
-# Performance analysis
+# Performance issues
 cerebrate-file performance.log \
   --prompt "Analyze response times, identify bottlenecks, create optimization recommendations" \
   --output performance_analysis.md
@@ -3930,16 +3864,14 @@ cerebrate-file performance.log \
 
 ### Report Generation
 
-Generate reports from raw data:
-
 ```bash
-# Sales report
+# Sales data
 cerebrate-file sales_data.txt \
   --file_prompt report_template.md \
   --prompt "Generate quarterly sales report with trends, visualizations descriptions, and recommendations" \
   --output Q4_report.md
 
-# Technical audit
+# Technical debt
 cerebrate-file codebase_analysis.txt \
   --prompt "Generate technical debt report: categorize issues, estimate effort, prioritize fixes" \
   --output tech_debt_report.md
@@ -3949,15 +3881,13 @@ cerebrate-file codebase_analysis.txt \
 
 ### Paper Formatting
 
-Format academic papers:
-
 ```bash
-# Convert to academic style
+# Academic style
 cerebrate-file draft.md \
   --prompt "Format as academic paper: add abstract, improve citations, use formal language" \
   --output paper.md
 
-# Add citations
+# Add references
 cerebrate-file research.md \
   --file_prompt bibliography.bib \
   --prompt "Add proper citations in APA format, create references section"
@@ -3965,16 +3895,14 @@ cerebrate-file research.md \
 
 ### Literature Review
 
-Process research papers:
-
 ```bash
-# Summarize papers
+# Extract key info
 cerebrate-file ./papers \
   --recurse "**/*.txt" \
   --prompt "Extract: main hypothesis, methodology, key findings, limitations" \
   --output ./summaries/
 
-# Create literature review
+# Compile review
 cat summaries/*.md > all_summaries.md
 cerebrate-file all_summaries.md \
   --prompt "Create comprehensive literature review with themes, gaps, and future directions" \
@@ -3983,15 +3911,13 @@ cerebrate-file all_summaries.md \
 
 ### Note Organization
 
-Organize research notes:
-
 ```bash
 # Structure notes
 cerebrate-file scattered_notes.txt \
   --prompt "Organize into sections: Key Concepts, Methodologies, Findings, Questions" \
   --output organized_notes.md
 
-# Create study guide
+# Study guide
 cerebrate-file lecture_notes.md \
   --prompt "Create study guide: key terms with definitions, important formulas, practice questions" \
   --output study_guide.md
@@ -4001,16 +3927,14 @@ cerebrate-file lecture_notes.md \
 
 ### Story Development
 
-Enhance creative writing:
-
 ```bash
-# Develop characters
+# Character profiles
 cerebrate-file character_sketches.txt \
   --prompt "Expand character profiles: add backstory, motivations, character arcs" \
   --temp 0.9 \
   --output characters.md
 
-# Improve dialogue
+# Better dialogue
 cerebrate-file story.md \
   --data_format semantic \
   --prompt "Improve dialogue: make it more natural, add subtext, vary speech patterns" \
@@ -4019,16 +3943,14 @@ cerebrate-file story.md \
 
 ### Content Expansion
 
-Expand existing content:
-
 ```bash
-# Blog post expansion
+# Blog post
 cerebrate-file outline.md \
   --prompt "Expand each point into 2-3 paragraphs with examples and transitions" \
   --max_tokens_ratio 200 \
   --output full_post.md
 
-# Course creation
+# Course material
 cerebrate-file course_outline.md \
   --prompt "Expand into full course: add learning objectives, exercises, quizzes for each module" \
   --output course_content.md
@@ -4038,10 +3960,8 @@ cerebrate-file course_outline.md \
 
 ### Configuration Generation
 
-Generate configuration files:
-
 ```bash
-# Docker configuration
+# Docker setup
 cerebrate-file app_requirements.txt \
   --prompt "Generate Dockerfile and docker-compose.yml for Python web application" \
   --output docker_configs.md
@@ -4054,16 +3974,14 @@ cerebrate-file project_info.md \
 
 ### Documentation from Code
 
-Generate docs from infrastructure:
-
 ```bash
-# Terraform documentation
+# Terraform docs
 cerebrate-file ./terraform \
   --recurse "**/*.tf" \
   --prompt "Generate infrastructure documentation with resource descriptions and dependencies" \
   --output infrastructure.md
 
-# Kubernetes manifests
+# Kubernetes docs
 cerebrate-file ./k8s \
   --recurse "**/*.yaml" \
   --prompt "Document Kubernetes resources: purpose, configuration, relationships" \
@@ -4074,8 +3992,6 @@ cerebrate-file ./k8s \
 
 ### Sequential Processing
 
-Process files in order:
-
 ```bash
 #!/bin/bash
 # process_sequential.sh
@@ -4085,20 +4001,18 @@ for file in *.md; do
   cerebrate-file "$file" \
     --file_prompt standard_prompt.md \
     --output "processed/${file}"
-  sleep 2  # Brief pause between files
+  sleep 2
 done
 ```
 
 ### Parallel Processing
 
-Process multiple files simultaneously:
-
 ```bash
-# Using GNU parallel
+# GNU parallel
 find . -name "*.txt" | parallel -j 4 \
   cerebrate-file {} --output processed/{/}
 
-# Using cerebrate-file's built-in parallel processing
+# Built-in parallel
 cerebrate-file . \
   --recurse "**/*.md" \
   --workers 8 \
@@ -4108,14 +4022,11 @@ cerebrate-file . \
 
 ### Conditional Processing
 
-Process based on conditions:
-
 ```bash
 #!/bin/bash
 # smart_process.sh
 
 for file in *.md; do
-  # Check file size
   size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file")
 
   if [ $size -lt 10000 ]; then
@@ -4136,13 +4047,11 @@ done
 
 ### Multi-Stage Processing
 
-Chain multiple transformations:
-
 ```bash
 #!/bin/bash
 # multi_stage.sh
 
-# Stage 1: Extract and clean
+# Stage 1: Clean data
 cerebrate-file raw_data.txt \
   --prompt "Extract relevant information, fix formatting" \
   --output stage1.md
@@ -4161,33 +4070,30 @@ cerebrate-file stage2.md \
 
 ### Content Pipeline
 
-Full content processing pipeline:
-
 ```bash
 #!/bin/bash
 # content_pipeline.sh
 
-# Variables
 SOURCE_DIR="content/drafts"
 EDIT_DIR="content/edited"
 TRANS_DIR="content/translated"
 FINAL_DIR="content/final"
 
-# Step 1: Edit and improve
+# Edit content
 cerebrate-file "$SOURCE_DIR" \
   --recurse "**/*.md" \
   --prompt "Improve clarity, fix grammar, enhance structure" \
   --output "$EDIT_DIR" \
   --workers 4
 
-# Step 2: Translate
+# Translate
 cerebrate-file "$EDIT_DIR" \
   --recurse "**/*.md" \
   --prompt "Translate to Spanish, preserve formatting" \
   --output "$TRANS_DIR" \
   --workers 4
 
-# Step 3: Final formatting
+# Final format
 cerebrate-file "$TRANS_DIR" \
   --recurse "**/*.md" \
   --prompt "Add table of contents, improve headings, check links" \
@@ -4197,14 +4103,14 @@ cerebrate-file "$TRANS_DIR" \
 
 ## Tips for Examples
 
-1. **Start Simple**: Test with small files first
-2. **Use Dry Run**: Verify chunking before processing
-3. **Save Prompts**: Reuse successful instruction files
-4. **Monitor Progress**: Use verbose mode for debugging
-5. **Adjust Parameters**: Fine-tune based on results
-6. **Handle Errors**: Add error checking to scripts
-7. **Document Workflows**: Save successful commands
-8. **Version Control**: Track changes in processed files
+1. **Start small**: Test with small files first
+2. **Use dry run**: Verify chunking before processing
+3. **Save prompts**: Reuse successful instruction files
+4. **Monitor progress**: Use verbose mode for debugging
+5. **Tune parameters**: Adjust based on results
+6. **Handle errors**: Add error checking to scripts
+7. **Document workflows**: Save successful commands
+8. **Version control**: Track changes in processed files
 
 ## Next Steps
 
@@ -4222,138 +4128,131 @@ cerebrate-file "$TRANS_DIR" \
 layout: home
 title: Home
 nav_order: 1
-description: "Cerebrate File is a powerful CLI tool for processing large documents with Cerebras AI"
+description: "Process large documents with Cerebras AI using intelligent chunking and context preservation"
 permalink: /
 ---
 
 # Cerebrate File Documentation
 {: .fs-9 }
 
-Process large documents with Cerebras AI through intelligent chunking and context preservation.
+Break large files into manageable pieces, preserve context, and process them with Cerebras AI.
 {: .fs-6 .fw-300 }
 
-[Get started now](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 } [View on GitHub](https://github.com/twardoch/cerebrate-file){: .btn .fs-5 .mb-4 .mb-md-0 }
+[Get started](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 } [View on GitHub](https://github.com/twardoch/cerebrate-file){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ---
 
 ## Overview
 
-**Cerebrate File** is a command-line utility that enables you to process large documents through the Cerebras AI API by intelligently splitting them into manageable chunks while maintaining context continuity. It's designed to handle documents that exceed the model's context window limitations seamlessly.
+**Cerebrate File** is a command-line tool for processing large documents through the Cerebras AI API. It splits files intelligently to fit within the model’s context window while keeping track of what came before.
 
 ### Key Features
 
-- 🧩 **Intelligent Chunking**: Automatically splits large documents into processable chunks
-- 🔗 **Context Preservation**: Maintains continuity between chunks with overlap samples
-- 📁 **Recursive Processing**: Process entire directory trees with glob patterns
-- ⚡ **Parallel Execution**: Multi-threaded processing for multiple files
-- 🎨 **Rich Terminal UI**: Beautiful progress display with real-time updates
-- 🔄 **Automatic Retry**: Smart handling of rate limits and transient failures
-- 📊 **Multiple Formats**: Supports text, markdown, code, and semantic chunking
-- 🎯 **Flexible Configuration**: Extensive CLI options for fine-tuning behavior
+- **Smart chunking**: Automatically break large documents into smaller parts
+- **Context overlap**: Keep snippets from previous chunks to maintain continuity
+- **Directory support**: Recursively process folders using glob patterns
+- **Parallel execution**: Handle multiple files at once with threading
+- **Terminal UI**: Clean progress output that updates in real time
+- **Retry logic**: Handle rate limits and temporary errors without manual intervention
+- **Format flexibility**: Works with text, markdown, code, and semantic content
+- **Configurable behavior**: Plenty of CLI options for tuning how things work
 
 ## Getting Started
 
 ### Installation
 
-Install Cerebrate File using pip or uv:
+Install with pip or uv:
 
 ```bash
 # Using pip
 pip install cerebrate-file
 
-# Using uv (recommended)
+# Using uv (faster)
 uv pip install cerebrate-file
 ```
 
 ### Quick Start
 
-1. **Set your Cerebras API key:**
+1. Set your Cerebras API key:
    ```bash
    export CEREBRAS_API_KEY="csk-..."
    ```
 
-2. **Process a single file:**
+2. Process a single file:
    ```bash
    cerebrate-file document.md --output processed.md
    ```
 
-3. **Process multiple files recursively:**
+3. Process all markdown files in a directory tree:
    ```bash
    cerebrate-file . --output ./output --recurse "**/*.md"
    ```
 
 ## Use Cases
 
-Cerebrate File is perfect for:
+Use Cerebrate File when you need to:
 
-- **Document Transformation**: Rewrite, summarize, or translate large documents
-- **Code Refactoring**: Process entire codebases with AI-powered transformations
-- **Content Generation**: Generate variations or expansions of existing content
-- **Batch Processing**: Apply consistent AI transformations across multiple files
-- **Data Processing**: Clean, format, or analyze large text datasets
+- Rewrite, summarize, or translate large documents
+- Refactor code across an entire project
+- Generate new versions or expansions of existing content
+- Apply consistent transformations to many files at once
+- Clean, format, or analyze large text datasets
 
-## Model Information
+## Model Details
 
-Cerebrate File uses the **Qwen-3 Coder 480B** model from Cerebras:
+The tool uses the **Qwen-3 Coder 480B** model from Cerebras:
 
-- **Context Window**: 131,072 tokens
+- **Context window**: 131,072 tokens
 - **Speed**: ~570 tokens/second
-- **Specialization**: Optimized for both code and natural language
-- **Rate Limits**:
+- **Specialty**: Good at both code and natural language
+- **Rate limits**:
   - 30 requests per minute
-  - 1000 requests per day
-  - 10M tokens per minute
+  - 1,000 requests per day
+  - 10 million tokens per minute
 
-## Documentation Structure
+## Documentation Sections
 
-This documentation is organized into the following sections:
-
-- **[Installation](installation/)** - Detailed setup instructions
-- **[Usage Guide](usage/)** - Comprehensive usage examples
-- **[CLI Reference](cli-reference/)** - Complete command-line options
-- **[Configuration](configuration/)** - Configuration options and best practices
-- **[Examples](examples/)** - Real-world usage examples
-- **[API Reference](api-reference/)** - Python API documentation
-- **[Troubleshooting](troubleshooting/)** - Common issues and solutions
-- **[Development](development/)** - Contributing and development guide
+- **[Installation](installation/)** – Setup instructions
+- **[Usage Guide](usage/)** – Practical examples
+- **[CLI Reference](cli-reference/)** – All command-line flags and options
+- **[Configuration](configuration/)** – Settings and tuning tips
+- **[Examples](examples/)** – Real-world workflows
+- **[API Reference](api-reference/)** – For Python integration
+- **[Troubleshooting](troubleshooting/)** – Fixes for common issues
+- **[Development](development/)** – How to contribute
 
 ## System Requirements
 
-- Python 3.9 or later
-- 4GB RAM minimum (8GB recommended for large files)
-- Active internet connection
+- Python 3.9+
+- Minimum 4GB RAM (8GB recommended for large files)
+- Internet connection
 - Valid Cerebras API key
 
 ## License
 
-Cerebrate File is distributed under the Apache 2.0 License. See the [LICENSE](https://github.com/twardoch/cerebrate-file/blob/main/LICENSE) file for details.
+Licensed under Apache 2.0. See [LICENSE](https://github.com/twardoch/cerebrate-file/blob/main/LICENSE) for details.
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/twardoch/cerebrate-file/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/twardoch/cerebrate-file/discussions)
-- **Author**: Adam Twardoch ([@twardoch](https://github.com/twardoch))
-
----
-
-
+- Report bugs or request features: [GitHub Issues](https://github.com/twardoch/cerebrate-file/issues)
+- Ask questions or share ideas: [GitHub Discussions](https://github.com/twardoch/cerebrate-file/discussions)
+- Maintainer: Adam Twardoch ([@twardoch](https://github.com/twardoch))
 </document_content>
 </document>
 
 <document index="28">
 <source>docs/installation.md</source>
 <document_content>
+Here's the edited version of your document with improvements for clarity, conciseness, and tone:
+
 ---
+
 layout: default
 title: Installation
 nav_order: 2
----
 
 # Installation
 {: .no_toc }
-
-Complete guide to installing and setting up Cerebrate File
-{: .fs-6 .fw-300 }
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -4367,11 +4266,11 @@ Complete guide to installing and setting up Cerebrate File
 
 Before installing Cerebrate File, ensure you have:
 
-- **Python 3.9 or later** installed on your system
+- **Python 3.9 or later**
 - **pip** or **uv** package manager
-- A **Cerebras API key** (obtain from [cerebras.ai](https://cerebras.ai))
+- A **Cerebras API key** (get it from [cerebras.ai](https://cerebras.ai))
 
-### Checking Python Version
+### Check Python Version
 
 ```bash
 python --version
@@ -4383,9 +4282,9 @@ You should see Python 3.9.0 or higher.
 
 ## Installation Methods
 
-### Using pip (Traditional)
+### Using pip
 
-Install the latest stable version from PyPI:
+Install the latest version from PyPI:
 
 ```bash
 pip install cerebrate-file
@@ -4397,12 +4296,12 @@ To install a specific version:
 pip install cerebrate-file==1.0.10
 ```
 
-### Using uv (Recommended)
+### Using uv (Preferred)
 
 [uv](https://github.com/astral-sh/uv) is a fast Python package installer:
 
 ```bash
-# Install uv if you haven't already
+# Install uv if needed
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install cerebrate-file
@@ -4414,36 +4313,36 @@ uv pip install cerebrate-file
 Install the development version directly from GitHub:
 
 ```bash
-# Using pip
+# With pip
 pip install git+https://github.com/twardoch/cerebrate-file.git
 
-# Using uv
+# With uv
 uv pip install git+https://github.com/twardoch/cerebrate-file.git
 ```
 
-### Development Installation
+### Development Setup
 
-For contributing or local development:
+For local development or contributions:
 
 ```bash
-# Clone the repository
+# Clone repo
 git clone https://github.com/twardoch/cerebrate-file.git
 cd cerebrate-file
 
-# Create a virtual environment
+# Create virtual environment
 uv venv --python 3.12
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Install in editable mode with development dependencies
+# Install in editable mode with dev dependencies
 uv pip install -e .
 uv add --dev pytest pytest-cov pytest-mock
 ```
 
 ## API Key Configuration
 
-### Setting the API Key
+### Environment Variable
 
-Cerebrate File requires a Cerebras API key. Set it as an environment variable:
+Set your Cerebras API key as an environment variable:
 
 ```bash
 # Linux/macOS
@@ -4456,78 +4355,78 @@ set CEREBRAS_API_KEY=csk-your-api-key-here
 $env:CEREBRAS_API_KEY="csk-your-api-key-here"
 ```
 
-### Using a .env File
+### .env File
 
-For convenience, you can store your API key in a `.env` file:
+Alternatively, store the key in a `.env` file:
 
-1. Create a `.env` file in your project directory:
+1. Create `.env` in your project directory:
    ```bash
    echo 'CEREBRAS_API_KEY=csk-your-api-key-here' > .env
    ```
 
 2. Cerebrate File will automatically load it when run from that directory.
 
-**Security Note**: Never commit `.env` files to version control. Add `.env` to your `.gitignore` file.
+**Security Reminder**: Don’t commit `.env` files to version control. Add `.env` to `.gitignore`.
 
-### Validating Your API Key
+### Validate API Key
 
-Test your installation and API key:
+Test installation and key setup:
 
 ```bash
-# Check installation
+# Check installed version
 cerebrate-file --version
 
-# Test API connection (coming in next version)
+# Test API connection (available in next release)
 # cerebrate-file --test-connection
 ```
 
 ## Dependencies
 
-Cerebrate File automatically installs these dependencies:
+Cerebrate File automatically installs these:
 
-### Core Dependencies
+### Core
 - `cerebras-cloud-sdk>=1.0.0` - Cerebras AI API client
-- `python-dotenv>=1.0.0` - Environment variable management
-- `fire>=0.7.1` - CLI interface
-- `loguru>=0.7.0` - Logging
-- `tenacity>=9.0.0` - Retry logic
-- `rich>=13.0.0` - Terminal UI
+- `python-dotenv>=1.0.0` - Environment variable handling
+- `fire>=0.7.1` - CLI framework
+- `loguru>=0.7.0` - Logging library
+- `tenacity>=9.0.0` - Retry utilities
+- `rich>=13.0.0` - Terminal formatting
 
-### Processing Dependencies
-- `semantic-text-splitter>=0.19.2` - Semantic text chunking
+### Processing
+- `semantic-text-splitter>=0.19.2` - Text chunking
 - `qwen-tokenizer>=0.1.2` - Token counting
 - `python-frontmatter>=1.1.0` - Frontmatter parsing
 
-### Optional Dependencies
-- `pytest>=8.3.4` - Testing (development only)
-- `pytest-cov>=6.0.0` - Coverage reporting (development only)
-- `pytest-mock>=3.14.0` - Mocking utilities (development only)
+### Optional (Development Only)
+- `pytest>=8.3.4` - Testing
+- `pytest-cov>=6.0.0` - Coverage reporting
+- `pytest-mock>=3.14.0` - Mocking tools
 
-## Verifying Installation
+## Verify Installation
 
-After installation, verify everything works:
+Confirm everything works:
 
 ```bash
-# Check the command is available
+# Check command availability
 which cerebrate-file
 
 # Show help
 cerebrate-file --help
 
-# Process a small test file
+# Run a quick test
 echo "Hello, world!" > test.txt
 cerebrate-file test.txt --prompt "Make this greeting more formal"
 ```
 
 ## Updating
 
-### Update to Latest Version
+### Upgrade to Latest Version
 
 ```bash
-# Using pip
+# With pip
 pip install --upgrade cerebrate-file
 
-# Using uv
+# With uv
 uv pip install --upgrade cerebrate-file
 ```
 
@@ -4539,33 +4438,33 @@ cerebrate-file --version
 python -c "import cerebrate_file; print(cerebrate_file.__version__)"
 ```
 
-## Uninstallation
+## Uninstall
 
-To remove Cerebrate File:
+Remove Cerebrate File:
 
 ```bash
-# Using pip
+# With pip
 pip uninstall cerebrate-file
 
-# Using uv
+# With uv
 uv pip uninstall cerebrate-file
 ```
 
-## Troubleshooting Installation
+## Troubleshooting
 
-### Common Issues
+### Common Errors
 
-#### Python Version Error
+#### Python Version Too Old
 ```
 ERROR: cerebrate-file requires Python >=3.9
 ```
-**Solution**: Upgrade Python to 3.9 or later.
+**Fix**: Upgrade Python.
 
 #### Missing Dependencies
 ```
 ModuleNotFoundError: No module named 'cerebras_cloud_sdk'
 ```
-**Solution**: Reinstall with dependencies:
+**Fix**: Reinstall:
 ```bash
 pip install --force-reinstall cerebrate-file
 ```
@@ -4574,7 +4473,7 @@ pip install --force-reinstall cerebrate-file
 ```
 ERROR: Could not install packages due to an EnvironmentError: [Errno 13] Permission denied
 ```
-**Solution**: Use user installation:
+**Fix**: Install for current user:
 ```bash
 pip install --user cerebrate-file
 ```
@@ -4583,29 +4482,33 @@ pip install --user cerebrate-file
 ```
 ssl.SSLCertVerificationError: certificate verify failed
 ```
-**Solution**: Update certificates or use trusted host:
+**Fix**: Update certificates or bypass verification:
 ```bash
 pip install --trusted-host pypi.org cerebrate-file
 ```
 
-### Getting Help
+### Need Help?
 
-If you encounter issues:
+If issues persist:
 
-1. Check the [Troubleshooting Guide](troubleshooting/)
+1. Review the [Troubleshooting Guide](troubleshooting/)
 2. Search [GitHub Issues](https://github.com/twardoch/cerebrate-file/issues)
-3. Open a new issue with:
+3. Open a new issue including:
    - Python version
    - Installation method
-   - Complete error message
+   - Full error message
    - Steps to reproduce
 
 ## Next Steps
 
-Once installed, proceed to:
-- [Usage Guide](usage/) - Learn how to use Cerebrate File
-- [Configuration](configuration/) - Set up your preferences
-- [Examples](examples/) - See real-world examples
+After installation, explore:
+- [Usage Guide](usage/) - How to use Cerebrate File
+- [Configuration](configuration/) - Customize settings
+- [Examples](examples/) - Real-world workflows
+
+--- 
+
+This edit removes fluff, simplifies structure, tightens technical descriptions, and adds a subtle dry humor where appropriate without losing any critical information. Let me know if you'd like a markdown-to-HTML version or want this tailored for a specific audience.
 </document_content>
 </document>
 
@@ -4788,10 +4691,10 @@ cerebrate-file . \
 ## 7. Monitor Progress
 
 The tool shows:
-- 📊 Progress bar with percentage
-- 📁 Current file being processed
-- ✅ Files completed
-- 🔄 Remaining API calls
+- Progress bar with percentage
+- Current file being processed
+- Files completed
+- Remaining API calls
 
 ## 8. Check Your Results
 
@@ -4889,20 +4792,11 @@ Now that you're up and running:
 <document index="30">
 <source>docs/troubleshooting.md</source>
 <document_content>
----
-layout: default
-title: Troubleshooting
-nav_order: 8
----
-
 # Troubleshooting
-{: .no_toc }
 
-Solutions to common issues and error messages
-{: .fs-6 .fw-300 }
+Solutions to common issues and error messages.
 
 ## Table of contents
-{: .no_toc .text-delta }
 
 1. TOC
 {:toc}
@@ -4945,7 +4839,7 @@ Warning: API key appears to be a placeholder
 ```
 
 **Solution:**
-- Ensure your API key starts with `csk-`
+- API key must start with `csk-`
 - Get a valid key from [cerebras.ai](https://cerebras.ai)
 - Check for typos or extra spaces
 
@@ -4961,8 +4855,8 @@ RateLimitError: 429 Too Many Requests
 **Solutions:**
 
 1. **Wait for reset:**
-   - Per-minute limits reset after 60 seconds
-   - Daily limits reset at midnight UTC
+   - Per-minute limits: 60 seconds
+   - Daily limits: midnight UTC
 
 2. **Reduce parallel workers:**
    ```bash
@@ -5007,8 +4901,8 @@ TokenLimitError: Maximum context length is 131072 tokens
    ```
 
 4. **Use simpler prompts:**
-   - Shorter instructions use fewer tokens
-   - Avoid redundant instructions
+   - Shorter instructions = fewer tokens
+   - Remove redundant instructions
 
 ### File Processing Errors
 
@@ -5461,7 +5355,7 @@ nav_order: 3
 # Usage Guide
 {: .no_toc }
 
-Comprehensive guide to using Cerebrate File effectively
+How to use Cerebrate File effectively
 {: .fs-6 .fw-300 }
 
 ## Table of contents
@@ -5476,17 +5370,17 @@ Comprehensive guide to using Cerebrate File effectively
 
 ### Processing a Single File
 
-The simplest use case is processing a single document:
+The simplest way to use Cerebrate File is on one document:
 
 ```bash
 cerebrate-file input.md
 ```
 
-This will process `input.md` and overwrite it with the AI-processed result.
+This overwrites `input.md` with the processed version.
 
 ### Specifying Output File
 
-To save the result to a different file:
+To save the result elsewhere:
 
 ```bash
 cerebrate-file input.md --output output.md
@@ -5494,16 +5388,16 @@ cerebrate-file input.md --output output.md
 
 ### Adding Instructions
 
-Provide instructions to guide the AI processing:
+Add instructions for the AI:
 
 ```bash
 cerebrate-file document.md \
-  --prompt "Summarize each section to 2-3 sentences"
+  --prompt "Summarize each section in 2-3 sentences"
 ```
 
 ### Using Instruction Files
 
-For complex instructions, use a separate file:
+For longer or reusable instructions, use a file:
 
 ```bash
 cerebrate-file report.md \
@@ -5515,74 +5409,74 @@ cerebrate-file report.md \
 
 ### Recursive Processing
 
-Process multiple files matching a pattern:
+Process multiple files by pattern:
 
 ```bash
-# Process all markdown files recursively
+# All markdown files, recursively
 cerebrate-file . --output ./processed --recurse "**/*.md"
 
-# Process specific file types
+# Specific file types
 cerebrate-file ./src --output ./docs --recurse "**/*.{py,js,ts}"
 
-# Process with specific depth
-cerebrate-file . --output ./output --recurse "*.txt"  # Current directory only
-cerebrate-file . --output ./output --recurse "*/*.txt"  # One level deep
+# Limit depth
+cerebrate-file . --output ./output --recurse "*.txt"      # Current dir only
+cerebrate-file . --output ./output --recurse "*/*.txt"     # One level deep
 ```
 
 ### Parallel Processing
 
-Speed up processing of multiple files:
+Speed up processing with multiple workers:
 
 ```bash
-# Use 8 workers for parallel processing
+# Use 8 workers
 cerebrate-file . --output ./output --recurse "**/*.md" --workers 8
 
-# Automatic worker count (based on CPU cores)
+# Auto-detect based on CPU cores
 cerebrate-file . --output ./output --recurse "**/*.md" --workers 0
 ```
 
 ### Chunking Strategies
 
-Choose the best chunking strategy for your content:
+Choose the right strategy for your content:
 
 ```bash
-# Markdown-aware chunking (default)
+# Markdown-aware (default)
 cerebrate-file doc.md --data_format markdown
 
-# Code-aware chunking for source files
+# Code-aware for source files
 cerebrate-file script.py --data_format code
 
 # Semantic chunking for natural text
 cerebrate-file article.txt --data_format semantic
 
-# Simple text chunking
+# Plain text
 cerebrate-file data.txt --data_format text
 ```
 
 ### Chunk Size Control
 
-Optimize chunk sizes for your use case:
+Adjust chunk sizes:
 
 ```bash
-# Smaller chunks for detailed processing
+# Smaller chunks = more detail
 cerebrate-file large.md --chunk_size 16000
 
-# Larger chunks for context preservation
+# Larger chunks = more context
 cerebrate-file report.md --chunk_size 64000
 
-# Adjust completion budget
-cerebrate-file doc.md --max_tokens_ratio 50  # Use 50% of chunk size for output
+# Control output size
+cerebrate-file doc.md --max_tokens_ratio 50  # Output uses 50% of chunk size
 ```
 
 ### Context Preservation
 
-Control how context is maintained between chunks:
+Control overlap between chunks:
 
 ```bash
-# Increase overlap for better continuity
+# More overlap = better continuity
 cerebrate-file novel.md --sample_size 500
 
-# Minimal overlap for independent sections
+# Less overlap = faster processing
 cerebrate-file data.csv --sample_size 50
 ```
 
@@ -5592,7 +5486,7 @@ cerebrate-file data.csv --sample_size 50
 
 ```bash
 cerebrate-file README.md \
-  --prompt "Add emojis to section headers" \
+  --prompt "Add emojis to headers" \
   --data_format markdown
 ```
 
@@ -5600,7 +5494,7 @@ cerebrate-file README.md \
 
 ```bash
 cerebrate-file app.py \
-  --prompt "Add comprehensive docstrings" \
+  --prompt "Add docstrings" \
   --data_format code \
   --chunk_size 24000
 ```
@@ -5609,71 +5503,71 @@ cerebrate-file app.py \
 
 ```bash
 cerebrate-file article.txt \
-  --prompt "Fix grammar and improve clarity" \
+  --prompt "Fix grammar and clarify language" \
   --data_format text
 ```
 
 ### Mixed Content
 
 ```bash
-# Process multiple file types with appropriate strategies
+# Process multiple file types at once
 cerebrate-file . --output ./processed \
   --recurse "**/*.{md,py,txt}" \
-  --prompt "Improve documentation and code comments"
+  --prompt "Improve docs and comments"
 ```
 
 ## Metadata Processing
 
 ### Extracting Metadata
 
-Use `--explain` mode to extract document metadata:
+Use `--explain` to extract/generate metadata:
 
 ```bash
 cerebrate-file blog_post.md --explain
 ```
 
-This extracts/generates:
+Extracts:
 - Title
 - Author
 - Document ID
-- Type classification
+- Type
 - Date
 
 ### Preserving Frontmatter
 
-Frontmatter in markdown files is automatically preserved:
+Markdown frontmatter is preserved automatically:
 
 ```yaml
 ---
 title: My Document
 author: John Doe
 ---
-# Content here...
+# Content starts here...
 ```
 
 ## Model Parameters
 
 ### Temperature Control
 
-Adjust creativity vs consistency:
+Control creativity:
 
 ```bash
-# More creative/varied output
+# High = more creative
 cerebrate-file story.md --temp 0.9
 
-# More consistent/deterministic output
+# Low = more predictable
 cerebrate-file technical.md --temp 0.3
 ```
 
 ### Top-p Sampling
 
-Control token selection diversity:
+Control vocabulary diversity:
 
 ```bash
-# More diverse vocabulary
+# Wider range of words
 cerebrate-file creative.md --top_p 0.95
 
-# More focused vocabulary
+# Stick to common words
 cerebrate-file formal.md --top_p 0.7
 ```
 
@@ -5681,22 +5575,22 @@ cerebrate-file formal.md --top_p 0.7
 
 ### Verbose Mode
 
-See detailed processing information:
+See what’s happening:
 
 ```bash
 cerebrate-file large.md --verbose
 ```
 
-Shows:
-- Chunk boundaries and sizes
-- Token counts
-- API requests and responses
-- Rate limit status
-- Processing time
+Displays:
+- Chunk boundaries
+- Token usage
+- API requests/responses
+- Rate limits
+- Timing info
 
 ### Dry Run
 
-Test chunking without API calls:
+Test chunking without calling the API:
 
 ```bash
 cerebrate-file huge.md --dry_run --verbose
@@ -5704,47 +5598,49 @@ cerebrate-file huge.md --dry_run --verbose
 
 Useful for:
 - Checking chunk sizes
-- Validating token budgets
-- Testing patterns
-- Debugging issues
+- Validating token limits
+- Testing file patterns
+- Debugging
 
 ### Progress Display
 
-The rich terminal UI shows:
-- Current file being processed
-- Progress bar with percentage
-- Output file path
+The terminal shows:
+- Current file
+- Progress percentage
+- Output path
 - Remaining API calls
 
 ## Best Practices
 
-### 1. Choose Appropriate Chunk Sizes
+### 1. Chunk Sizes
 
-- **Small files (<10K tokens)**: Use default 32K chunks
-- **Large files (>100K tokens)**: Consider 48K-64K chunks
-- **Code files**: Use 24K chunks for better function boundaries
+- **Small files (<10K tokens)**: Default 32K chunks work fine
+- **Large files (>100K tokens)**: Try 48K–64K chunks
+- **Code files**: 24K chunks help keep functions intact
 
-### 2. Select Right Chunking Strategy
+### 2. Chunking Strategy
 
-- **Markdown**: Use `markdown` format for documents
-- **Code**: Use `code` format for source files
-- **Articles**: Use `semantic` format for natural text
-- **Data**: Use `text` format for structured data
+- **Markdown**: Use `markdown`
+- **Code**: Use `code`
+- **Articles**: Use `semantic`
+- **Structured data**: Use `text`
 
-### 3. Optimize for Rate Limits
+### 3. Rate Limits
 
-- Monitor remaining requests: `📊 Remaining today: X requests`
-- Use `--workers` wisely for parallel processing
-- Add delays between batches if needed
+- Watch remaining requests: `📊 Remaining today: X`
+- Use `--workers` carefully
+- Add delays if hitting limits
 
-### 4. Handle Large Projects
+### 4. Large Projects
+
+Process in controlled batches:
 
 ```bash
-# Process in batches
+# Shell-based batching
 find . -name "*.md" -print0 | \
   xargs -0 -n 10 cerebrate-file --output ./processed
 
-# Or use parallel with controlled concurrency
+# Or with limited parallelism
 cerebrate-file . --output ./output \
   --recurse "**/*.md" \
   --workers 4
@@ -5752,12 +5648,13 @@ cerebrate-file . --output ./output \
 
 ### 5. Preserve Context
 
-For documents requiring strong continuity:
+For continuous text:
+
 ```bash
 cerebrate-file book.md \
   --sample_size 500 \
   --chunk_size 48000 \
-  --prompt "Maintain narrative voice and continuity"
+  --prompt "Keep narrative voice consistent"
 ```
 
 ## Common Workflows
@@ -5766,7 +5663,7 @@ cerebrate-file book.md \
 
 ```bash
 cerebrate-file document.md \
-  --prompt "Translate to Spanish, preserve formatting" \
+  --prompt "Translate to Spanish, keep formatting" \
   --output documento.md
 ```
 
@@ -5775,7 +5672,7 @@ cerebrate-file document.md \
 ```bash
 cerebrate-file ./src \
   --recurse "**/*.py" \
-  --prompt "Add comprehensive docstrings following Google style" \
+  --prompt "Add Google-style docstrings" \
   --output ./documented
 ```
 
@@ -5784,7 +5681,7 @@ cerebrate-file ./src \
 ```bash
 cerebrate-file reports/ \
   --recurse "*.pdf.txt" \
-  --prompt "Create executive summary, max 500 words" \
+  --prompt "Executive summary, 500 words max" \
   --output summaries/
 ```
 
@@ -5800,7 +5697,7 @@ cerebrate-file blog.md \
 ### Batch Processing
 
 ```bash
-# Process all markdown files with consistent instructions
+# Apply same instructions to all markdown files
 for file in *.md; do
   cerebrate-file "$file" \
     --file_prompt instructions.md \
@@ -5810,26 +5707,28 @@ done
 
 ## Error Handling
 
-### Rate Limit Handling
+### Rate Limits
 
-Cerebrate File automatically handles rate limits:
-- Exponential backoff for rate limit errors
-- Automatic retry with delays
-- Clear status messages
+Cerebrate File handles them automatically:
+- Exponential backoff
+- Retries with delays
+- Clear status updates
 
 ### Network Issues
 
-For unreliable connections:
+For flaky connections:
+
 ```bash
-# Increase retry attempts (handled automatically)
+# Verbose mode helps debug retries
 cerebrate-file document.md --verbose
 ```
 
-### Large File Issues
+### Large Files
 
-For very large files:
+If you hit token limits:
+
 ```bash
-# Use smaller chunks and lower completion ratio
+# Reduce chunk size and output ratio
 cerebrate-file huge.md \
   --chunk_size 24000 \
   --max_tokens_ratio 50
@@ -5839,7 +5738,8 @@ cerebrate-file huge.md \
 
 ### 1. Preview Changes
 
-Use dry run to preview:
+Dry run before processing:
+
 ```bash
 cerebrate-file doc.md --dry_run --verbose
 ```
@@ -5847,6 +5747,7 @@ cerebrate-file doc.md --dry_run --verbose
 ### 2. Save Prompts
 
 Create reusable instruction files:
+
 ```bash
 echo "Your instructions here" > prompts/summarize.md
 cerebrate-file doc.md --file_prompt prompts/summarize.md
@@ -5854,23 +5755,25 @@ cerebrate-file doc.md --file_prompt prompts/summarize.md
 
 ### 3. Chain Processing
 
-Process files through multiple stages:
+Multi-step workflows:
+
 ```bash
-# Stage 1: Translate
+# Step 1: Translate
 cerebrate-file doc.md --prompt "Translate to Spanish" --output doc_es.md
 
-# Stage 2: Summarize
+# Step 2: Summarize
 cerebrate-file doc_es.md --prompt "Summarize key points" --output summary_es.md
 ```
 
 ### 4. Use Shell Features
 
-Leverage shell capabilities:
+Leverage shell tools:
+
 ```bash
 # Process files modified today
 find . -name "*.md" -mtime -1 -exec cerebrate-file {} \;
 
-# Process with confirmation
+# Confirm before processing
 for file in *.txt; do
   read -p "Process $file? " -n 1 -r
   echo
@@ -5882,10 +5785,10 @@ done
 
 ## Next Steps
 
-- Explore [CLI Reference](cli-reference/) for all options
-- See [Examples](examples/) for real-world use cases
-- Check [Troubleshooting](troubleshooting/) for common issues
-- Learn about [API Reference](api-reference/) for programmatic use
+- [CLI Reference](cli-reference/) – full list of options
+- [Examples](examples/) – real-world use cases
+- [Troubleshooting](troubleshooting/) – common issues
+- [API Reference](api-reference/) – programmatic usage
 </document_content>
 </document>
 
@@ -5940,6 +5843,33 @@ Then /work to implement the feature.
 </document>
 
 <document index="35">
+<source>md.txt</source>
+<document_content>
+
+
+
+/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/api-reference.md
+/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/cli-reference.md
+/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/configuration.md
+/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/development.md
+/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/examples.md
+/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/index.md
+/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/installation.md
+/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/quick-start.md
+/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/README.md
+/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/troubleshooting.md
+/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/usage.md
+
+
+
+
+/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/README.md
+/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/REVIEW.md
+/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/prompts/README.md
+</document_content>
+</document>
+
+<document index="36">
 <source>package.toml</source>
 <document_content>
 # Package configuration
@@ -5956,7 +5886,7 @@ github_actions = true   # Add GitHub Actions workflows
 </document_content>
 </document>
 
-<document index="36">
+<document index="37">
 <source>pyproject.toml</source>
 <document_content>
 # this_file: pyproject.toml
@@ -6381,7 +6311,6 @@ ban-relative-imports = 'all' # Ban all relative imports for consistency
     'TID252'
     # Allow relative imports in tests for convenience
 ]
-
 </document_content>
 </document>
 
@@ -7249,7 +7178,7 @@ def resolve_prompt_file((file_prompt: str)) -> Path | None:
     """Resolve a prompt file path, checking both absolute and library paths."""
 
 
-<document index="37">
+<document index="38">
 <source>src/cerebrate_file/prompts/README.md</source>
 <document_content>
 # Prompt Library
@@ -7259,21 +7188,21 @@ This directory contains pre-configured prompts for common use cases with `cerebr
 ## Available Prompts
 
 ### fix-pdf-extracted-text.xml
-**Purpose**: Clean up poorly extracted PDF text
+**Purpose**: Clean up poorly extracted PDF text  
 **Usage**: `cerebrate-file input.txt --file-prompt fix-pdf-extracted-text.xml`
 
-This prompt helps clean up text that was poorly extracted from PDFs, fixing:
-- Hard hyphenation at line endings (e.g., "docu-\nment" → "document")
-- Page numbers, headers, and footers
-- OCR errors and character substitution issues
-- Paragraph breaks and formatting artifacts
-- Converts to clean Markdown format
+Fixes common PDF extraction issues:
+- Line-ending hyphens (e.g., "docu-\nment" → "document")
+- Page numbers, headers, footers
+- OCR errors and character substitutions
+- Broken paragraph formatting
+- Outputs clean Markdown
 
-## Using Prompts from the Library
+## Using Prompts
 
-You can reference prompts from this library in three ways:
+Reference prompts in three ways:
 
-1. **By name only** (recommended for library prompts):
+1. **By name** (for library prompts):
    ```bash
    cerebrate-file input.txt --file-prompt fix-pdf-extracted-text.xml
    ```
@@ -7290,19 +7219,19 @@ You can reference prompts from this library in three ways:
 
 ## Adding Custom Prompts
 
-To add your own prompts to the library:
+Add your own prompts to the library:
 
 1. Create your prompt file with any extension (`.xml`, `.txt`, `.md`, etc.)
 2. Place it in this directory
-3. It will be available by name after reinstalling the package
+3. Reinstall the package to make it available by name
 
 ## Prompt Format
 
-Prompts can be in any text format. The POML (Prompt Optimization Markup Language) format used in `fix-pdf-extracted-text.xml` provides structured instructions, but plain text prompts work just as well.
+Prompts can be any text format. The POML format used in `fix-pdf-extracted-text.xml` provides structured instructions, but plain text works fine too.
 
-## Combining with Text Prompts
+## Combining Prompts
 
-You can combine library prompts with additional instructions:
+Combine library prompts with additional instructions:
 
 ```bash
 cerebrate-file input.txt \
@@ -7310,11 +7239,11 @@ cerebrate-file input.txt \
   --prompt "Also translate to Spanish"
 ```
 
-The file prompt is loaded first, followed by the text prompt.
+The file prompt loads first, then the text prompt.
 </document_content>
 </document>
 
-<document index="38">
+<document index="39">
 <source>src/cerebrate_file/prompts/fix-pdf-extracted-text.xml</source>
 <document_content>
 <poml><role>You are a meticulous document restoration specialist who cleans up poorly extracted PDF        text while preserving every word of the original content.</role><task>Clean and format extracted PDF text into proper Markdown while maintaining absolute        fidelity to the original content.</task><h>Processing Instructions</h><stepwise-instructions><list listStyle="decimal"><item><b>Line Merging:</b><list><item>Join lines that were artificially broken mid-sentence by PDF column width</item><item>Preserve intentional line breaks between paragraphs</item><item>Maintain list structures and indentation where clearly intended</item></list></item><item><b>Structure & pagination:</b><list><item>Remove empty paragraphs</item><item>Remove visible page numbers, headers, and footers</item><item>If page numbers or page breaks exist in the source, only retain then in                        form of a free-standing separate line that says `<a id="page_NNN"></a>`                        (where NNN is the page number), with a newline above and a newline below,                        and move them down (that is, place them before the first paragraph of the                        page, separating with a newline).</item><item>Join paragraphs that were artificially broken, especially due to column or                        page breaks. If a page break existed mid-paragraph, move the page break                        after the paragraph.</item><item>Preserve all narrative content parts, including table-of-contents,                        footnotes, and other content that is not part of the main text. Only remove                        visible page numbers, headers, and footers that make no sense in a                        non-paginated document.</item></list></item><item><b>Artifact Removal:</b><list><item>Remove hard hyphenation at line endings (e.g., "docu-\nment" → "document")</item><item>Delete page numbers, headers, and footers that repeat across pages</item><item>Remove garbled character sequences that are clearly extraction errors                        (e.g., "■□▪▫" or "????")</item><item>Clean up spacing artifacts (multiple spaces, tabs mixed with spaces)</item></list></item><item><b>OCR Correction:</b><list><item>Fix obvious character substitution errors (e.g., "rn" misread as "m", "cl"                        as "d")</item><item>Correct clearly misspelled words only when the intended word is                        unambiguous</item><item>Fix number/letter confusion in obvious contexts (e.g., "0" vs "O", "1" vs                        "l")</item><item>If it’s obvious from the context, fix the writing system of the text (СССР                        and not CCCP)</item><item>If it’s obvious from the context, enrich text with diacritics that have                        been omitted lazily (e.g. write Wałęsa and not Walesa)</item></list></item><item><b>Orthotypography:</b><list><item>Use proper high-end punctuation, especially the correct typographic                        quotation marks appropriate for the language of the text.</item><item>Use em dashes appropriately, but ALWAYS separate them by spaces from                        neighboring text on left and right. Never glue an em dash directly to a                        word.</item><item>Use en dashes (without surrounding spaces) to indicate ranges or spans.</item><item>However, do not overcorrect punctuation.</item></list></item><item><b>Markdown Formatting (Conservative):</b><list><item>Add heading markers (#, ##, etc.) ONLY for text that is clearly a title or                        section header</item><item>Use **bold** ONLY where emphasis was clearly intended in the original</item><item>Format obvious lists with - or 1. notation</item><item>Use code blocks for clearly technical content or code samples</item><item>Add blockquotes (>) for clearly quoted material</item><item>Use Markdown tables if you know what you’re doing</item></list></item></list></stepwise-instructions><cp caption="Critical Preservation Rules"><list><item>NEVER delete sentences, phrases, or meaningful words</item><item>NEVER paraphrase or rewrite sentences for clarity</item><item>NEVER add explanatory text or context</item><item>NEVER change technical terms, proper nouns, or specialized vocabulary</item><item>NEVER merge or split paragraphs unless fixing obvious extraction errors</item><item>PRESERVE all numerical data exactly as written</item></list></cp><examples><example caption="Line merge correction"><input>The quick brown fox jum-                ped over the lazy dog which                was sleeping in the garden.</input><output>The quick brown fox jumped over the lazy dog which was sleeping in the garden.</output></example><example caption="OCR and formatting"><input>Chapter l: lntroduction                This chapfer discusses the rnain concepts...</input><output># Chapter 1: Introduction                This chapter discusses the main concepts...</output></example><example caption="Artifact removal"><input>The report■□▪ shows that sales                - - - Page 42 - - -                increased by 15% this quarter.</input><output>The report shows that sales increased by 15% this quarter.</output></example></examples><cp caption="Decision Framework"><p>When uncertain about whether text is an error or intentional:</p><list><item>If it could be meaningful content → KEEP IT</item><item>If clearly garbled/repeated/artifactual → REMOVE IT</item><item>If unsure about formatting → LEAVE UNFORMATTED</item><item>If unsure about spelling → KEEP ORIGINAL</item></list></cp><output-format>Clean Markdown text with proper paragraph separation, conservative heading        hierarchy, minimal formatting markup, all original content preserved</output-format></poml>
@@ -7538,7 +7467,7 @@ def validate_model_parameters((
     """Validate all model parameters together."""
 
 
-<document index="39">
+<document index="40">
 <source>test1.sh</source>
 <document_content>
 #!/usr/bin/env bash
@@ -7547,14 +7476,13 @@ python -m cerebrate_file --workers=4 --input_data=testdata/ex/01.md --output_dat
 </document_content>
 </document>
 
-<document index="40">
+<document index="41">
 <source>test2.sh</source>
 <document_content>
 #!/usr/bin/env bash
 cd "$(dirname "$0")"
 python -m cerebrate_file --recurse="*.md" --workers=4 --input_data=testdata/in/ --output_data=testdata/out/ --file_prompt=testdata/poml-fix-pdf-extracted-text.xml --explain 
 python -m cerebrate_file --recurse="*.md" --workers=4 --input_data=testdata/in/ --output_data=testdata/out3/ --file_prompt=testdata/poml-fix-pdf-extracted-text.xml --explain --temp 1.1
-
 </document_content>
 </document>
 
@@ -8521,7 +8449,7 @@ def test_large_file_set_simulation((self)):
 def mock_processing_func((input_path: Path, output_path: Path)) -> ProcessingState:
 
 
-<document index="41">
+<document index="42">
 <source>tests/test_sample.txt</source>
 <document_content>
 This is a test document for cerebrate-file CLI testing.

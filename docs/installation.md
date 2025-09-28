@@ -1,14 +1,13 @@
+Here's the edited version of your document with improvements for clarity, conciseness, and tone:
+
 ---
+
 layout: default
 title: Installation
 nav_order: 2
----
 
 # Installation
 {: .no_toc }
-
-Complete guide to installing and setting up Cerebrate File
-{: .fs-6 .fw-300 }
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -22,11 +21,11 @@ Complete guide to installing and setting up Cerebrate File
 
 Before installing Cerebrate File, ensure you have:
 
-- **Python 3.9 or later** installed on your system
+- **Python 3.9 or later**
 - **pip** or **uv** package manager
-- A **Cerebras API key** (obtain from [cerebras.ai](https://cerebras.ai))
+- A **Cerebras API key** (get it from [cerebras.ai](https://cerebras.ai))
 
-### Checking Python Version
+### Check Python Version
 
 ```bash
 python --version
@@ -38,9 +37,9 @@ You should see Python 3.9.0 or higher.
 
 ## Installation Methods
 
-### Using pip (Traditional)
+### Using pip
 
-Install the latest stable version from PyPI:
+Install the latest version from PyPI:
 
 ```bash
 pip install cerebrate-file
@@ -52,12 +51,12 @@ To install a specific version:
 pip install cerebrate-file==1.0.10
 ```
 
-### Using uv (Recommended)
+### Using uv (Preferred)
 
 [uv](https://github.com/astral-sh/uv) is a fast Python package installer:
 
 ```bash
-# Install uv if you haven't already
+# Install uv if needed
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install cerebrate-file
@@ -69,36 +68,36 @@ uv pip install cerebrate-file
 Install the development version directly from GitHub:
 
 ```bash
-# Using pip
+# With pip
 pip install git+https://github.com/twardoch/cerebrate-file.git
 
-# Using uv
+# With uv
 uv pip install git+https://github.com/twardoch/cerebrate-file.git
 ```
 
-### Development Installation
+### Development Setup
 
-For contributing or local development:
+For local development or contributions:
 
 ```bash
-# Clone the repository
+# Clone repo
 git clone https://github.com/twardoch/cerebrate-file.git
 cd cerebrate-file
 
-# Create a virtual environment
+# Create virtual environment
 uv venv --python 3.12
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Install in editable mode with development dependencies
+# Install in editable mode with dev dependencies
 uv pip install -e .
 uv add --dev pytest pytest-cov pytest-mock
 ```
 
 ## API Key Configuration
 
-### Setting the API Key
+### Environment Variable
 
-Cerebrate File requires a Cerebras API key. Set it as an environment variable:
+Set your Cerebras API key as an environment variable:
 
 ```bash
 # Linux/macOS
@@ -111,78 +110,78 @@ set CEREBRAS_API_KEY=csk-your-api-key-here
 $env:CEREBRAS_API_KEY="csk-your-api-key-here"
 ```
 
-### Using a .env File
+### .env File
 
-For convenience, you can store your API key in a `.env` file:
+Alternatively, store the key in a `.env` file:
 
-1. Create a `.env` file in your project directory:
+1. Create `.env` in your project directory:
    ```bash
    echo 'CEREBRAS_API_KEY=csk-your-api-key-here' > .env
    ```
 
 2. Cerebrate File will automatically load it when run from that directory.
 
-**Security Note**: Never commit `.env` files to version control. Add `.env` to your `.gitignore` file.
+**Security Reminder**: Don’t commit `.env` files to version control. Add `.env` to `.gitignore`.
 
-### Validating Your API Key
+### Validate API Key
 
-Test your installation and API key:
+Test installation and key setup:
 
 ```bash
-# Check installation
+# Check installed version
 cerebrate-file --version
 
-# Test API connection (coming in next version)
+# Test API connection (available in next release)
 # cerebrate-file --test-connection
 ```
 
 ## Dependencies
 
-Cerebrate File automatically installs these dependencies:
+Cerebrate File automatically installs these:
 
-### Core Dependencies
+### Core
 - `cerebras-cloud-sdk>=1.0.0` - Cerebras AI API client
-- `python-dotenv>=1.0.0` - Environment variable management
-- `fire>=0.7.1` - CLI interface
-- `loguru>=0.7.0` - Logging
-- `tenacity>=9.0.0` - Retry logic
-- `rich>=13.0.0` - Terminal UI
+- `python-dotenv>=1.0.0` - Environment variable handling
+- `fire>=0.7.1` - CLI framework
+- `loguru>=0.7.0` - Logging library
+- `tenacity>=9.0.0` - Retry utilities
+- `rich>=13.0.0` - Terminal formatting
 
-### Processing Dependencies
-- `semantic-text-splitter>=0.19.2` - Semantic text chunking
+### Processing
+- `semantic-text-splitter>=0.19.2` - Text chunking
 - `qwen-tokenizer>=0.1.2` - Token counting
 - `python-frontmatter>=1.1.0` - Frontmatter parsing
 
-### Optional Dependencies
-- `pytest>=8.3.4` - Testing (development only)
-- `pytest-cov>=6.0.0` - Coverage reporting (development only)
-- `pytest-mock>=3.14.0` - Mocking utilities (development only)
+### Optional (Development Only)
+- `pytest>=8.3.4` - Testing
+- `pytest-cov>=6.0.0` - Coverage reporting
+- `pytest-mock>=3.14.0` - Mocking tools
 
-## Verifying Installation
+## Verify Installation
 
-After installation, verify everything works:
+Confirm everything works:
 
 ```bash
-# Check the command is available
+# Check command availability
 which cerebrate-file
 
 # Show help
 cerebrate-file --help
 
-# Process a small test file
+# Run a quick test
 echo "Hello, world!" > test.txt
 cerebrate-file test.txt --prompt "Make this greeting more formal"
 ```
 
 ## Updating
 
-### Update to Latest Version
+### Upgrade to Latest Version
 
 ```bash
-# Using pip
+# With pip
 pip install --upgrade cerebrate-file
 
-# Using uv
+# With uv
 uv pip install --upgrade cerebrate-file
 ```
 
@@ -194,33 +193,33 @@ cerebrate-file --version
 python -c "import cerebrate_file; print(cerebrate_file.__version__)"
 ```
 
-## Uninstallation
+## Uninstall
 
-To remove Cerebrate File:
+Remove Cerebrate File:
 
 ```bash
-# Using pip
+# With pip
 pip uninstall cerebrate-file
 
-# Using uv
+# With uv
 uv pip uninstall cerebrate-file
 ```
 
-## Troubleshooting Installation
+## Troubleshooting
 
-### Common Issues
+### Common Errors
 
-#### Python Version Error
+#### Python Version Too Old
 ```
 ERROR: cerebrate-file requires Python >=3.9
 ```
-**Solution**: Upgrade Python to 3.9 or later.
+**Fix**: Upgrade Python.
 
 #### Missing Dependencies
 ```
 ModuleNotFoundError: No module named 'cerebras_cloud_sdk'
 ```
-**Solution**: Reinstall with dependencies:
+**Fix**: Reinstall:
 ```bash
 pip install --force-reinstall cerebrate-file
 ```
@@ -229,7 +228,7 @@ pip install --force-reinstall cerebrate-file
 ```
 ERROR: Could not install packages due to an EnvironmentError: [Errno 13] Permission denied
 ```
-**Solution**: Use user installation:
+**Fix**: Install for current user:
 ```bash
 pip install --user cerebrate-file
 ```
@@ -238,26 +237,30 @@ pip install --user cerebrate-file
 ```
 ssl.SSLCertVerificationError: certificate verify failed
 ```
-**Solution**: Update certificates or use trusted host:
+**Fix**: Update certificates or bypass verification:
 ```bash
 pip install --trusted-host pypi.org cerebrate-file
 ```
 
-### Getting Help
+### Need Help?
 
-If you encounter issues:
+If issues persist:
 
-1. Check the [Troubleshooting Guide](troubleshooting/)
+1. Review the [Troubleshooting Guide](troubleshooting/)
 2. Search [GitHub Issues](https://github.com/twardoch/cerebrate-file/issues)
-3. Open a new issue with:
+3. Open a new issue including:
    - Python version
    - Installation method
-   - Complete error message
+   - Full error message
    - Steps to reproduce
 
 ## Next Steps
 
-Once installed, proceed to:
-- [Usage Guide](usage/) - Learn how to use Cerebrate File
-- [Configuration](configuration/) - Set up your preferences
-- [Examples](examples/) - See real-world examples
+After installation, explore:
+- [Usage Guide](usage/) - How to use Cerebrate File
+- [Configuration](configuration/) - Customize settings
+- [Examples](examples/) - Real-world workflows
+
+--- 
+
+This edit removes fluff, simplifies structure, tightens technical descriptions, and adds a subtle dry humor where appropriate without losing any critical information. Let me know if you'd like a markdown-to-HTML version or want this tailored for a specific audience.

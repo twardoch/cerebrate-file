@@ -8,8 +8,7 @@ has_children: true
 # Examples
 {: .no_toc }
 
-Real-world examples and use cases for Cerebrate File
-{: .fs-6 .fw-300 }
+Practical use cases for Cerebrate File
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -23,15 +22,13 @@ Real-world examples and use cases for Cerebrate File
 
 ### README Enhancement
 
-Improve project documentation:
-
 ```bash
-# Add emojis and better structure
+# Add structure and clarity
 cerebrate-file README.md \
   --prompt "Add relevant emojis to headers, improve clarity, and ensure all sections are complete" \
   --output README_enhanced.md
 
-# Generate comprehensive documentation
+# Generate from notes
 cerebrate-file project_notes.txt \
   --prompt "Convert to well-structured README with sections: Overview, Installation, Usage, API, Contributing" \
   --output README.md
@@ -39,16 +36,14 @@ cerebrate-file project_notes.txt \
 
 ### API Documentation Generation
 
-Generate documentation from code:
-
 ```bash
-# Python docstrings to markdown
+# From Python code
 cerebrate-file api.py \
   --data_format code \
   --prompt "Extract all functions and classes, generate markdown API documentation with examples" \
   --output api_docs.md
 
-# Multiple source files
+# From multiple files
 cerebrate-file ./src \
   --recurse "**/*.py" \
   --prompt "Generate comprehensive API documentation in markdown format" \
@@ -57,16 +52,14 @@ cerebrate-file ./src \
 
 ### Changelog Generation
 
-Create or update changelogs:
-
 ```bash
-# From git commits
+# From git log
 git log --oneline -n 50 > commits.txt
 cerebrate-file commits.txt \
   --prompt "Generate a CHANGELOG.md with sections: Added, Changed, Fixed, Removed" \
   --output CHANGELOG.md
 
-# Update existing changelog
+# Update existing
 cerebrate-file CHANGELOG.md \
   --file_prompt new_features.txt \
   --prompt "Add these features to the Unreleased section"
@@ -75,8 +68,6 @@ cerebrate-file CHANGELOG.md \
 ## Code Transformation
 
 ### Adding Type Hints
-
-Improve Python code with type hints:
 
 ```bash
 # Single file
@@ -94,33 +85,29 @@ cerebrate-file ./src \
 
 ### Code Refactoring
 
-Refactor and improve code quality:
-
 ```bash
-# Modernize code
+# Modernize syntax
 cerebrate-file legacy.py \
   --data_format code \
   --prompt "Refactor to use modern Python features: f-strings, pathlib, dataclasses, type hints" \
   --output modern.py
 
-# Apply design patterns
+# Apply patterns
 cerebrate-file service.py \
   --prompt "Refactor using dependency injection and repository pattern" \
-  --temp 0.4  # Lower temperature for consistency
+  --temp 0.4  # Lower temp for consistency
 ```
 
 ### Test Generation
 
-Generate test cases:
-
 ```bash
-# Generate pytest tests
+# Generate tests
 cerebrate-file calculator.py \
   --data_format code \
   --prompt "Generate comprehensive pytest test cases with edge cases and fixtures" \
   --output test_calculator.py
 
-# Add test cases to existing tests
+# Extend existing tests
 cerebrate-file test_utils.py \
   --prompt "Add edge case tests for error conditions and boundary values"
 ```
@@ -129,15 +116,13 @@ cerebrate-file test_utils.py \
 
 ### Translation
 
-Translate documents while preserving formatting:
-
 ```bash
 # Single document
 cerebrate-file article.md \
   --prompt "Translate to Spanish, preserve all markdown formatting and code blocks" \
   --output articulo.md
 
-# Batch translation
+# Batch process
 cerebrate-file ./content/en \
   --recurse "**/*.md" \
   --prompt "Translate to French, maintain technical terms in English with translations in parentheses" \
@@ -145,8 +130,6 @@ cerebrate-file ./content/en \
 ```
 
 ### Summarization
-
-Create summaries of various lengths:
 
 ```bash
 # Executive summary
@@ -164,10 +147,8 @@ cerebrate-file book.md \
 
 ### Style Transformation
 
-Change writing style:
-
 ```bash
-# Technical to layman
+# Technical to plain English
 cerebrate-file technical_manual.md \
   --prompt "Rewrite for general audience, explain technical terms, use analogies" \
   --output user_guide.md
@@ -175,23 +156,21 @@ cerebrate-file technical_manual.md \
 # Formal to conversational
 cerebrate-file formal_report.md \
   --prompt "Rewrite in conversational tone, add examples, use 'you' and 'we'" \
-  --temp 0.8  # Higher temperature for variety
+  --temp 0.8  # Higher temp for variety
 ```
 
 ## Data Processing
 
 ### CSV/JSON Processing
 
-Transform structured data:
-
 ```bash
-# CSV to markdown table
+# CSV to markdown
 cerebrate-file data.csv \
   --data_format text \
   --prompt "Convert to markdown table with proper formatting, add summary statistics" \
   --output data_table.md
 
-# JSON to documentation
+# JSON to docs
 cerebrate-file api_spec.json \
   --prompt "Generate human-readable API documentation with examples for each endpoint" \
   --output api_guide.md
@@ -199,17 +178,15 @@ cerebrate-file api_spec.json \
 
 ### Log Analysis
 
-Process and analyze logs:
-
 ```bash
-# Error analysis
+# Error patterns
 cerebrate-file app.log \
   --data_format text \
   --chunk_size 32000 \
   --prompt "Identify error patterns, group by type, suggest fixes" \
   --output error_report.md
 
-# Performance analysis
+# Performance issues
 cerebrate-file performance.log \
   --prompt "Analyze response times, identify bottlenecks, create optimization recommendations" \
   --output performance_analysis.md
@@ -217,16 +194,14 @@ cerebrate-file performance.log \
 
 ### Report Generation
 
-Generate reports from raw data:
-
 ```bash
-# Sales report
+# Sales data
 cerebrate-file sales_data.txt \
   --file_prompt report_template.md \
   --prompt "Generate quarterly sales report with trends, visualizations descriptions, and recommendations" \
   --output Q4_report.md
 
-# Technical audit
+# Technical debt
 cerebrate-file codebase_analysis.txt \
   --prompt "Generate technical debt report: categorize issues, estimate effort, prioritize fixes" \
   --output tech_debt_report.md
@@ -236,15 +211,13 @@ cerebrate-file codebase_analysis.txt \
 
 ### Paper Formatting
 
-Format academic papers:
-
 ```bash
-# Convert to academic style
+# Academic style
 cerebrate-file draft.md \
   --prompt "Format as academic paper: add abstract, improve citations, use formal language" \
   --output paper.md
 
-# Add citations
+# Add references
 cerebrate-file research.md \
   --file_prompt bibliography.bib \
   --prompt "Add proper citations in APA format, create references section"
@@ -252,16 +225,14 @@ cerebrate-file research.md \
 
 ### Literature Review
 
-Process research papers:
-
 ```bash
-# Summarize papers
+# Extract key info
 cerebrate-file ./papers \
   --recurse "**/*.txt" \
   --prompt "Extract: main hypothesis, methodology, key findings, limitations" \
   --output ./summaries/
 
-# Create literature review
+# Compile review
 cat summaries/*.md > all_summaries.md
 cerebrate-file all_summaries.md \
   --prompt "Create comprehensive literature review with themes, gaps, and future directions" \
@@ -270,15 +241,13 @@ cerebrate-file all_summaries.md \
 
 ### Note Organization
 
-Organize research notes:
-
 ```bash
 # Structure notes
 cerebrate-file scattered_notes.txt \
   --prompt "Organize into sections: Key Concepts, Methodologies, Findings, Questions" \
   --output organized_notes.md
 
-# Create study guide
+# Study guide
 cerebrate-file lecture_notes.md \
   --prompt "Create study guide: key terms with definitions, important formulas, practice questions" \
   --output study_guide.md
@@ -288,16 +257,14 @@ cerebrate-file lecture_notes.md \
 
 ### Story Development
 
-Enhance creative writing:
-
 ```bash
-# Develop characters
+# Character profiles
 cerebrate-file character_sketches.txt \
   --prompt "Expand character profiles: add backstory, motivations, character arcs" \
   --temp 0.9 \
   --output characters.md
 
-# Improve dialogue
+# Better dialogue
 cerebrate-file story.md \
   --data_format semantic \
   --prompt "Improve dialogue: make it more natural, add subtext, vary speech patterns" \
@@ -306,16 +273,14 @@ cerebrate-file story.md \
 
 ### Content Expansion
 
-Expand existing content:
-
 ```bash
-# Blog post expansion
+# Blog post
 cerebrate-file outline.md \
   --prompt "Expand each point into 2-3 paragraphs with examples and transitions" \
   --max_tokens_ratio 200 \
   --output full_post.md
 
-# Course creation
+# Course material
 cerebrate-file course_outline.md \
   --prompt "Expand into full course: add learning objectives, exercises, quizzes for each module" \
   --output course_content.md
@@ -325,10 +290,8 @@ cerebrate-file course_outline.md \
 
 ### Configuration Generation
 
-Generate configuration files:
-
 ```bash
-# Docker configuration
+# Docker setup
 cerebrate-file app_requirements.txt \
   --prompt "Generate Dockerfile and docker-compose.yml for Python web application" \
   --output docker_configs.md
@@ -341,16 +304,14 @@ cerebrate-file project_info.md \
 
 ### Documentation from Code
 
-Generate docs from infrastructure:
-
 ```bash
-# Terraform documentation
+# Terraform docs
 cerebrate-file ./terraform \
   --recurse "**/*.tf" \
   --prompt "Generate infrastructure documentation with resource descriptions and dependencies" \
   --output infrastructure.md
 
-# Kubernetes manifests
+# Kubernetes docs
 cerebrate-file ./k8s \
   --recurse "**/*.yaml" \
   --prompt "Document Kubernetes resources: purpose, configuration, relationships" \
@@ -361,8 +322,6 @@ cerebrate-file ./k8s \
 
 ### Sequential Processing
 
-Process files in order:
-
 ```bash
 #!/bin/bash
 # process_sequential.sh
@@ -372,20 +331,18 @@ for file in *.md; do
   cerebrate-file "$file" \
     --file_prompt standard_prompt.md \
     --output "processed/${file}"
-  sleep 2  # Brief pause between files
+  sleep 2
 done
 ```
 
 ### Parallel Processing
 
-Process multiple files simultaneously:
-
 ```bash
-# Using GNU parallel
+# GNU parallel
 find . -name "*.txt" | parallel -j 4 \
   cerebrate-file {} --output processed/{/}
 
-# Using cerebrate-file's built-in parallel processing
+# Built-in parallel
 cerebrate-file . \
   --recurse "**/*.md" \
   --workers 8 \
@@ -395,14 +352,11 @@ cerebrate-file . \
 
 ### Conditional Processing
 
-Process based on conditions:
-
 ```bash
 #!/bin/bash
 # smart_process.sh
 
 for file in *.md; do
-  # Check file size
   size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file")
 
   if [ $size -lt 10000 ]; then
@@ -423,13 +377,11 @@ done
 
 ### Multi-Stage Processing
 
-Chain multiple transformations:
-
 ```bash
 #!/bin/bash
 # multi_stage.sh
 
-# Stage 1: Extract and clean
+# Stage 1: Clean data
 cerebrate-file raw_data.txt \
   --prompt "Extract relevant information, fix formatting" \
   --output stage1.md
@@ -448,33 +400,30 @@ cerebrate-file stage2.md \
 
 ### Content Pipeline
 
-Full content processing pipeline:
-
 ```bash
 #!/bin/bash
 # content_pipeline.sh
 
-# Variables
 SOURCE_DIR="content/drafts"
 EDIT_DIR="content/edited"
 TRANS_DIR="content/translated"
 FINAL_DIR="content/final"
 
-# Step 1: Edit and improve
+# Edit content
 cerebrate-file "$SOURCE_DIR" \
   --recurse "**/*.md" \
   --prompt "Improve clarity, fix grammar, enhance structure" \
   --output "$EDIT_DIR" \
   --workers 4
 
-# Step 2: Translate
+# Translate
 cerebrate-file "$EDIT_DIR" \
   --recurse "**/*.md" \
   --prompt "Translate to Spanish, preserve formatting" \
   --output "$TRANS_DIR" \
   --workers 4
 
-# Step 3: Final formatting
+# Final format
 cerebrate-file "$TRANS_DIR" \
   --recurse "**/*.md" \
   --prompt "Add table of contents, improve headings, check links" \
@@ -484,14 +433,14 @@ cerebrate-file "$TRANS_DIR" \
 
 ## Tips for Examples
 
-1. **Start Simple**: Test with small files first
-2. **Use Dry Run**: Verify chunking before processing
-3. **Save Prompts**: Reuse successful instruction files
-4. **Monitor Progress**: Use verbose mode for debugging
-5. **Adjust Parameters**: Fine-tune based on results
-6. **Handle Errors**: Add error checking to scripts
-7. **Document Workflows**: Save successful commands
-8. **Version Control**: Track changes in processed files
+1. **Start small**: Test with small files first
+2. **Use dry run**: Verify chunking before processing
+3. **Save prompts**: Reuse successful instruction files
+4. **Monitor progress**: Use verbose mode for debugging
+5. **Tune parameters**: Adjust based on results
+6. **Handle errors**: Add error checking to scripts
+7. **Document workflows**: Save successful commands
+8. **Version control**: Track changes in processed files
 
 ## Next Steps
 

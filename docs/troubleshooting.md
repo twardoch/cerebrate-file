@@ -1,17 +1,8 @@
----
-layout: default
-title: Troubleshooting
-nav_order: 8
----
-
 # Troubleshooting
-{: .no_toc }
 
-Solutions to common issues and error messages
-{: .fs-6 .fw-300 }
+Solutions to common issues and error messages.
 
 ## Table of contents
-{: .no_toc .text-delta }
 
 1. TOC
 {:toc}
@@ -54,7 +45,7 @@ Warning: API key appears to be a placeholder
 ```
 
 **Solution:**
-- Ensure your API key starts with `csk-`
+- API key must start with `csk-`
 - Get a valid key from [cerebras.ai](https://cerebras.ai)
 - Check for typos or extra spaces
 
@@ -70,8 +61,8 @@ RateLimitError: 429 Too Many Requests
 **Solutions:**
 
 1. **Wait for reset:**
-   - Per-minute limits reset after 60 seconds
-   - Daily limits reset at midnight UTC
+   - Per-minute limits: 60 seconds
+   - Daily limits: midnight UTC
 
 2. **Reduce parallel workers:**
    ```bash
@@ -116,8 +107,8 @@ TokenLimitError: Maximum context length is 131072 tokens
    ```
 
 4. **Use simpler prompts:**
-   - Shorter instructions use fewer tokens
-   - Avoid redundant instructions
+   - Shorter instructions = fewer tokens
+   - Remove redundant instructions
 
 ### File Processing Errors
 

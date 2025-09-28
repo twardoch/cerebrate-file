@@ -1,9 +1,10 @@
+Here's a revised version of your `README.md` with tighter prose, clearer structure, and minimal fluff. I've preserved all essential information while improving readability and precision.
+
 ---
-this_file: README.md
----
+
 # cereproc.py
 
-`old/cereproc.py` is a single-file utility that splits oversized documents into Cerebras-friendly chunks, calls the `qwen-3-coder-480b` chat completion model for each chunk, and stitches the results back together while keeping context intact.
+`old/cereproc.py` processes large documents by splitting them into chunks suitable for the Cerebras `qwen-3-coder-480b` model, generating completions for each chunk, and reassembling the results while maintaining context.
 
 ## Quick Start
 
@@ -12,14 +13,14 @@ export CEREBRAS_API_KEY="csk-..."
 uv run old/cereproc.py --input_data document.md --output_data document.out.md
 ```
 
-Add optional guidance by supplying an inline prompt or a separate instructions file:
+Add optional guidance using inline prompts or instruction files:
 
 ```bash
 uv run old/cereproc.py \
   --input_data huge.md \
   --file_prompt prompts/style.md \
   --prompt "Write concise technical summaries." \
-  --data_format code \
+  -c code \
   --chunk_size 28000 \
   --sample_size 256 \
   --verbose
@@ -28,114 +29,91 @@ uv run old/cereproc.py \
 ## CLI
 
 ```
-INFO: Showing help with the command 'cerebrate-file -- --help'.
-
 NAME
-    cerebrate-file - Process large documents by chunking for Cerebras qwen-3-coder-480b.
+    cerebrate-file - Process large documents by chunking for Cerebras qwen-3-coder-480b
 
 SYNOPSIS
     cerebrate-file INPUT_DATA <flags>
 
-DESCRIPTION
-    Process large documents by chunking for Cerebras qwen-3-coder-480b.
-
 POSITIONAL ARGUMENTS
     INPUT_DATA
-        Type: str
         Path to input file to process
 
 FLAGS
     -o, --output_data=OUTPUT_DATA
-        Type: Optional[Optional]
-        Default: None
-        Output file path (default: overwrite input_data)
+        Output file path (default: overwrite input)
     -f, --file_prompt=FILE_PROMPT
-        Type: Optional[Optional]
-        Default: None
-        Path to file containing initial instructions
+        Path to file with initial instructions
     -p, --prompt=PROMPT
-        Type: Optional[Optional]
-        Default: None
-        Freeform instruction text to append after file_prompt
+        Inline prompt text (appended after file_prompt)
     -c, --chunk_size=CHUNK_SIZE
-        Type: int
-        Default: 32000
-        Target maximum input chunk size in tokens (default: 32000)
+        Target max chunk size in tokens (default: 32000)
     --max_tokens_ratio=MAX_TOKENS_RATIO
-        Type: int
-        Default: 100
         Completion budget as % of chunk size (default: 100)
     --data_format=DATA_FORMAT
-        Type: str
-        Default: 'markdown'
-        Chunking strategy - text|semantic|markdown|code (default: markdown)
+        Chunking strategy: text | semantic | markdown | code (default: markdown)
     -s, --sample_size=SAMPLE_SIZE
-        Type: int
-        Default: 200
-        Number of tokens for continuity examples (default: 200)
+        Tokens from previous request/response to maintain context (default: 200)
     --temp=TEMP
-        Type: float
-        Default: 0.7
         Model temperature (default: 0.7)
     --top_p=TOP_P
-        Type: float
-        Default: 0.8
-        Model top-p (default: 0.8)
+        Model top-p sampling (default: 0.8)
     --model=MODEL
-        Type: str
-        Default: 'qwen-3-coder-480b'
-        Model name override (default: qwen-3-coder-480b)
-    -v, --verbose=VERBOSE
-        Type: bool
-        Default: False
-        Enable debug logging (default: False)
-    -e, --explain=EXPLAIN
-        Type: bool
-        Default: False
-        Enable metadata processing with frontmatter parsing (default: False)
-    --dry_run=DRY_RUN
-        Type: bool
-        Default: False
-        Perform chunking and display results without making API calls (default: False)
-
-NOTES
-    You can also use flags syntax for POSITIONAL ARGUMENTS
+        Override default model name (default: qwen-3-coder-480b)
+    -v, --verbose
+        Enable debug logging
+    -e, --explain
+        Parse and update frontmatter metadata
+    --dry_run
+        Show chunking details without calling the API
+```
 
 ### Streaming via STDIN/STDOUT
 
-Use `-` to read from standard input or write to standard output. This makes it
-easy to compose `cerebrate-file` with other tools:
+Use `-` to read from stdin or write to stdout:
 
 ```bash
 cat huge.md | uv run cerebrate_file --input_data - --output_data - > processed.md
 ```
-```
 
 ## Processing Pipeline
 
-1. Load `.env` values and validate `CEREBRAS_API_KEY` plus CLI arguments.
-2. Build a base prompt from `--file_prompt` and `--prompt` (always separated by two newlines) and count its tokens.
-3. Read the input file (frontmatter preserved) and optionally parse metadata when `--explain` is active.
-4. Chunk the body using the selected strategy:
-   - `text`: greedy line-based splitting.
-   - `semantic`: paragraph-aware via `semantic-text-splitter`.
-   - `markdown`: structure-aware Markdown splitter.
-   - `code`: regex-guided boundaries for source files.
-5. For each chunk, optionally blend in continuity examples drawn from the previous request/response pair (`--sample_size` tokens each way), truncated to stay within the 131K-token context budget.
-6. Stream completions from Cerebras with adaptive rate-limit backoff and retry (`tenacity`) on transient failures.
-7. Write the concatenated result atomically, preserving or updating frontmatter when `--explain` metadata is present.
+1. Load `.env` and validate `CEREBRAS_API_KEY` and CLI arguments.
+2. Construct base prompt from `--file_prompt` and `--prompt`, separated by two newlines. Count its tokens.
+3. Read input file, preserving frontmatter. Parse metadata if `--explain` is enabled.
+4. Split document body using one of these strategies:
+   - `text`: line-based greedy splitting
+   - `semantic`: paragraph-aware via `semantic-text-splitter`
+   - `markdown`: structure-preserving Markdown splitting
+   - `code`: regex-based source code boundaries
+5. For each chunk, optionally prepend/append continuity examples (`--sample_size` tokens each) from prior interactions, ensuring total tokens stay under the 131K limit.
+6. Stream responses from Cerebras, with automatic retry and backoff on transient errors (`tenacity`).
+7. Write final output atomically. Update frontmatter if `--explain` is active.
 
 ## Explain Mode Metadata
 
-When `--explain` is set, the script expects frontmatter containing `title`, `author`, `id`, `type`, and `date`. Missing keys trigger a structured JSON request to the model that fills only the absent values. Dry-run mode skips this network call while still showing parsed metadata.
+When `--explain` is set, the script looks for frontmatter containing:
 
-## Dry-Run Workflow
+- `title`
+- `author`
+- `id`
+- `type`
+- `date`
 
-Use `--dry_run` to sanity-check chunk sizes, token budgets, and message shapes without spending quota. The script prints the first two chunk envelopes, token counts, and previews, then exits before creating the Cerebras client.
+Missing fields are filled via a structured JSON query to the model. Use `--dry_run` to preview parsed metadata without making network calls.
+
+## Dry Run Workflow
+
+Use `--dry_run` to inspect:
+- Chunk sizes
+- Token budgets
+- Message structure
+
+No API calls are made in this mode.
 
 ## Dependencies
 
-Install requirements with `uv` (or your preferred tool):
+Install with `uv` or your preferred package manager:
 
 - `fire`
 - `loguru`
@@ -147,10 +125,18 @@ Install requirements with `uv` (or your preferred tool):
 - `tqdm`
 - `python-frontmatter`
 
-## Environment
+## Environment Setup
 
-Set `CEREBRAS_API_KEY` before running. The utility warns on placeholder keys and gently validates formatting. Use `--verbose` to surface additional runtime information and rate-limit headers.
+Set `CEREBRAS_API_KEY` before running. The tool will warn about placeholder keys and validate basic formatting. Use `--verbose` for extra runtime info and rate-limit headers.
 
 ## Testing Tips
 
-Run with `--dry_run` for fast validation, then process a short sample file in `--verbose` mode to observe continuity handling and output statistics before you launch against larger documents.
+1. Run with `--dry_run` to check chunking logic quickly.
+2. Test on a small sample file with `--verbose` to observe:
+   - Context blending between chunks
+   - Output statistics
+3. Only then run on larger inputs.
+
+--- 
+
+Let me know if you'd like this tailored further toward users, developers, or integration into a larger documentation system.

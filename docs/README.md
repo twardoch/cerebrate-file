@@ -29,7 +29,7 @@ https://twardoch.github.io/cerebrate-file/
 
 3. View at: http://localhost:4000/cerebrate-file/
 
-### Alternative with Docker
+### Docker Alternative
 
 ```bash
 docker run --rm \
@@ -70,7 +70,7 @@ docs/
    ```
 3. Write content in Markdown
 
-## Theme Documentation
+## Theme Resources
 
 This site uses the Just-the-Docs theme:
 - [Theme documentation](https://just-the-docs.github.io/just-the-docs/)

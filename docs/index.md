@@ -2,117 +2,112 @@
 layout: home
 title: Home
 nav_order: 1
-description: "Cerebrate File is a powerful CLI tool for processing large documents with Cerebras AI"
+description: "Process large documents with Cerebras AI using intelligent chunking and context preservation"
 permalink: /
 ---
 
 # Cerebrate File Documentation
 {: .fs-9 }
 
-Process large documents with Cerebras AI through intelligent chunking and context preservation.
+Break large files into manageable pieces, preserve context, and process them with Cerebras AI.
 {: .fs-6 .fw-300 }
 
-[Get started now](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 } [View on GitHub](https://github.com/twardoch/cerebrate-file){: .btn .fs-5 .mb-4 .mb-md-0 }
+[Get started](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 } [View on GitHub](https://github.com/twardoch/cerebrate-file){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ---
 
 ## Overview
 
-**Cerebrate File** is a command-line utility that enables you to process large documents through the Cerebras AI API by intelligently splitting them into manageable chunks while maintaining context continuity. It's designed to handle documents that exceed the model's context window limitations seamlessly.
+**Cerebrate File** is a command-line tool for processing large documents through the Cerebras AI API. It splits files intelligently to fit within the model’s context window while keeping track of what came before.
 
 ### Key Features
 
-- 🧩 **Intelligent Chunking**: Automatically splits large documents into processable chunks
-- 🔗 **Context Preservation**: Maintains continuity between chunks with overlap samples
-- 📁 **Recursive Processing**: Process entire directory trees with glob patterns
-- ⚡ **Parallel Execution**: Multi-threaded processing for multiple files
-- 🎨 **Rich Terminal UI**: Beautiful progress display with real-time updates
-- 🔄 **Automatic Retry**: Smart handling of rate limits and transient failures
-- 📊 **Multiple Formats**: Supports text, markdown, code, and semantic chunking
-- 🎯 **Flexible Configuration**: Extensive CLI options for fine-tuning behavior
+- **Smart chunking**: Automatically break large documents into smaller parts
+- **Context overlap**: Keep snippets from previous chunks to maintain continuity
+- **Directory support**: Recursively process folders using glob patterns
+- **Parallel execution**: Handle multiple files at once with threading
+- **Terminal UI**: Clean progress output that updates in real time
+- **Retry logic**: Handle rate limits and temporary errors without manual intervention
+- **Format flexibility**: Works with text, markdown, code, and semantic content
+- **Configurable behavior**: Plenty of CLI options for tuning how things work
 
 ## Getting Started
 
 ### Installation
 
-Install Cerebrate File using pip or uv:
+Install with pip or uv:
 
 ```bash
 # Using pip
 pip install cerebrate-file
 
-# Using uv (recommended)
+# Using uv (faster)
 uv pip install cerebrate-file
 ```
 
 ### Quick Start
 
-1. **Set your Cerebras API key:**
+1. Set your Cerebras API key:
    ```bash
    export CEREBRAS_API_KEY="csk-..."
    ```
 
-2. **Process a single file:**
+2. Process a single file:
    ```bash
    cerebrate-file document.md --output processed.md
    ```
 
-3. **Process multiple files recursively:**
+3. Process all markdown files in a directory tree:
    ```bash
    cerebrate-file . --output ./output --recurse "**/*.md"
    ```
 
 ## Use Cases
 
-Cerebrate File is perfect for:
+Use Cerebrate File when you need to:
 
-- **Document Transformation**: Rewrite, summarize, or translate large documents
-- **Code Refactoring**: Process entire codebases with AI-powered transformations
-- **Content Generation**: Generate variations or expansions of existing content
-- **Batch Processing**: Apply consistent AI transformations across multiple files
-- **Data Processing**: Clean, format, or analyze large text datasets
+- Rewrite, summarize, or translate large documents
+- Refactor code across an entire project
+- Generate new versions or expansions of existing content
+- Apply consistent transformations to many files at once
+- Clean, format, or analyze large text datasets
 
-## Model Information
+## Model Details
 
-Cerebrate File uses the **Qwen-3 Coder 480B** model from Cerebras:
+The tool uses the **Qwen-3 Coder 480B** model from Cerebras:
 
-- **Context Window**: 131,072 tokens
+- **Context window**: 131,072 tokens
 - **Speed**: ~570 tokens/second
-- **Specialization**: Optimized for both code and natural language
-- **Rate Limits**:
+- **Specialty**: Good at both code and natural language
+- **Rate limits**:
   - 30 requests per minute
-  - 1000 requests per day
-  - 10M tokens per minute
+  - 1,000 requests per day
+  - 10 million tokens per minute
 
-## Documentation Structure
+## Documentation Sections
 
-This documentation is organized into the following sections:
-
-- **[Installation](installation/)** - Detailed setup instructions
-- **[Usage Guide](usage/)** - Comprehensive usage examples
-- **[CLI Reference](cli-reference/)** - Complete command-line options
-- **[Configuration](configuration/)** - Configuration options and best practices
-- **[Examples](examples/)** - Real-world usage examples
-- **[API Reference](api-reference/)** - Python API documentation
-- **[Troubleshooting](troubleshooting/)** - Common issues and solutions
-- **[Development](development/)** - Contributing and development guide
+- **[Installation](installation/)** – Setup instructions
+- **[Usage Guide](usage/)** – Practical examples
+- **[CLI Reference](cli-reference/)** – All command-line flags and options
+- **[Configuration](configuration/)** – Settings and tuning tips
+- **[Examples](examples/)** – Real-world workflows
+- **[API Reference](api-reference/)** – For Python integration
+- **[Troubleshooting](troubleshooting/)** – Fixes for common issues
+- **[Development](development/)** – How to contribute
 
 ## System Requirements
 
-- Python 3.9 or later
-- 4GB RAM minimum (8GB recommended for large files)
-- Active internet connection
+- Python 3.9+
+- Minimum 4GB RAM (8GB recommended for large files)
+- Internet connection
 - Valid Cerebras API key
 
 ## License
 
-Cerebrate File is distributed under the Apache 2.0 License. See the [LICENSE](https://github.com/twardoch/cerebrate-file/blob/main/LICENSE) file for details.
+Licensed under Apache 2.0. See [LICENSE](https://github.com/twardoch/cerebrate-file/blob/main/LICENSE) for details.
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/twardoch/cerebrate-file/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/twardoch/cerebrate-file/discussions)
-- **Author**: Adam Twardoch ([@twardoch](https://github.com/twardoch))
-
----
-
+- Report bugs or request features: [GitHub Issues](https://github.com/twardoch/cerebrate-file/issues)
+- Ask questions or share ideas: [GitHub Discussions](https://github.com/twardoch/cerebrate-file/discussions)
+- Maintainer: Adam Twardoch ([@twardoch](https://github.com/twardoch))

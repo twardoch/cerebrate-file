@@ -174,10 +174,10 @@ cerebrate-file . \
 ## 7. Monitor Progress
 
 The tool shows:
-- 📊 Progress bar with percentage
-- 📁 Current file being processed
-- ✅ Files completed
-- 🔄 Remaining API calls
+- Progress bar with percentage
+- Current file being processed
+- Files completed
+- Remaining API calls
 
 ## 8. Check Your Results
 

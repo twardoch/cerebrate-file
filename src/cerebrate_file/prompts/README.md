@@ -5,21 +5,21 @@ This directory contains pre-configured prompts for common use cases with `cerebr
 ## Available Prompts
 
 ### fix-pdf-extracted-text.xml
-**Purpose**: Clean up poorly extracted PDF text
+**Purpose**: Clean up poorly extracted PDF text  
 **Usage**: `cerebrate-file input.txt --file-prompt fix-pdf-extracted-text.xml`
 
-This prompt helps clean up text that was poorly extracted from PDFs, fixing:
-- Hard hyphenation at line endings (e.g., "docu-\nment" → "document")
-- Page numbers, headers, and footers
-- OCR errors and character substitution issues
-- Paragraph breaks and formatting artifacts
-- Converts to clean Markdown format
+Fixes common PDF extraction issues:
+- Line-ending hyphens (e.g., "docu-\nment" → "document")
+- Page numbers, headers, footers
+- OCR errors and character substitutions
+- Broken paragraph formatting
+- Outputs clean Markdown
 
-## Using Prompts from the Library
+## Using Prompts
 
-You can reference prompts from this library in three ways:
+Reference prompts in three ways:
 
-1. **By name only** (recommended for library prompts):
+1. **By name** (for library prompts):
    ```bash
    cerebrate-file input.txt --file-prompt fix-pdf-extracted-text.xml
    ```
@@ -36,19 +36,19 @@ You can reference prompts from this library in three ways:
 
 ## Adding Custom Prompts
 
-To add your own prompts to the library:
+Add your own prompts to the library:
 
 1. Create your prompt file with any extension (`.xml`, `.txt`, `.md`, etc.)
 2. Place it in this directory
-3. It will be available by name after reinstalling the package
+3. Reinstall the package to make it available by name
 
 ## Prompt Format
 
-Prompts can be in any text format. The POML (Prompt Optimization Markup Language) format used in `fix-pdf-extracted-text.xml` provides structured instructions, but plain text prompts work just as well.
+Prompts can be any text format. The POML format used in `fix-pdf-extracted-text.xml` provides structured instructions, but plain text works fine too.
 
-## Combining with Text Prompts
+## Combining Prompts
 
-You can combine library prompts with additional instructions:
+Combine library prompts with additional instructions:
 
 ```bash
 cerebrate-file input.txt \
@@ -56,4 +56,4 @@ cerebrate-file input.txt \
   --prompt "Also translate to Spanish"
 ```
 
-The file prompt is loaded first, followed by the text prompt.
+The file prompt loads first, then the text prompt.

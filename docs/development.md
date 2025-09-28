@@ -47,7 +47,7 @@ Contributing to Cerebrate File development
    uv add --dev pytest pytest-cov pytest-mock rich loguru
    ```
 
-4. **Set up pre-commit hooks (optional):**
+4. **Set up pre-commit hooks (optional but recommended):**
    ```bash
    uv add --dev pre-commit
    pre-commit install
@@ -79,13 +79,13 @@ cerebrate-file/
 │   ├── test_integration.py    # Integration tests
 │   ├── test_recursive.py      # Recursive processing tests
 │   └── test_ui.py             # UI component tests
-├── docs/                       # Documentation (Jekyll)
-├── examples/                   # Example scripts
+├── docs/                      # Documentation (Jekyll)
+├── examples/                  # Example scripts
 ├── pyproject.toml             # Package configuration
 ├── README.md                  # Project README
-├── CHANGELOG.md              # Version history
-├── LICENSE                   # Apache 2.0 license
-└── .gitignore               # Git ignore rules
+├── CHANGELOG.md               # Version history
+├── LICENSE                    # Apache 2.0 license
+└── .gitignore                 # Git ignore rules
 ```
 
 ## Development Workflow
@@ -635,4 +635,4 @@ python -m cerebrate_file.cli --verbose
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the Apache 2.0 License.
+By contributing, you agree that your contributions will be licensed under the Apache 2.0

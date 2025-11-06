@@ -248,7 +248,7 @@ All notable changes to cerebrate-file will be documented in this file.
 ## [1.0.0] - 2025-09-19
 
 ### Added
-- Complete implementation of cereproc.py CLI tool for processing large documents through Cerebras qwen-3-coder-480b
+- Complete implementation of cereproc.py CLI tool for processing large documents through Cerebras zai-glm-4.6
 - Fire-based command-line interface with comprehensive parameter validation
 - Four chunking strategies: text (line-based), semantic, markdown, and code modes
 - Intelligent continuity system maintaining context across chunk boundaries

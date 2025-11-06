@@ -4,7 +4,7 @@ Here's a revised version of your `README.md` with tighter prose, clearer structu
 
 # cereproc.py
 
-`old/cereproc.py` processes large documents by splitting them into chunks suitable for the Cerebras `qwen-3-coder-480b` model, generating completions for each chunk, and reassembling the results while maintaining context.
+`old/cereproc.py` processes large documents by splitting them into chunks suitable for the Cerebras `zai-glm-4.6` model, generating completions for each chunk, and reassembling the results while maintaining context.
 
 ## Quick Start
 
@@ -30,7 +30,7 @@ uv run old/cereproc.py \
 
 ```
 NAME
-    cerebrate-file - Process large documents by chunking for Cerebras qwen-3-coder-480b
+    cerebrate-file - Process large documents by chunking for Cerebras zai-glm-4.6
 
 SYNOPSIS
     cerebrate-file INPUT_DATA <flags>
@@ -59,7 +59,7 @@ FLAGS
     --top_p=TOP_P
         Model top-p sampling (default: 0.8)
     --model=MODEL
-        Override default model name (default: qwen-3-coder-480b)
+        Override default model name (default: zai-glm-4.6)
     -v, --verbose
         Enable debug logging
     -e, --explain

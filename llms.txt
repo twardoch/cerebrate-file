@@ -706,7 +706,7 @@ All notable changes to cerebrate-file will be documented in this file.
 ## [1.0.0] - 2025-09-19
 
 ### Added
-- Complete implementation of cereproc.py CLI tool for processing large documents through Cerebras qwen-3-coder-480b
+- Complete implementation of cereproc.py CLI tool for processing large documents through Cerebras zai-glm-4.6
 - Fire-based command-line interface with comprehensive parameter validation
 - Four chunking strategies: text (line-based), semantic, markdown, and code modes
 - Intelligent continuity system maintaining context across chunk boundaries
@@ -958,7 +958,7 @@ Here's a revised version of your `README.md` with tighter prose, clearer structu
 
 # cereproc.py
 
-`old/cereproc.py` processes large documents by splitting them into chunks suitable for the Cerebras `qwen-3-coder-480b` model, generating completions for each chunk, and reassembling the results while maintaining context.
+`old/cereproc.py` processes large documents by splitting them into chunks suitable for the Cerebras `zai-glm-4.6` model, generating completions for each chunk, and reassembling the results while maintaining context.
 
 ## Quick Start
 
@@ -984,7 +984,7 @@ uv run old/cereproc.py \
 
 ```
 NAME
-    cerebrate-file - Process large documents by chunking for Cerebras qwen-3-coder-480b
+    cerebrate-file - Process large documents by chunking for Cerebras zai-glm-4.6
 
 SYNOPSIS
     cerebrate-file INPUT_DATA <flags>
@@ -1013,7 +1013,7 @@ FLAGS
     --top_p=TOP_P
         Model top-p sampling (default: 0.8)
     --model=MODEL
-        Override default model name (default: qwen-3-coder-480b)
+        Override default model name (default: zai-glm-4.6)
     -v, --verbose
         Enable debug logging
     -e, --explain
@@ -1544,7 +1544,7 @@ def process_document(
     sample_size: int = 200,
     temp: float = 0.7,
     top_p: float = 0.8,
-    model: str = "qwen-3-coder-480b",
+    model: str = "zai-glm-4.6",
     verbose: bool = False,
     explain: bool = False,
     dry_run: bool = False,
@@ -1615,7 +1615,7 @@ from cerebrate_file.api_client import CerebrasClient
 class CerebrasClient:
     """Client for Cerebras API interactions."""
 
-    def __init__(self, api_key: str, model: str = "qwen-3-coder-480b"):
+    def __init__(self, api_key: str, model: str = "zai-glm-4.6"):
         """
         Initialize Cerebras client.
 
@@ -2145,7 +2145,7 @@ Complete reference for all command-line options
 cerebrate-file INPUT_DATA [OPTIONS]
 ```
 
-Process large documents by chunking for Cerebras qwen-3-coder-480b model.
+Process large documents by chunking for Cerebras zai-glm-4.6 model.
 
 ## Positional Arguments
 
@@ -2304,9 +2304,9 @@ More workers speed up processing but increase API request rate.
 Cerebras model to use.
 
 - **Type**: String
-- **Default**: `qwen-3-coder-480b`
-- **Currently Supported**: `qwen-3-coder-480b`
-- **Example**: `--model qwen-3-coder-480b`
+- **Default**: `zai-glm-4.6`
+- **Currently Supported**: `zai-glm-4.6`
+- **Example**: `--model zai-glm-4.6`
 
 #### --temp TEMP
 
@@ -6657,7 +6657,7 @@ def run((
     sample_size: int = 200,
     temp: float = 0.98,
     top_p: float = 0.8,
-    model: str = "qwen-3-coder-480b",
+    model: str = "zai-glm-4.6",
     verbose: bool = False,
     explain: bool = False,
     dry_run: bool = False,
@@ -6665,7 +6665,7 @@ def run((
     workers: int = 4,
     force: bool = False,
 )) -> None:
-    """Process large documents by chunking for Cerebras qwen-3-coder-480b."""
+    """Process large documents by chunking for Cerebras zai-glm-4.6."""
 
 def _redirect_print_to_stderr(()):
 

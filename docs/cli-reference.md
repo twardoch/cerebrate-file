@@ -24,7 +24,7 @@ Complete reference for all command-line options
 cerebrate-file INPUT_DATA [OPTIONS]
 ```
 
-Process large documents by chunking for Cerebras qwen-3-coder-480b model.
+Process large documents by chunking for Cerebras zai-glm-4.6 model.
 
 ## Positional Arguments
 
@@ -183,9 +183,9 @@ More workers speed up processing but increase API request rate.
 Cerebras model to use.
 
 - **Type**: String
-- **Default**: `qwen-3-coder-480b`
-- **Currently Supported**: `qwen-3-coder-480b`
-- **Example**: `--model qwen-3-coder-480b`
+- **Default**: `zai-glm-4.6`
+- **Currently Supported**: `zai-glm-4.6`
+- **Example**: `--model zai-glm-4.6`
 
 #### --temp TEMP
 

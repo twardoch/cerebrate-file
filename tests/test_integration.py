@@ -114,10 +114,8 @@ def test_chunking_pipeline():
 def test_configuration_validation():
     """Test configuration validation and setup."""
     # Test API config
-    api_config = APIConfig(
-        model="qwen-3-coder-480b", temperature=0.98, top_p=0.8, max_tokens_ratio=100
-    )
-    assert api_config.model == "qwen-3-coder-480b"
+    api_config = APIConfig(model="zai-glm-4.6", temperature=0.98, top_p=0.8, max_tokens_ratio=100)
+    assert api_config.model == "zai-glm-4.6"
     assert api_config.temperature == 0.98
 
     # Test chunking config

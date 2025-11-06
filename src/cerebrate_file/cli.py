@@ -58,7 +58,7 @@ def run(
     sample_size: int = 200,
     temp: float = 0.98,
     top_p: float = 0.8,
-    model: str = "qwen-3-coder-480b",
+    model: str = "zai-glm-4.6",
     verbose: bool = False,
     explain: bool = False,
     dry_run: bool = False,
@@ -66,7 +66,7 @@ def run(
     workers: int = 4,
     force: bool = False,
 ) -> None:
-    """Process large documents by chunking for Cerebras qwen-3-coder-480b.
+    """Process large documents by chunking for Cerebras zai-glm-4.6.
 
     Args:
         input_data: Path to input file to process, or directory when using --recurse
@@ -79,7 +79,7 @@ def run(
         sample_size: Number of tokens for continuity examples (default: 200)
         temp: Model temperature (default: 0.98)
         top_p: Model top-p (default: 0.8)
-        model: Model name override (default: qwen-3-coder-480b)
+        model: Model name override (default: zai-glm-4.6)
         verbose: Enable debug logging (default: False)
         explain: Enable metadata processing with frontmatter parsing (default: False)
         dry_run: Perform chunking and display results without making API calls (default: False)

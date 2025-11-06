@@ -38,7 +38,7 @@ def process_document(
     sample_size: int = 200,
     temp: float = 0.7,
     top_p: float = 0.8,
-    model: str = "qwen-3-coder-480b",
+    model: str = "zai-glm-4.6",
     verbose: bool = False,
     explain: bool = False,
     dry_run: bool = False,
@@ -109,7 +109,7 @@ from cerebrate_file.api_client import CerebrasClient
 class CerebrasClient:
     """Client for Cerebras API interactions."""
 
-    def __init__(self, api_key: str, model: str = "qwen-3-coder-480b"):
+    def __init__(self, api_key: str, model: str = "zai-glm-4.6"):
         """
         Initialize Cerebras client.
 

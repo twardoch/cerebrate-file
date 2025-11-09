@@ -53,6 +53,8 @@ All notable changes to cerebrate-file will be documented in this file.
   - Searchable documentation with navigation
 
 ### Fixed
+- **Pydantic Plugin ImportError**: Resolved `ImportError` related to `logfire-plugin` by ensuring execution within an isolated environment, preventing Pydantic from attempting to load external, incompatible plugins.
+
 - **Rate Limit Display**: Removed incorrect token calculation from remaining quota display
   - Fixed misleading "remaining tokens" calculation that multiplied requests by average chunk size
   - Now correctly shows only actual remaining daily requests from Cerebras API headers
@@ -139,19 +141,9 @@ All notable changes to cerebrate-file will be documented in this file.
 
 ### Technical Improvements
 - **Better Error Handling**: Comprehensive exception hierarchy
-- **Graceful Fallbacks**: Tokenizer works with/without qwen-tokenizer
-- **Strategy Pattern**: Extensible chunking with pluggable strategies
-- **Type Safety**: Full type hints throughout codebase
-- **Documentation**: Detailed docstrings and inline documentation
-  - `api_client.py`: Cerebras API communication (pending)
-  - `cerebrate_file.py`: Main processing logic (pending)
-  - `cli.py`: Fire-based CLI interface (pending)
-
-### Added
-- **Improved Error Handling**: Custom exception classes for different error types
 - **Dependency Injection**: TokenizerManager for better testability
 - **Strategy Pattern**: Clean chunking strategy implementation
-- **Type Hints**: Comprehensive type annotations throughout
+- **Type Safety**: Full type hints throughout codebase
 - **Validation Methods**: Enhanced input validation with user-friendly messages
 - **Backup Support**: File operations now support automatic backups
 - **Additional Utilities**: Path validation, file info retrieval, environment info
@@ -202,7 +194,7 @@ All notable changes to cerebrate-file will be documented in this file.
 - **Dry-Run Functionality**:
   - Displays detailed chunking analysis
   - Shows token counts and chunk statistics
-  - Previews API request structure without making calls
+  - Previews API request structure without making API calls
   - Useful for testing and debugging chunking strategies
 
 - **Input Validation**:

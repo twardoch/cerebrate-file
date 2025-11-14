@@ -2,90 +2,75 @@
 this_file: PLAN.md
 ---
 
-# Issue 203 – STDIN/STDOUT Support for cerebrate-file CLI *(completed)*
+# Cerebrate-File: Refinement and Stabilization Plan
 
-## Problem Analysis
-- The CLI currently assumes `input_data` and `output_data` are filesystem paths.
-- Passing `-` (the Unix convention for stdin/stdout) causes validation and file I/O helpers to fail because they immediately coerce to `Path` objects.
-- Users want to stream content through the tool in pipelines without touching intermediate files.
+This plan outlines two main objectives: first, to diagnose and fix the critical "zero-token output" bug, and second, to perform a comprehensive cleanup of the repository to improve maintainability, clarity, and adherence to best practices.
 
-## Constraints
-- Keep the implementation simple: reuse existing helpers rather than duplicating logic inside the CLI.
-- Do not close or reassign `sys.stdin`/`sys.stdout`; avoid interfering with other tooling.
-- Preserve existing behaviours for recursive mode; refuse combinations that do not make sense (e.g. `--recurse` with `input_data=-`).
-- Maintain atomic file writes for real paths and keep current logging UX intact.
-- Follow project rules: short functions, exhaustive tests, no new dependencies.
+---
 
-## Solution Options and Trade-offs
-1. **Patch CLI only:** detect `-` inside `cli.run` and branch to bespoke read/write logic. (+) quick, (-) duplicates file handling, harder to test in isolation.
-2. **Extend `read_file_safely`/`write_output_atomically`:** add stdin/stdout support inside shared utilities. (+) centralised behaviour, easier to test, (-) must carefully bypass Path logic. ✅
-3. **Introduce new helper layer:** create dedicated stream helpers. (+) explicit semantics, (-) extra indirection and boilerplate without clear benefit.
+## Phase 1: Bug Fix — Resolve Zero-Token Output (Issue #204)
 
-## Edge Cases to Cover
-- Empty stdin -> should produce empty output without errors.
-- Using `--dry_run` or `--explain` together with stdin/stdout.
-- Metadata/frontmatter generation when reading from stdin (should still work).
-- `--output_data -` combined with existing file overwrite checks.
-- Explicitly reject `--recurse` with `input_data=-` or `output_data=-` to avoid ambiguous semantics.
+The highest priority is to fix the bug where `cerebrate-file` fails with "zero tokens returned" for each chunk, while the simpler `testapi.py` script successfully processes a whole file. This indicates a problem in the main tool's chunking or request logic, not the Cerebras API itself.
 
-## Implementation Phases
-1. **Utility Enhancements**
-   - Update `read_file_safely` to return `sys.stdin.read()` when given `-`.
-   - Update `write_output_atomically` to stream to `sys.stdout.write()` when the target is `-`, skipping temp-file logic.
-   - Ensure logging remains informative (include markers when using streams).
+### 1.1. Problem Analysis
 
-2. **Validation Adjustments**
-   - Teach `validate_inputs` to accept `-` without touching the filesystem, while keeping other checks intact.
-   - Guard recursive validation: raise/exit if stdin/stdout markers are used with `--recurse`.
+- **Symptom:** The tool produces "Chunk X returned zero tokens" warnings for all chunks and aborts, leaving the output file empty.
+- **Clue:** `testapi.py` sends the entire file in one request and succeeds. `cerebrate-file` fails when it splits the same file into chunks.
+- **Hypothesis:** The issue likely lies in one of these areas:
+    1.  **Chunk Content:** The chunking logic might be creating malformed or empty chunks.
+    2.  **Request Parameters:** The `max_completion_tokens` for each chunk might be calculated incorrectly (e.g., as zero or a negative number).
+    3.  **API Changes:** The Cerebras API may have new requirements for chunked requests that the tool doesn't meet. The successful `testapi.py` uses `zai-glm-4.6`, while the failing `cerebrate-file` log also shows `zai-glm-4.6`. The model seems consistent.
 
-3. **CLI Integration**
-   - Skip path existence checks and overwrite warnings when dealing with stdout.
-   - Ensure base prompt and frontmatter handling work identically for streamed input/output.
-   - Prevent progress displays or summaries from corrupting stdout output when streaming (e.g. flush output after processing, document behaviour).
+### 1.2. Investigation and Debugging Strategy
 
-4. **Testing & Documentation**
-   - Add unit tests for the updated utilities using `io.StringIO` + monkeypatching.
-   - Add CLI-level test (or high-level function test) to verify stdin→stdout round-trip with simple content.
-   - Update README usage examples plus CHANGELOG/TODO/WORK as required.
+1.  **Reproduce the Failure:** Run the exact command from `issues/204.md`:
+    ```bash
+    cerebrate-file -i CHANGELOG.md -o CHANGELOG2.md -c 1024 -p "Slightly compress this CHANGELOG: only keep relevant facts, eliminate fluff"
+    ```
+2.  **Add Debug Logging:** Enhance the logging in `cerebrate_file/cerebrate_file.py` and `cerebrate_file/api_client.py` to print the exact content and parameters of each chunk's API request just before it's sent. Key information to log:
+    -   Chunk content being sent.
+    -   `max_completion_tokens` value.
+    -   The full `messages` payload.
+3.  **Analyze and Fix:**
+    -   Examine the logged output to find the discrepancy. Is the content empty? Is `max_completion_tokens` too small or invalid?
+    -   Modify the chunking or token calculation logic based on the findings.
+    -   Iteratively test the fix until the command succeeds and `CHANGELOG2.md` is generated correctly.
+4.  **Create a Regression Test:** Add a new test case to `tests/test_cerebrate_file.py` that specifically replicates this failure condition (e.g., processing a small file with small chunks) to ensure it doesn't happen again.
 
-## Testing Strategy
-- Unit tests for `read_file_safely` and `write_output_atomically` covering both path and `-` inputs.
-- Integration-style test invoking `cli.run` with mocked stdin/stdout to confirm pipeline behaviour.
-- Re-run full test suite (`python -m pytest -xvs`).
+---
 
-## Dependencies
-- No new packages; rely on `sys` and `io` from the standard library.
+## Phase 2: Repository Cleanup and Standardization
 
-## Future Considerations
-- Could add support for piping multiple files via archive formats if demand arises, but out of scope now.
-- Consider configurable separators when streaming multiple files in the future, if recursive + stdout support becomes a requirement.
+After the bug is fixed and the tool is stable, we will clean up the repository.
 
-## Completion Summary
-- Implementation merged with tests and documentation updates on 2025-09-24.
-- Streaming markers rejected in recursive mode to prevent ambiguous batch semantics.
-- README and CHANGELOG refreshed with usage guidance.
+### 2.1. File Consolidation and Deletion
 
-# Issue 204 – Zero-output Safeguards *(completed)*
+-   **Objective:** Eliminate redundant, temporary, and obsolete files.
+-   **Actions:**
+    1.  **Merge `CHANGELOG.md` and `CHANGELOG2.md`:** Consolidate all relevant, project-specific history into `CHANGELOG.md` and delete `CHANGELOG2.md`. The format should follow the "Keep a Changelog" standard.
+    2.  **Consolidate Development Guidelines:** Merge `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `LLXPRT.md`, `QWEN.md`, and `.cursorrules` into a single, comprehensive `CONTRIBUTING.md`. This file will serve as the single source of truth for development process and agent instructions.
+    3.  **Remove Obsolete Scripts:**
+        -   Delete `package.toml` (unused).
+        -   Delete `test_retry_mechanism.py` after merging its logic into a new integration test in `tests/test_api_retry.py`.
+        -   Delete `test1.sh` and `test2.sh` (obsolete).
+    4.  **Archive or Remove One-off Files:**
+        -   Delete `REVIEW.md` (insights can be moved to docs if needed).
+        -   Delete `issues/204.md` once the bug is fixed and documented in the changelog.
+        -   Delete temporary files like `md.txt`.
 
-## Problem Analysis
-- Cerebras occasionally streams zero completion tokens. The CLI currently overwrites the input file with empty content, erasing original data.
-- Users receive no actionable diagnostics besides a "0 tokens generated" info log.
+### 2.2. Documentation and Configuration Overhaul
 
-## Constraints
-- Must not add network calls beyond the existing API invocation.
-- Keep the warning surface small so non-verbose runs still surface the failure on stderr.
-- Avoid mutating stdout payload when streaming mode is enabled.
+-   **Objective:** Make the project easy to understand, use, and contribute to.
+-   **Actions:**
+    1.  **Update `README.md`:** Rewrite the README to be a concise, welcoming entry point. It should briefly describe the project, show a clear usage example, and link to the full documentation in the `docs/` directory. Remove references to `old/cereproc.py`.
+    2.  **Standardize Scripts:** Review `build.sh`. Move its core logic into `pyproject.toml` as `hatch` scripts for consistency (`hatch run build`, `hatch run publish`, etc.). Document the release process in `CONTRIBUTING.md`.
+    3.  **Clean `TODO.md` and `WORK.md`:** Clear the completed tasks from these files to prepare for the next development cycle.
+    4.  **Centralize Configuration:** Ensure `pyproject.toml` remains the single source of truth for all project configuration (dependencies, linting, testing, building).
 
-## Solution Approach
-1. Capture per-chunk diagnostics (input tokens, completion budget, rate-limit snapshot).
-2. Log a warning whenever a chunk returns zero tokens, even if later chunks succeed.
-3. After processing, abort writes (and exit non-zero) when the aggregate output tokens remain zero; instead, surface the diagnostics summary to the user.
+### 2.3. Final Polish
 
-## Testing Strategy
-- Unit-test the new `ChunkDiagnostics` helper and ensure `ProcessingState` retains diagnostic entries.
-- Integration-style CLI test: patch `process_document` to simulate zero output and assert files remain unchanged and `write_output_atomically` is never called.
-- Regression test for `process_document` that verifies the warning is emitted for zero-token responses.
-
-## Completion Summary
-- CLI now exits with an error before touching the filesystem when the API emits zero tokens and prints diagnostics for the first few failing chunks.
-- Each chunk records diagnostic metadata, enabling future observability improvements.
+-   **Objective:** Ensure the repository follows Python community best practices.
+-   **Actions:**
+    1.  **Add Standard Files:** Consider adding a `CODE_OF_CONDUCT.md`.
+    2.  **Review `.gitignore`:** Ensure all generated files and artifacts are ignored.
+    3.  **Run Full Test Suite:** After all changes, run the entire test suite (`uvx hatch test`) to confirm that nothing has been broken during the cleanup.

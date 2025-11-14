@@ -9,6 +9,7 @@ import pytest
 
 from cerebrate_file.api_client import make_cerebras_request
 from cerebrate_file.constants import APIError
+from cerebrate_file.models import RateLimitStatus
 
 
 class MockAPIStatusError(Exception):
@@ -121,3 +122,27 @@ def test_successful_request():
     # Verify successful response
     assert result[0] == "Test response"
     assert result[1] is not None  # Rate limit status
+
+
+def test_full_retry_flow(mocker):
+    """Test the full tenacity retry flow by simulating a 503 and then success."""
+
+    # We need to mock the inner function that is decorated with @retry
+    mocked_impl = mocker.patch("cerebrate_file.api_client._make_cerebras_request_impl")
+
+    # Configure the side effect of the mocked function
+    mocked_impl.side_effect = [
+        APIError("Simulating a 503 error"),  # First call raises an error
+        ("Successful response", RateLimitStatus()),  # Second call returns a successful response
+    ]
+
+    mock_client = Mock()
+    messages = [{"role": "user", "content": "test"}]
+
+    # Call the parent function which handles the retry logic
+    result, _ = make_cerebras_request(mock_client, messages, "llama3.1-8b", 1000, 0.7, 0.9)
+
+    # Assert that the inner function was called twice (initial + 1 retry)
+    assert mocked_impl.call_count == 2
+    # Assert that we got the successful response from the second call
+    assert result == "Successful response"

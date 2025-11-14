@@ -101,19 +101,19 @@ DEFAULT_SAMPLE_SIZE = 200
 VALID_DATA_FORMATS: set[str] = {"text", "semantic", "markdown", "code"}
 
 # Continuity template for chunk processing
-CONTINUITY_TEMPLATE = """Our current input text chunk is the immediate continuation of this input text chunk:
+CONTINUITY_TEMPLATE = """
+---
+### Previous Input:
+{input_example}
 
-<previous_input>
-(...){input_example}
-</previous_input>
+---
+### Previous Output:
+{output_example}
 
-and the previous input chunk has been processed like so:
+---
 
-<previous_output>
-(...){output_example}
-</previous_output>
-
-Please process our current input text analogically, and maintain logical and stylistic continuity of the text."""
+Based on the preceding context, please process the current input text, maintaining logical and stylistic continuity.
+"""
 
 
 # Exception Classes

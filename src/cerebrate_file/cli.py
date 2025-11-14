@@ -39,8 +39,7 @@ from .file_utils import (
     read_file_safely,
     write_output_atomically,
 )
-
-# from .models import ProcessingState, RateLimitStatus  # unused
+from .models import ProcessingState
 from .tokenizer import encode_text
 from .ui import FileProgressDisplay
 
@@ -554,6 +553,10 @@ def run(
         if progress_display:
             progress_display.finish_file_processing()
 
+        # Abort before overwriting anything if the API never returned tokens
+        if state.total_output_tokens == 0:
+            _report_zero_output_failure(state, input_data, output_data)
+
         # Write output atomically
         write_output_atomically(final_output, output_data, metadata if explain else None)
 
@@ -684,3 +687,54 @@ def _show_dry_run_analysis(
     print(
         f"   Estimated total input tokens: {sum(c.token_count for c in chunks) + len(chunks) * base_prompt_tokens:,}"
     )
+
+
+def _report_zero_output_failure(state: ProcessingState, input_path: str, output_path: str) -> None:
+    """Emit diagnostics and exit when every chunk generated zero tokens."""
+
+    target_desc = "stdout" if output_path == "-" else output_path
+    zero_chunks = [
+        diag for diag in getattr(state, "chunk_diagnostics", []) if diag.response_tokens == 0
+    ]
+
+    print(
+        "❌ Cerebras returned zero tokens for the document – no data was written to "
+        f"{target_desc}."
+    )
+    print(f"   Input file remains unchanged: {input_path}")
+
+    if zero_chunks:
+        preview_count = min(len(zero_chunks), 3)
+        print(f"   API diagnostics (first {preview_count} zero-output chunks):")
+        for diag in zero_chunks[:preview_count]:
+            req_remaining = (
+                diag.rate_requests_remaining if diag.rate_headers_parsed else "unknown"
+            )
+            tokens_remaining = (
+                diag.rate_tokens_remaining if diag.rate_headers_parsed else "unknown"
+            )
+            print(
+                "    - Chunk {idx}: input={input_tokens} tokens, budget={budget}, model={model}, "
+                "temp={temp}, top_p={top_p}, requests_remaining={req}, tokens_remaining={tokens}".format(
+                    idx=diag.chunk_index,
+                    input_tokens=diag.total_input_tokens,
+                    budget=diag.max_completion_tokens,
+                    model=diag.model,
+                    temp=diag.temperature,
+                    top_p=diag.top_p,
+                    req=req_remaining,
+                    tokens=tokens_remaining,
+                )
+            )
+        if len(zero_chunks) > preview_count:
+            print(f"    ... and {len(zero_chunks) - preview_count} more zero-output chunks")
+    else:
+        print("   Unable to collect chunk diagnostics for further analysis.")
+
+    logger.error(
+        "Aborting write because Cerebras returned zero tokens for %s -> %s | diagnostics=%s",
+        input_path,
+        target_desc,
+        [diag.to_log_dict() for diag in zero_chunks] if zero_chunks else [],
+    )
+    sys.exit(1)

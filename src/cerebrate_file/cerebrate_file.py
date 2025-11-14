@@ -8,6 +8,7 @@ large documents and processes them through Cerebras AI models.
 """
 
 import json
+import math
 import time
 from typing import Any
 
@@ -17,7 +18,12 @@ from .api_client import make_cerebras_request
 
 # from .chunking import create_chunks  # unused
 # from .config import validate_environment, validate_inputs  # unused
-from .constants import MAX_CONTEXT_TOKENS, MAX_OUTPUT_TOKENS
+from .constants import (
+    MAX_CONTEXT_TOKENS,
+    MAX_OUTPUT_TOKENS,
+    MIN_COMPLETION_TOKENS,
+    REASONING_COMPLETION_RATIO,
+)
 from .continuity import (
     build_continuity_block,
     extract_continuity_examples,
@@ -26,7 +32,7 @@ from .continuity import (
 from .error_recovery import format_error_message
 
 # from .file_utils import build_base_prompt, read_file_safely, write_output_atomically  # unused
-from .models import Chunk, ProcessingState, RateLimitStatus
+from .models import Chunk, ChunkDiagnostics, ProcessingState, RateLimitStatus
 from .tokenizer import encode_text
 
 __all__ = [
@@ -39,6 +45,11 @@ __all__ = [
 def calculate_completion_budget(chunk_tokens: int, max_tokens_ratio: int) -> int:
     """Calculate max_completion_tokens for this chunk.
 
+    Cerebras recently introduced verbose reasoning streams that easily
+    consume thousands of completion tokens before emitting user-facing
+    content. This helper therefore guarantees a generous minimum budget
+    and a reasoning multiplier so each chunk can finish its thought.
+
     Args:
         chunk_tokens: Number of tokens in the current chunk
         max_tokens_ratio: Completion budget as percentage of chunk size
@@ -46,15 +57,30 @@ def calculate_completion_budget(chunk_tokens: int, max_tokens_ratio: int) -> int
     Returns:
         Maximum completion tokens (capped at 40000)
     """
-    # Calculate based on ratio
+    if chunk_tokens < 0:
+        raise ValueError("chunk_tokens must be non-negative")
+
+    # Baseline requested from the user-provided ratio
     requested_tokens = (chunk_tokens * max_tokens_ratio) // 100
 
-    # Enforce hard limit
-    max_completion_tokens = min(MAX_OUTPUT_TOKENS, requested_tokens)
+    # Allocate extra headroom for reasoning-heavy models (e.g., zai-glm-4.6)
+    reasoning_target = math.ceil(chunk_tokens * REASONING_COMPLETION_RATIO / 100)
+
+    # Even tiny chunks (frontmatter) need a few thousand tokens to finish reasoning
+    minimum_budget = MIN_COMPLETION_TOKENS if chunk_tokens > 0 else MIN_COMPLETION_TOKENS
+
+    effective_tokens = max(requested_tokens, reasoning_target, minimum_budget)
+    max_completion_tokens = min(MAX_OUTPUT_TOKENS, effective_tokens)
 
     logger.debug(
-        f"Completion budget: {chunk_tokens} chunk tokens * {max_tokens_ratio}% = "
-        f"{requested_tokens} requested, capped at {max_completion_tokens}"
+        "Completion budget: chunk=%s tokens, ratio=%s%% -> requested=%s, "
+        "reasoning_target=%s, floor=%s, capped=%s",
+        chunk_tokens,
+        max_tokens_ratio,
+        requested_tokens,
+        reasoning_target,
+        minimum_budget,
+        max_completion_tokens,
     )
 
     return max_completion_tokens
@@ -258,19 +284,46 @@ def process_document(
             state.prev_input_tokens = encode_text(chunk.text)
             state.prev_output_text = response_text
             state.prev_output_tokens = encode_text(response_text)
+            response_tokens = len(state.prev_output_tokens)
 
             state.total_input_tokens += total_input_tokens
-            state.total_output_tokens += len(state.prev_output_tokens)
+            state.total_output_tokens += response_tokens
             state.chunks_processed += 1
 
             results.append(response_text)
             last_rate_status = rate_status
 
+            diagnostic = ChunkDiagnostics(
+                chunk_index=i + 1,
+                chunk_tokens=chunk.token_count,
+                total_input_tokens=total_input_tokens,
+                max_completion_tokens=max_completion_tokens,
+                response_tokens=response_tokens,
+                response_chars=len(response_text),
+                model=model,
+                temperature=temp,
+                top_p=top_p,
+                rate_requests_remaining=rate_status.requests_remaining
+                if rate_status.headers_parsed
+                else None,
+                rate_tokens_remaining=rate_status.tokens_remaining
+                if rate_status.headers_parsed
+                else None,
+                rate_headers_parsed=rate_status.headers_parsed,
+            )
+            state.add_chunk_diagnostic(diagnostic)
+
+            if response_tokens == 0:
+                warning_payload = diagnostic.to_log_dict()
+                logger.warning(
+                    f"Chunk {i + 1} returned zero tokens. Request diagnostics: {warning_payload}"
+                )
+                if verbose:
+                    print("  ⚠️  Chunk produced zero tokens. Inspect logs for diagnostics.")
+
             # Show completion progress
             if verbose:
-                print(
-                    f"  ✓ Chunk {i + 1} complete: {len(state.prev_output_tokens)} tokens generated"
-                )
+                print(f"  ✓ Chunk {i + 1} complete: {response_tokens} tokens generated")
                 if rate_status.headers_parsed:
                     print(
                         f"  → Rate status: {rate_status.requests_remaining} requests, {rate_status.tokens_remaining} tokens remaining"
@@ -285,7 +338,7 @@ def process_document(
 
             logger.info(
                 f"Chunk {i + 1} complete: {len(response_text)} chars, "
-                f"{len(state.prev_output_tokens)} tokens generated"
+                f"{response_tokens} tokens generated"
             )
 
         except Exception as e:

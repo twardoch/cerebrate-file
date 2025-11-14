@@ -64,3 +64,28 @@ this_file: PLAN.md
 - Implementation merged with tests and documentation updates on 2025-09-24.
 - Streaming markers rejected in recursive mode to prevent ambiguous batch semantics.
 - README and CHANGELOG refreshed with usage guidance.
+
+# Issue 204 – Zero-output Safeguards *(completed)*
+
+## Problem Analysis
+- Cerebras occasionally streams zero completion tokens. The CLI currently overwrites the input file with empty content, erasing original data.
+- Users receive no actionable diagnostics besides a "0 tokens generated" info log.
+
+## Constraints
+- Must not add network calls beyond the existing API invocation.
+- Keep the warning surface small so non-verbose runs still surface the failure on stderr.
+- Avoid mutating stdout payload when streaming mode is enabled.
+
+## Solution Approach
+1. Capture per-chunk diagnostics (input tokens, completion budget, rate-limit snapshot).
+2. Log a warning whenever a chunk returns zero tokens, even if later chunks succeed.
+3. After processing, abort writes (and exit non-zero) when the aggregate output tokens remain zero; instead, surface the diagnostics summary to the user.
+
+## Testing Strategy
+- Unit-test the new `ChunkDiagnostics` helper and ensure `ProcessingState` retains diagnostic entries.
+- Integration-style CLI test: patch `process_document` to simulate zero output and assert files remain unchanged and `write_output_atomically` is never called.
+- Regression test for `process_document` that verifies the warning is emitted for zero-token responses.
+
+## Completion Summary
+- CLI now exits with an error before touching the filesystem when the API emits zero tokens and prints diagnostics for the first few failing chunks.
+- Each chunk records diagnostic metadata, enabling future observability improvements.

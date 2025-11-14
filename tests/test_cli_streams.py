@@ -28,6 +28,7 @@ def _stub_state() -> SimpleNamespace:
         total_input_tokens=5,
         total_output_tokens=7,
         last_rate_status=SimpleNamespace(headers_parsed=False, requests_remaining=None),
+        chunk_diagnostics=[],
     )
 
 

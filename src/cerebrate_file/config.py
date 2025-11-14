@@ -16,6 +16,7 @@ from loguru import logger
 from .constants import (
     LOG_FORMAT,
     MAX_CONTEXT_TOKENS,
+    MAX_OUTPUT_TOKENS,
     VALID_DATA_FORMATS,
     ConfigurationError,
     ValidationError,
@@ -250,12 +251,12 @@ def validate_inputs(
             f"chunk_size ({chunk_size}). This may reduce effective chunk size."
         )
 
-    # Validate max_tokens_ratio
-    if not (1 <= max_tokens_ratio <= 100):
+    # Validate max_tokens_ratio (percent). No upper bound — capped by MAX_OUTPUT_TOKENS downstream.
+    if max_tokens_ratio < 1:
         errors.append(
-            f"max_tokens_ratio must be between 1 and 100, got: {max_tokens_ratio}. "
-            f"This value represents the completion budget as a percentage of chunk size. "
-            f"Use 100 for equal input/output size, or lower for shorter responses."
+            f"max_tokens_ratio must be >= 1, got: {max_tokens_ratio}. "
+            f"This is the completion budget as a percentage of chunk size. "
+            f"Practical cap applies downstream (max {MAX_OUTPUT_TOKENS} completion tokens)."
         )
 
     # Validate data_format

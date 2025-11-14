@@ -1,5 +1,0 @@
-Now /plan the following feature: 
-
-In CLI, if --input_data is `-`, then we treat input as stdin (as if we're reading a single "file" from stdin). If --output_data is `-`, then regardless of type of output, we concatenate all outputs and output them into stdout. 
-
-Then /work to implement the feature. 

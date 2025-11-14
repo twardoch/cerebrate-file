@@ -18,6 +18,8 @@ __all__ = [
     "DEFAULT_CHUNK_SIZE",
     "MAX_CONTEXT_TOKENS",
     "MAX_OUTPUT_TOKENS",
+    "MIN_COMPLETION_TOKENS",
+    "REASONING_COMPLETION_RATIO",
     "METADATA_SCHEMA",
     "REQUIRED_METADATA_FIELDS",
     "APIError",
@@ -31,6 +33,8 @@ __all__ = [
 MAX_CONTEXT_TOKENS = 131000
 MAX_OUTPUT_TOKENS = 40000
 DEFAULT_CHUNK_SIZE = 32000  # Conservative chunk size for better processing
+MIN_COMPLETION_TOKENS = 4096  # Minimum completion budget per chunk to satisfy reasoning models
+REASONING_COMPLETION_RATIO = 450  # Allocate at least 4.5x the chunk input tokens for completions
 
 # Required metadata fields for --explain mode
 REQUIRED_METADATA_FIELDS: set[str] = {"title", "author", "id", "type", "date"}

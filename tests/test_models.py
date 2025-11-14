@@ -10,6 +10,7 @@ import pytest
 from cerebrate_file.models import (
     APIConfig,
     Chunk,
+    ChunkDiagnostics,
     ChunkingConfig,
     ProcessingResult,
     ProcessingState,
@@ -106,3 +107,26 @@ def test_api_config():
     assert config.temperature == 0.98
     assert config.top_p == 0.9
     assert config.max_tokens_ratio == 100
+
+
+def test_chunk_diagnostics_to_log_dict():
+    """ChunkDiagnostics should expose a stable log dict."""
+
+    diagnostics = ChunkDiagnostics(
+        chunk_index=1,
+        chunk_tokens=1200,
+        total_input_tokens=1300,
+        max_completion_tokens=800,
+        response_tokens=0,
+        response_chars=0,
+        model="zai-glm-4.6",
+        temperature=0.5,
+        top_p=0.9,
+        rate_requests_remaining=99,
+        rate_tokens_remaining=5000,
+        rate_headers_parsed=True,
+    )
+    payload = diagnostics.to_log_dict()
+    assert payload["chunk_index"] == 1
+    assert payload["response_tokens"] == 0
+    assert payload["rate_requests_remaining"] == 99

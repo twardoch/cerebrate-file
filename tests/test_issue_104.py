@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from src.cerebrate_file.api_client import parse_rate_limit_headers
-from src.cerebrate_file.file_utils import write_output_atomically
-from src.cerebrate_file.models import Chunk, ProcessingState, RateLimitStatus
+from cerebrate_file.api_client import parse_rate_limit_headers
+from cerebrate_file.file_utils import write_output_atomically
+from cerebrate_file.models import Chunk, ProcessingState, RateLimitStatus
 
 
 def test_call_counting_bug():
@@ -172,7 +172,7 @@ def test_call_counting_issue_debug():
 
 def test_explain_mode_metadata_completeness_check():
     """Test metadata completeness checking logic."""
-    from src.cerebrate_file.file_utils import check_metadata_completeness
+    from cerebrate_file.file_utils import check_metadata_completeness
 
     # Complete metadata
     complete_metadata = {

@@ -154,8 +154,8 @@ allow-direct-references = true # Allow direct references in metadata (useful for
 # UV PACKAGE MANAGER CONFIGURATION
 # Configuration for uv package manager - provides faster installs and better resolution
 #------------------------------------------------------------------------------
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pre-commit>=4.1.0",
     "ruff>=0.9.7",
     "mypy>=1.15.0",

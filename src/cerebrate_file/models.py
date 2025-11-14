@@ -15,6 +15,7 @@ from typing import Any, Optional
 __all__ = [
     "APIConfig",
     "Chunk",
+    "ChunkDiagnostics",
     "ChunkingConfig",
     "ProcessingResult",
     "ProcessingState",
@@ -46,6 +47,42 @@ class Chunk:
     def is_empty(self) -> bool:
         """Check if the chunk is empty or only whitespace."""
         return not self.text.strip()
+
+
+@dataclass
+class ChunkDiagnostics:
+    """Captured diagnostics for a chunk that was sent to the API."""
+
+    chunk_index: int
+    chunk_tokens: int
+    total_input_tokens: int
+    max_completion_tokens: int
+    response_tokens: int
+    response_chars: int
+    model: str
+    temperature: float
+    top_p: float
+    rate_requests_remaining: int | None = None
+    rate_tokens_remaining: int | None = None
+    rate_headers_parsed: bool = False
+
+    def to_log_dict(self) -> dict[str, Any]:
+        """Return a structured dict for logging/diagnostics output."""
+
+        return {
+            "chunk_index": self.chunk_index,
+            "chunk_tokens": self.chunk_tokens,
+            "total_input_tokens": self.total_input_tokens,
+            "max_completion_tokens": self.max_completion_tokens,
+            "response_tokens": self.response_tokens,
+            "response_chars": self.response_chars,
+            "model": self.model,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "rate_requests_remaining": self.rate_requests_remaining,
+            "rate_tokens_remaining": self.rate_tokens_remaining,
+            "rate_headers_parsed": self.rate_headers_parsed,
+        }
 
 
 @dataclass
@@ -137,6 +174,7 @@ class ProcessingState:
     chunks_processed: int = 0
     processing_time: float = 0.0
     last_rate_status: Optional["RateLimitStatus"] = None
+    chunk_diagnostics: list[ChunkDiagnostics] = field(default_factory=list)
 
     def update_from_chunk(
         self,
@@ -170,6 +208,11 @@ class ProcessingState:
     def has_previous_context(self) -> bool:
         """Check if we have previous context for continuity."""
         return bool(self.prev_input_tokens and self.prev_output_tokens)
+
+    def add_chunk_diagnostic(self, diagnostic: ChunkDiagnostics) -> None:
+        """Store diagnostics for the recently processed chunk."""
+
+        self.chunk_diagnostics.append(diagnostic)
 
 
 @dataclass
@@ -253,5 +296,5 @@ class APIConfig:
             raise ValueError("temperature must be between 0.0 and 2.0")
         if not (0.0 <= self.top_p <= 1.0):
             raise ValueError("top_p must be between 0.0 and 1.0")
-        if not (1 <= self.max_tokens_ratio <= 100):
-            raise ValueError("max_tokens_ratio must be between 1 and 100")
+        if self.max_tokens_ratio < 1:
+            raise ValueError("max_tokens_ratio must be >= 1")

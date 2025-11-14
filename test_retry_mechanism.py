@@ -4,7 +4,7 @@
 """Test script to verify retry mechanism for API errors."""
 
 import sys
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 
 # Test the retry mechanism by simulating 503 errors

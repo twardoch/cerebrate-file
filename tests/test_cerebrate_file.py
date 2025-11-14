@@ -25,9 +25,9 @@ def test_calculate_completion_budget_applies_reasoning_multiplier() -> None:
 
     expected = math.ceil(1000 * REASONING_COMPLETION_RATIO / 100)
     budget = calculate_completion_budget(chunk_tokens=1000, max_tokens_ratio=80)
-    assert (
-        budget == expected
-    ), "Reasoning multiplier should dominate when user ratio is lower than required"
+    assert budget == expected, (
+        "Reasoning multiplier should dominate when user ratio is lower than required"
+    )
 
 
 def test_calculate_completion_budget_caps_at_max_output() -> None:

@@ -698,8 +698,7 @@ def _report_zero_output_failure(state: ProcessingState, input_path: str, output_
     ]
 
     print(
-        "❌ Cerebras returned zero tokens for the document – no data was written to "
-        f"{target_desc}."
+        f"❌ Cerebras returned zero tokens for the document – no data was written to {target_desc}."
     )
     print(f"   Input file remains unchanged: {input_path}")
 
@@ -707,24 +706,11 @@ def _report_zero_output_failure(state: ProcessingState, input_path: str, output_
         preview_count = min(len(zero_chunks), 3)
         print(f"   API diagnostics (first {preview_count} zero-output chunks):")
         for diag in zero_chunks[:preview_count]:
-            req_remaining = (
-                diag.rate_requests_remaining if diag.rate_headers_parsed else "unknown"
-            )
-            tokens_remaining = (
-                diag.rate_tokens_remaining if diag.rate_headers_parsed else "unknown"
-            )
+            req_remaining = diag.rate_requests_remaining if diag.rate_headers_parsed else "unknown"
+            tokens_remaining = diag.rate_tokens_remaining if diag.rate_headers_parsed else "unknown"
             print(
-                "    - Chunk {idx}: input={input_tokens} tokens, budget={budget}, model={model}, "
-                "temp={temp}, top_p={top_p}, requests_remaining={req}, tokens_remaining={tokens}".format(
-                    idx=diag.chunk_index,
-                    input_tokens=diag.total_input_tokens,
-                    budget=diag.max_completion_tokens,
-                    model=diag.model,
-                    temp=diag.temperature,
-                    top_p=diag.top_p,
-                    req=req_remaining,
-                    tokens=tokens_remaining,
-                )
+                f"    - Chunk {diag.chunk_index}: input={diag.total_input_tokens} tokens, budget={diag.max_completion_tokens}, model={diag.model}, "
+                f"temp={diag.temperature}, top_p={diag.top_p}, requests_remaining={req_remaining}, tokens_remaining={tokens_remaining}"
             )
         if len(zero_chunks) > preview_count:
             print(f"    ... and {len(zero_chunks) - preview_count} more zero-output chunks")

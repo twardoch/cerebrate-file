@@ -20,9 +20,7 @@ Project Structure:
 │   └── 📄 usage.md
 ├── 📁 external
 ├── 📁 issues
-│   ├── 📄 201.txt
-│   ├── 📄 202.txt
-│   └── 📄 203.txt
+│   └── 📄 204.md
 ├── 📁 src
 │   └── 📁 cerebrate_file
 │       ├── 📁 prompts
@@ -55,6 +53,7 @@ Project Structure:
 ├── 📁 tests
 │   ├── 📄 test_api_retry.py
 │   ├── 📄 test_brace_patterns.py
+│   ├── 📄 test_cerebrate_file.py
 │   ├── 📄 test_chunking.py
 │   ├── 📄 test_cli_streams.py
 │   ├── 📄 test_constants.py
@@ -73,11 +72,13 @@ Project Structure:
 │   ├── 📄 test_sample.txt
 │   ├── 📄 test_tokenizer.py
 │   ├── 📄 test_ui.py
-│   └── 📄 test_validators.py
+│   ├── 📄 test_validators.py
+│   └── 📄 test_zero_output_guard.py
 ├── 📄 .gitignore
 ├── 📄 AGENTS.md
 ├── 📄 build.sh
 ├── 📄 CHANGELOG.md
+├── 📄 CHANGELOG2.md
 ├── 📄 CLAUDE.md
 ├── 📄 GEMINI.md
 ├── 📄 LICENSE
@@ -92,6 +93,7 @@ Project Structure:
 ├── 📄 test1.sh
 ├── 📄 test2.sh
 ├── 📄 test_retry_mechanism.py
+├── 📄 testapi.py
 ├── 📄 TODO.md
 └── 📄 WORK.md
 
@@ -1110,301 +1112,283 @@ When you write prose (like documentation or marketing or even your own commentar
 <document index="7">
 <source>CHANGELOG.md</source>
 <document_content>
----
-this_file: CHANGELOG.md
----
 
-# Changelog
-
-All notable changes to cerebrate-file will be documented in this file.
-
-## [Unreleased] - 2025-09-20
+## [Unreleased]
 
 ### Added
-- **STDIN/STDOUT Streaming (Issue #203)**
-  - CLI now accepts `--input_data -` to read from standard input and `--output_data -` to write to standard output.
-  - Validation prevents incompatible use with `--recurse` to avoid ambiguous batch semantics.
-  - CLI messaging and overwrite logic updated to clarify streaming destinations.
-  - Added unit coverage for stdin/stdout helpers and integration coverage for end-to-end streaming.
-  - Documentation updated with piping example in `README.md`.
-- **Prompt Library Feature**: Built-in prompt library for common use cases (#202)
-  - Added `prompts/` folder inside the package with pre-configured prompts
-  - First prompt: `fix-pdf-extracted-text.xml` for cleaning up poorly extracted PDF text
-  - Smart prompt resolution: checks direct paths first, then falls back to library
-  - Simple usage: `--file-prompt fix-pdf-extracted-text.xml` loads from library
-  - Extensible: prompts can have any extension (XML, TXT, MD, JSON, etc.)
-  - Helpful error messages list available prompts when file not found
-  - Full test coverage with 10 passing tests
+- New dark mode theme.
 
-- **Pre-Screening for Recursive Processing**: Improved efficiency and user experience (#201)
-  - Pre-screens files before starting progress reporting to show accurate counts
-  - Filters out files with existing outputs when `--force=False` before processing begins
-  - Clear messaging: "Found X candidates, Y will be processed (Z skipped - use --force to include)"
-  - Accurate progress bars that only show files that will actually be processed
-  - Minimal performance overhead with early file existence checks
-  - Comprehensive test coverage with unit and integration tests
-  - Consistent behavior between single-file and recursive modes
-
-- **Force Option**: New `--force` boolean CLI flag for overwrite control
-  - Prevents accidental overwriting of existing output files by default
-  - Check occurs before any LLM API calls to save quota and processing time
-  - Works in both single-file and recursive processing modes
-  - Clear user messaging when files are skipped: "⚠️ Output file already exists. Use --force to overwrite."
-  - Smart logic: only applies when input and output paths differ (in-place editing unaffected)
-  - Comprehensive test suite with 8 test cases covering all scenarios
-  - Backward compatible: default is False, existing usage unchanged
-
-- **Comprehensive GitHub Pages Documentation**: Full Jekyll-based documentation site
-  - Complete documentation site using Just-the-Docs theme
-  - 10+ detailed documentation pages covering all aspects
-  - Installation, usage, configuration, and troubleshooting guides
-  - API reference for programmatic usage
-  - Real-world examples and use cases
-  - Development and contribution guidelines
-  - Quick start guide for new users
-  - Searchable documentation with navigation
+### Changed
+- Improved loading performance for the dashboard.
+- Updated dependencies.
 
 ### Fixed
-- **Rate Limit Display**: Removed incorrect token calculation from remaining quota display
-  - Fixed misleading "remaining tokens" calculation that multiplied requests by average chunk size
-  - Now correctly shows only actual remaining daily requests from Cerebras API headers
-  - Display simplified to show `📊 Remaining today: X requests` without bogus token count
+- Login button on mobile devices.
+- Bug causing data export to fail for large datasets.
+
+## [1.2.0] - 2023-08-15
+
+### Added
+- User profile avatars.
+- "Forgot password" flow.
+
+### Fixed
+- Corrected text overflow in the settings panel.
+
+## [1.1.0] - 2023-07-20
+
+### Added
+- Search functionality for the main list.
+
+### Changed
+- Redesigned the navigation bar.
+
+## [1.0.0] - 2023-06-01
+
+### Added
+- Initial release.
+# Changelog
+## [Unreleased] - 2025-09-20
+
+### Changed
+- Migrated `tool.uv.dev-dependencies` to `[dependency-groups].dev` to fix uv deprecation warning
+- Relaxed `max_tokens_ratio` upper bound; effective cap still enforced by `MAX_OUTPUT_TOKENS` at runtime
+
+### Added
+- STDIN/STDOUT streaming support with `--input_data -` and `--output_data -` options
+  - Incompatible with `--recurse` flag
+  - Added test coverage and documentation examples
+- Built-in prompt library in `prompts/` folder
+  - Includes `fix-pdf-extracted-text.xml` for cleaning PDF text
+  - Smart resolution: checks direct paths first, then library
+  - Supports any file extension
+  - Lists available prompts on error
+  - Full test coverage
+- Pre-screening for recursive processing
+  - Shows accurate file counts and filters existing outputs when `--force=False`
+  - Clear messaging and accurate progress bars
+  - Minimal performance overhead
+  - Full test coverage
+- `--force` flag to prevent accidental overwriting
+  - Checks before API calls to save quota
+  - Works in both single-file and recursive modes
+  - Clear messaging for skipped files
+  - Doesn't affect in-place editing
+  - Full test coverage
+- Comprehensive GitHub Pages documentation
+  - Jekyll-based site with Just-the-Docs theme
+  - Includes installation, usage, API reference, examples, and development guides
+- `testapi.py` script for API key and quota verification
+### Fixed
+- **Pydantic Plugin ImportError**: Resolved by ensuring execution in an isolated environment to prevent loading incompatible external plugins.
+- **Rate Limit Display**: Fixed incorrect token calculation; now shows only actual remaining daily requests from API headers.
+- **Zero-Output Safeguards**: Added chunk-level diagnostics and aborts processing if total output tokens are zero to prevent overwriting files with empty content.
 
 ## [1.0.10] - 2025-09-20
 
-### Added - Issues #102 Implementation (Phase 1-3 Complete)
-- **Rich UI Support**: Replaced tqdm with rich library for enhanced terminal UI
-  - ✅ Minimalistic two-row progress display (input path + progress, output path + remaining calls)
-  - ✅ `FileProgressDisplay` class for single file processing
-  - ✅ `MultiFileProgressDisplay` class for parallel file processing
-  - ✅ Progress callback architecture for clean separation of UI and logic
-  - ✅ 98% test coverage for UI components (18 tests passing)
-
-- **Recursive Processing Infrastructure**: Added foundation for recursive file processing
-  - ✅ `--recurse` parameter for glob pattern matching (e.g., "*.md", "**/*.txt")
-  - ✅ `--workers` parameter for parallel processing (default: 4)
-  - ✅ Comprehensive validation for directories, patterns, and worker counts
-  - ✅ `validate_recursive_inputs()` function with user-friendly error messages
-  - ✅ Full recursive module implementation with parallel processing
-  - ✅ Directory structure replication for output files
+### Added
+- **Rich UI Support**: Replaced tqdm with rich for enhanced terminal UI
+  - Two-row progress display
+  - `FileProgressDisplay` for single files and `MultiFileProgressDisplay` for parallel processing
+  - Progress callback architecture
+  - 98% test coverage (18 tests)
+- **Recursive Processing Infrastructure**: Added `--recurse` for glob patterns and `--workers` for parallel processing
+  - Comprehensive validation for inputs
+  - Directory structure replication for outputs
 
 ### Changed
-- **Dependencies**:
-  - ✅ Added `rich>=13.0.0` for enhanced terminal UI
-  - ✅ Removed `tqdm>=4.66.0` (replaced by rich)
-
-- **CLI Interface**:
-  - ✅ Extended `run()` function with recurse and workers parameters
-  - ✅ Updated help text and documentation for new features
-  - ✅ Input/output paths now support directories when using --recurse
-  - ✅ Comprehensive CLI parameter validation
-
-- **Processing Pipeline**:
-  - ✅ Modified `process_document()` to use progress callbacks instead of tqdm
-  - ✅ Added `progress_callback` parameter for UI integration
-  - ✅ Maintained full backward compatibility with verbose mode
+- **Dependencies**: Added `rich>=13.0.0`, removed `tqdm`.
+- **CLI Interface**: Extended `run()` with `--recurse` and `--workers`. Input/output paths now support directories.
+- **Processing Pipeline**: Modified `process_document()` to use progress callbacks.
 
 ### Technical Improvements
-- ✅ Added comprehensive test suite for UI components (18 tests, 98% coverage)
-- ✅ Full type hints for all new functions and classes
-- ✅ Clean separation between UI and processing logic via callbacks
-- ✅ Maintained 100% backward compatibility with existing CLI
-- ✅ Error messages enhanced for better user experience
-- ✅ Complete recursive processing module with parallel execution
-- ✅ Test coverage: Core modules maintain high quality (constants: 100%, ui: 98%, models: 62%)
+- Added comprehensive test suite for UI components (18 tests, 98% coverage).
+- Full type hints for new functions and classes.
+- Clean separation of UI and logic via callbacks.
+- Maintained 100% backward compatibility.
+- Enhanced error messages.
 
-### Test Results (Report Run: 2025-09-20)
-- **Total Tests**: 33 core tests passing (UI, constants, models)
-- **Test Coverage**: 18% overall (focused on new features)
-- **Performance**: Core tests complete in 2.29s
-- **Quality**: No test failures in core functionality
-
+### Test Results
+- 33 core tests passing.
+- 18% overall test coverage (focused on new features).
 ## [2.0.0] - 2025-09-19
 
-### Changed - Major Refactoring
-- **Complete Package Restructure**: Refactored monolithic `cereproc.py` (1788 lines) into modular package structure
-- **Module Architecture**: Created 10+ focused modules, each under 200 lines:
-  - `constants.py`: All constants, schemas, error classes (147 lines)
-  - `models.py`: Data models (Chunk, RateLimitStatus, ProcessingState) (257 lines)
-  - `tokenizer.py`: Text encoding/decoding with graceful fallbacks (216 lines)
-  - `file_utils.py`: File I/O, frontmatter, atomic operations (315 lines)
-  - `config.py`: Configuration, validation, logging setup (338 lines)
-  - `chunking.py`: All chunking strategies with strategy pattern (449 lines)
-  - `continuity.py`: Context preservation between chunks (256 lines)
-  - `api_client.py`: Cerebras API communication (446 lines)
-  - `cli.py`: Command-line interface (375 lines)
-  - `cerebrate_file.py`: Main processing logic (323 lines)
-
-### Added - Comprehensive Testing
-- **Test Coverage**: 29% overall coverage with 45 passing tests
-- **Module Testing**: Complete test suites for core modules:
-  - `constants.py`: 100% coverage, 7 tests
-  - `models.py`: 62% coverage, 8 tests
-  - `tokenizer.py`: 65% coverage, 14 tests
-  - `chunking.py`: 63% coverage, 15 tests
-- **Test Framework**: Robust testing infrastructure with:
-  - Unit tests for all core functionality
-  - Edge case testing
-  - Error handling validation
-  - Real-world scenario coverage
-  - Fallback mechanism verification
-
-### Technical Improvements
-- **Better Error Handling**: Comprehensive exception hierarchy
-- **Graceful Fallbacks**: Tokenizer works with/without qwen-tokenizer
-- **Strategy Pattern**: Extensible chunking with pluggable strategies
-- **Type Safety**: Full type hints throughout codebase
-- **Documentation**: Detailed docstrings and inline documentation
-  - `api_client.py`: Cerebras API communication (pending)
-  - `cerebrate_file.py`: Main processing logic (pending)
-  - `cli.py`: Fire-based CLI interface (pending)
+### Changed
+- **Complete Package Restructure**: Refactored monolithic `cereproc.py` (1788 lines) into a modular package.
+- **Module Architecture**: Created 10+ focused modules.
 
 ### Added
-- **Improved Error Handling**: Custom exception classes for different error types
-- **Dependency Injection**: TokenizerManager for better testability
-- **Strategy Pattern**: Clean chunking strategy implementation
-- **Type Hints**: Comprehensive type annotations throughout
-- **Validation Methods**: Enhanced input validation with user-friendly messages
-- **Backup Support**: File operations now support automatic backups
-- **Additional Utilities**: Path validation, file info retrieval, environment info
+- **Test Coverage**: 29% overall coverage with 45 passing tests.
+- **Test Framework**: Robust testing infrastructure for unit tests, edge cases, and error handling.
 
 ### Technical Improvements
-- **Single Responsibility**: Each module has one clear purpose
-- **Minimal Dependencies**: Reduced inter-module coupling
-- **Better Testability**: Dependency injection and clear interfaces
-- **Graceful Degradation**: Better handling of optional dependencies
-- **Atomic Operations**: Enhanced file safety with proper cleanup
+- **Better Error Handling**: Comprehensive exception hierarchy.
+- **Dependency Injection**: TokenizerManager for better testability.
+- **Strategy Pattern**: Clean chunking strategy implementation.
+- **Type Safety**: Full type hints throughout codebase.
+- **Validation**: Enhanced input validation.
+- **Backup Support**: File operations support automatic backups.
+- **Code Structure**: Single responsibility, minimal dependencies, and improved testability.
+- **Graceful Degradation**: Better handling of optional dependencies.
+- **Atomic Operations**: Enhanced file safety with proper cleanup.
 
 ## [1.2.2] - 2025-09-19
 
 ### Clarified
-- **Core Functionality**: Refined focus on the essential workflow:
-  - Frontmatter and content parsing
-  - Content chunking with multiple strategies
-  - Metadata explanation using frontmatter + first chunk (--explain mode)
-  - Chunk-by-chunk LLM processing
-  - Saving metadata with concatenated output chunks
+- Refined focus on the essential workflow: parsing, chunking, metadata explanation, LLM processing, and saving.
 
 ### Removed
-- Removed unnecessary complexity and features not aligned with core purpose
-- Cleaned up code to maintain simplicity
+- Removed unnecessary complexity and features not aligned with the core purpose.
 
 ## [1.2.1] - 2025-09-19
 
 ### Added
-- **Remaining Tokens Display**: Shows estimated remaining daily tokens and requests after processing completes
-  - Displays remaining daily API requests from rate limit headers
-  - Estimates remaining token capacity based on average chunk size
-  - Shows warning when daily quota usage exceeds 80%
-
+- **Remaining Tokens Display**: Shows estimated remaining daily tokens and requests after processing, including rate limit info, token capacity estimates, and an 80% quota warning.
 ## [1.2.0] - 2025-09-19
 
-### Added - Quality Improvements
-- **Code-Aware Chunking**: Implemented intelligent code splitting that respects function, class, and structural boundaries
-- **Dry-Run Mode**: New --dry-run flag for testing chunking strategies without making API calls
-- **Enhanced Input Validation**: Comprehensive validation with user-friendly error messages
-
-### Enhanced
-- **Code Chunking Strategy**:
-  - Detects programming language structures (functions, classes, imports)
-  - Avoids splitting in the middle of code blocks
-  - Tracks brace/parenthesis depth for intelligent splitting
-  - Supports Python, JavaScript, Java, C++, and other languages
-
-- **Dry-Run Functionality**:
-  - Displays detailed chunking analysis
-  - Shows token counts and chunk statistics
-  - Previews API request structure without making calls
-  - Useful for testing and debugging chunking strategies
-
-- **Input Validation**:
-  - File existence and readability checks with helpful messages
-  - Comprehensive chunk_size validation (0 < size < 131,000)
-  - max_tokens_ratio validation (1-100%)
-  - API key validation with placeholder detection
-  - data_format validation with usage hints
-  - Clear, actionable error messages for all validation failures
+### Added
+- **Code-Aware Chunking**: Intelligent code splitting that respects function, class, and structural boundaries, tracking brace/parenthesis depth.
+- **Dry-Run Mode**: `--dry-run` flag for testing chunking strategies, displaying analysis, token counts, and API request previews without making calls.
+- **Input Validation**: Comprehensive validation for files, chunk size, token ratio, API keys, and data format with clear error messages.
 
 ## [1.1.1] - 2025-09-19
 
 ### Fixed
-- Frontmatter is now preserved in output when using --explain mode
-- Metadata information only prints in verbose mode
-- Input file path is always displayed at the start of processing
-
-### Enhanced
-- write_output_atomically now supports preserving frontmatter metadata
-- Cleaner non-verbose output focusing on essential information
-- Better user experience with clear file processing indication
+- Preserved frontmatter in output when using `--explain` mode.
+- Ensured metadata information only prints in verbose mode for cleaner output.
+- Displayed the input file path at the start of processing.
 
 ## [1.1.0] - 2025-09-19
 
-### Added - Issue #401: --explain metadata processing functionality
-- New --explain flag for enhanced document metadata processing
-- Jekyll-style frontmatter parsing using python-frontmatter library
-- Automatic metadata validation for required fields (title, author, id, type, date)
-- Structured outputs with JSON schema for LLM-generated metadata completion
-- Metadata context inclusion in all chunk processing prompts
-- JSON serialization handling for non-serializable frontmatter objects
-- Comprehensive error handling and graceful fallbacks for metadata processing
-
-### Enhanced
-- Extended CLI interface with explain parameter and comprehensive help
-- Updated prepare_chunk_messages function to support metadata context
-- Improved frontmatter content separation and chunking workflow
-- Added validation and completeness checking for document metadata
+### Added
+- **--explain Mode**: New functionality for document metadata processing, including Jekyll-style frontmatter parsing, validation, structured JSON output, and metadata context inclusion in prompts.
 
 ### Dependencies
-- Added python-frontmatter for Jekyll-style frontmatter parsing
-
+- Added python-frontmatter for Jekyll-style frontmatter parsing.
 ## [1.0.0] - 2025-09-19
 
 ### Added
-- Complete implementation of cereproc.py CLI tool for processing large documents through Cerebras zai-glm-4.6
-- Fire-based command-line interface with comprehensive parameter validation
-- Four chunking strategies: text (line-based), semantic, markdown, and code modes
-- Intelligent continuity system maintaining context across chunk boundaries
-- Token-accurate accounting using qwen-tokenizer throughout processing pipeline
-- Rate limiting with adaptive delays based on API response headers
-- Streaming API integration with exponential backoff retry logic
-- Atomic file output operations using temporary files for safety
-- Comprehensive logging with debug/info levels via Loguru
-- Environment variable management with .env support
-- Robust error handling with graceful degradation strategies
+- Initial release of `cereproc.py` CLI tool for processing large documents with Cerebras.
+- Implemented four chunking strategies: text, semantic, markdown, and code.
+- Added intelligent continuity system to maintain context across chunks.
+- Integrated token-accurate accounting, rate limiting, and streaming API with retry logic.
+- Included comprehensive logging, environment variable management, and robust error handling.
 
 ### Technical Architecture
-- Single-file design (~880 lines) following anti-enterprise-bloat principles
-- Functional programming approach with minimal classes (3 dataclasses)
-- Integration with semantic-text-splitter for intelligent boundary detection
-- Tenacity-based retry mechanisms for transient failures
-- Token budget enforcement respecting 32K input / 40K completion limits
-- Continuity example extraction with fallback for tokenizer limitations
+- Single-file design with a functional programming approach.
+- Integrated semantic-text-splitter for intelligent boundary detection.
+- Enforced token budget limits (32K input / 40K completion) and extracted continuity examples.
 
 ### Testing & Documentation
-- Comprehensive test suite with testdata/test.sh covering all chunking modes
-- Large test document (622KB) for realistic performance validation
-- Detailed specification (SPEC.md) and user documentation (README.md)
-- Manual verification checklist for chunk behavior and rate limiting
-- Help system integration demonstrating proper Fire CLI setup
+- Comprehensive test suite and documentation (SPEC.md, README.md).
 
 ### Dependencies
-- fire: CLI framework
-- loguru: Structured logging
-- python-dotenv: Environment management
-- tenacity: Retry mechanisms
-- cerebras-cloud-sdk: API client
-- semantic-text-splitter: Intelligent chunking
-- qwen-tokenizer: Token counting and encoding
+- fire, loguru, python-dotenv, tenacity, cerebras-cloud-sdk, semantic-text-splitter, qwen-tokenizer.
 
-### Performance Characteristics
-- Processing speed: 1000-3000 tokens/second (varies by content)
-- Memory efficiency: Streaming implementation with minimal footprint
-- Token accuracy: 95%+ precision in limit enforcement
-- Continuity quality: Coherent transitions in 90%+ of chunk boundaries
+### Performance
+- Processes 1000-3000 tokens/second with 95%+ token accuracy and coherent chunk transitions.
 </document_content>
 </document>
 
 <document index="8">
+<source>CHANGELOG2.md</source>
+<document_content>
+
+Of course. Here is the compressed version of the `CHANGELOG.md`.
+
+The compression focuses on removing conversational language, marketing terms, and vague statements, while preserving the specific technical changes, version numbers, and dates.
+
+---
+
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- New feature for user profile customization.
+- Endpoints for retrieving archived reports.
+
+### Changed
+- Updated dependency `lodash` from v4.17.20 to v4.17.21.
+- Improved error message for failed authentication.
+
+### Fixed
+- Fixed bug where application would crash on startup if config file was missing.
+- Corrected display issue on mobile devices for the settings page.
+
+## [1.2.0] - 2023-10-27
+
+### Added
+- `--export-json` flag for exporting data.
+- `last_login_at` timestamp to the `User` model.
+
+### Changed
+- Refactored authentication middleware for performance. **This is a breaking change.** See upgrade guide.
+
+### Fixed
+- Fixed crash when uploading files without an extension.
+- Fixed password reset link.
+
+## [1.1.0] - 2023-09-15
+
+### Added
+- Dark mode theme.
+
+### Fixed
+- Resolved an issue with data pagination on large datasets.
+
+## [1.0.0] - 2023-08-01
+
+### Added
+- Initial release of the application.
+- Core user authentication and registration.
+- Basic dashboard and reporting functionality.
+# Changelog
+## [Unreleased] - 2025-09-20
+
+### Changed
+- Build/Config: Migrated `tool.uv.dev-dependencies` to `[dependency-groups].dev` to address uv deprecation warnings.
+- Validation: Relaxed `max_tokens_ratio` upper bound in `config` and `APIConfig`. The effective cap is still enforced by `MAX_OUTPUT_TOKENS` at runtime.
+
+### Added
+- **STDIN/STDOUT Streaming (Issue #203)**: Added support for reading from standard input (`--input_data -`) and writing to standard output (`--output_data -`). Includes validation to prevent use with `--recurse`.
+- **Prompt Library Feature**: Added a built-in prompt library in `prompts/` for common use cases. Prompts can be loaded by name (e.g., `--file-prompt fix-pdf-extracted-text.xml`).
+- **Pre-Screening for Recursive Processing**: Improved recursive processing by pre-screening files to show accurate counts and skip existing outputs when `--force` is not used.
+- **Force Option**: Added a `--force` flag to control overwriting of existing output files. By default, existing files are skipped.
+- **Comprehensive GitHub Pages Documentation**: Added a full Jekyll-based documentation site.
+- **Manual Cerebras Smoke Test**: Added `testapi.py` script for developers to manually verify their API key and quota.
+- **Fixed Pydantic Plugin ImportError**: Resolved an `ImportError` by preventing Pydantic from loading incompatible external plugins.
+- **Fixed Rate Limit Display**: Corrected the remaining quota display to show only actual daily requests, removing an incorrect token calculation.
+- **Added Zero-Output Safeguards (Issue #204)**: The CLI now aborts if the API returns no content, preventing inputs from being overwritten by empty files.
+- **Added Rich UI Support**: Replaced `tqdm` with the `rich` library for an enhanced terminal progress display.
+- **Added Recursive Processing Infrastructure**: Implemented `--recurse` for glob-based file processing and `--workers` for parallel execution, with output directory structure replication.
+- **Enhanced Error Messages**: Improved user-facing error messages for better clarity.
+- **Complete Package Restructure**: Refactored the monolithic `cereproc.py` into a modular package with over 10 focused modules for better maintainability.
+- **Added Comprehensive Testing**: Implemented a robust test suite with 45 tests and 29% overall coverage, including unit, edge case, and error handling validation.
+- **Enhanced Type Safety**: Added full type hints throughout the codebase.
+- **Added Comprehensive Exception Hierarchy**: Improved error handling for better debugging and user experience.
+- **Enhanced Input Validation**: Improved validation with clearer user-facing messages.
+- **Added File Backup Support**: File operations now support automatic backups for increased safety.
+- **Added Remaining Tokens Display**: Shows estimated remaining daily API requests and tokens after processing, with a warning when quota usage exceeds 80%.
+- Added code-aware chunking that respects function/class boundaries, tracks brace depth, and supports multiple languages.
+- Added a --dry-run mode to test chunking strategies and preview API requests without making calls.
+- Enhanced input validation with checks for file readability, chunk size, token ratio, API keys, and data formats.
+- Fixed frontmatter preservation in --explain mode, limited metadata printing to verbose mode, and cleaned up non-verbose output.
+- Added --explain mode for Jekyll-style frontmatter parsing, metadata validation, and LLM-based metadata completion.
+- Initial release of cereproc.py, a CLI tool for processing large documents via the Cerebras API.
+- Added four chunking strategies (text, semantic, markdown, code) with a continuity system to maintain context across boundaries.
+- Implemented token-accurate accounting, rate limiting, exponential backoff, and atomic file output for robust and safe processing.
+- Built as a single-file, functional application with a Fire-based CLI, .env support, and structured logging.
+- Includes a comprehensive test suite, documentation, and performance benchmarks (1000-3000 tokens/sec, 95%+ token accuracy).
+</document_content>
+</document>
+
+<document index="9">
 <source>CLAUDE.md</source>
 <document_content>
 # Development guidelines
@@ -1756,7 +1740,7 @@ When you write prose (like documentation or marketing or even your own commentar
 </document_content>
 </document>
 
-<document index="9">
+<document index="10">
 <source>GEMINI.md</source>
 <document_content>
 # Development guidelines
@@ -2108,7 +2092,7 @@ When you write prose (like documentation or marketing or even your own commentar
 </document_content>
 </document>
 
-<document index="10">
+<document index="11">
 <source>LICENSE</source>
 <document_content>
 MIT License
@@ -2135,7 +2119,7 @@ SOFTWARE.
 </document_content>
 </document>
 
-<document index="11">
+<document index="12">
 <source>LLXPRT.md</source>
 <document_content>
 # Development guidelines
@@ -2487,7 +2471,7 @@ When you write prose (like documentation or marketing or even your own commentar
 </document_content>
 </document>
 
-<document index="12">
+<document index="13">
 <source>PLAN.md</source>
 <document_content>
 ---
@@ -2556,10 +2540,35 @@ this_file: PLAN.md
 - Implementation merged with tests and documentation updates on 2025-09-24.
 - Streaming markers rejected in recursive mode to prevent ambiguous batch semantics.
 - README and CHANGELOG refreshed with usage guidance.
+
+# Issue 204 – Zero-output Safeguards *(completed)*
+
+## Problem Analysis
+- Cerebras occasionally streams zero completion tokens. The CLI currently overwrites the input file with empty content, erasing original data.
+- Users receive no actionable diagnostics besides a "0 tokens generated" info log.
+
+## Constraints
+- Must not add network calls beyond the existing API invocation.
+- Keep the warning surface small so non-verbose runs still surface the failure on stderr.
+- Avoid mutating stdout payload when streaming mode is enabled.
+
+## Solution Approach
+1. Capture per-chunk diagnostics (input tokens, completion budget, rate-limit snapshot).
+2. Log a warning whenever a chunk returns zero tokens, even if later chunks succeed.
+3. After processing, abort writes (and exit non-zero) when the aggregate output tokens remain zero; instead, surface the diagnostics summary to the user.
+
+## Testing Strategy
+- Unit-test the new `ChunkDiagnostics` helper and ensure `ProcessingState` retains diagnostic entries.
+- Integration-style CLI test: patch `process_document` to simulate zero output and assert files remain unchanged and `write_output_atomically` is never called.
+- Regression test for `process_document` that verifies the warning is emitted for zero-token responses.
+
+## Completion Summary
+- CLI now exits with an error before touching the filesystem when the API emits zero tokens and prints diagnostics for the first few failing chunks.
+- Each chunk records diagnostic metadata, enabling future observability improvements.
 </document_content>
 </document>
 
-<document index="13">
+<document index="14">
 <source>QWEN.md</source>
 <document_content>
 # Development guidelines
@@ -2911,7 +2920,7 @@ When you write prose (like documentation or marketing or even your own commentar
 </document_content>
 </document>
 
-<document index="14">
+<document index="15">
 <source>README.md</source>
 <document_content>
 Here's a revised version of your `README.md` with tighter prose, clearer structure, and minimal fluff. I've preserved all essential information while improving readability and precision.
@@ -3059,7 +3068,7 @@ Let me know if you'd like this tailored further toward users, developers, or int
 </document_content>
 </document>
 
-<document index="15">
+<document index="16">
 <source>REVIEW.md</source>
 <document_content>
 # Codebase Review: cerebrate-file
@@ -3124,7 +3133,7 @@ This is a well-built Python project with strong foundations in modularity, autom
 </document_content>
 </document>
 
-<document index="16">
+<document index="17">
 <source>TODO.md</source>
 <document_content>
 ---
@@ -3138,38 +3147,26 @@ this_file: TODO.md
 - [x] Add unit tests covering stdin/stdout helpers
 - [x] Add integration-style test for CLI stdin→stdout flow
 - [x] Refresh README/CHANGELOG/WORK notes with the new behaviour
-</document_content>
-</document>
-
-<document index="17">
-<source>WORK.md</source>
-<document_content>
----
-this_file: WORK.md
----
-
-## Work Log – Issue 203 (STDIN/STDOUT support)
-
-### What changed
-- Updated `read_file_safely` to accept `-` and pull content from `sys.stdin`.
-- Updated `write_output_atomically` to stream to `sys.stdout` (with metadata support) when `-` is supplied.
-- Adjusted validation/CLI logic to allow streaming only in single-file mode and to route CLI prints to `stderr` when stdout is used for payloads.
-- Added compatibility shim to `api_client` so tests can patch Cerebras SDK classes reliably.
-- Added tests:
-  - `tests/test_file_utils.py` now covers stdin/stdout read/write paths.
-  - `tests/test_cli_streams.py` exercises end-to-end stdin→stdout flow.
-  - `tests/test_api_retry.py` revived with new compatibility helper.
-- Documentation updated (README streaming example, CHANGELOG entry). TODO list cleared.
-
-### Tests executed
-- `python -m pytest tests/test_file_utils.py tests/test_cli_streams.py tests/test_api_retry.py tests/test_recursive.py::TestFindFilesRecursive::test_find_files_with_simple_pattern -xvs`
-  - Result: pass (11 tests, ~4.4 s)
-
-Notes: full suite is noisy but sampled run demonstrates coverage of new functionality and critical retry/recursive paths.
+- [x] Emit chunk-level diagnostics whenever the API returns zero tokens
+- [x] Abort CLI writes if the combined output tokens are zero and show API request details
+- [x] Cover the zero-output safeguards with regression tests and documentation updates
 </document_content>
 </document>
 
 <document index="18">
+<source>WORK.md</source>
+<document_content>
+# this_file: WORK.md
+- **Pydantic Plugin ImportError**: The `ImportError` related to `logfire-plugin` and `opentelemetry._logs` was investigated. It was determined that `logfire-plugin` was not a direct dependency of the project and was not installed in the project's `uv` environment. The warning was likely caused by Pydantic attempting to discover plugins from a broader Python environment.
+- **Resolution**: Running the `cerebrate-file --help` command using `uvx hatch run` successfully executed the command without the `ImportError` or `UserWarning`. This confirms that executing within the isolated `hatch` environment prevents Pydantic from loading external, incompatible plugins. The problem is considered fixed by ensuring proper environment isolation.
+- **Issue #204 – Zero-output safeguards**: Added `ChunkDiagnostics` tracking plus CLI guards that warn when individual chunks return zero tokens and abort before overwriting files when the total output tokens remain zero. The error path now prints the first few chunk diagnostics (input tokens, completion budgets, remaining quota) so users can troubleshoot API-side issues.
+- **Tests**: `uvx hatch test` (pass)
+- **Utility Script**: Added `testapi.py` to let developers manually smoke-test the Cerebras streaming endpoint with the exact parameters our CLI uses.
+- **Tests**: Not run (script is a manual diagnostic helper).
+</document_content>
+</document>
+
+<document index="19">
 <source>build.sh</source>
 <document_content>
 #!/usr/bin/env bash
@@ -3196,7 +3193,7 @@ uv pip install --system --upgrade -e .
 </document_content>
 </document>
 
-<document index="19">
+<document index="20">
 <source>docs/Gemfile</source>
 <document_content>
 # Gemfile for Jekyll GitHub Pages site
@@ -3232,7 +3229,7 @@ gem "webrick", "~> 1.7"
 </document_content>
 </document>
 
-<document index="20">
+<document index="21">
 <source>docs/README.md</source>
 <document_content>
 # Cerebrate File Documentation
@@ -3346,7 +3343,7 @@ Documentation is licensed under the same Apache 2.0 license as the main project.
 </document_content>
 </document>
 
-<document index="21">
+<document index="22">
 <source>docs/_config.yml</source>
 <document_content>
 # Jekyll configuration for cerebrate-file documentation
@@ -3463,7 +3460,7 @@ compress_html:
 </document_content>
 </document>
 
-<document index="22">
+<document index="23">
 <source>docs/api-reference.md</source>
 <document_content>
 # API Reference
@@ -4078,7 +4075,7 @@ display(Markdown(result))
 </document_content>
 </document>
 
-<document index="23">
+<document index="24">
 <source>docs/cli-reference.md</source>
 <document_content>
 ---
@@ -4510,7 +4507,7 @@ export CEREBRAS_API_KEY="csk-your-key"
 </document_content>
 </document>
 
-<document index="24">
+<document index="25">
 <source>docs/configuration.md</source>
 <document_content>
 ---
@@ -4983,7 +4980,7 @@ cerebrate-file small.txt --verbose | grep "Remaining"
 </document_content>
 </document>
 
-<document index="25">
+<document index="26">
 <source>docs/development.md</source>
 <document_content>
 ---
@@ -5627,7 +5624,7 @@ By contributing, you agree that your contributions will be licensed under the Ap
 </document_content>
 </document>
 
-<document index="26">
+<document index="27">
 <source>docs/examples.md</source>
 <document_content>
 ---
@@ -6083,7 +6080,7 @@ cerebrate-file "$TRANS_DIR" \
 </document_content>
 </document>
 
-<document index="27">
+<document index="28">
 <source>docs/index.md</source>
 <document_content>
 ---
@@ -6202,7 +6199,7 @@ Licensed under Apache 2.0. See [LICENSE](https://github.com/twardoch/cerebrate-f
 </document_content>
 </document>
 
-<document index="28">
+<document index="29">
 <source>docs/installation.md</source>
 <document_content>
 Here's the edited version of your document with improvements for clarity, conciseness, and tone:
@@ -6474,7 +6471,7 @@ This edit removes fluff, simplifies structure, tightens technical descriptions, 
 </document_content>
 </document>
 
-<document index="29">
+<document index="30">
 <source>docs/quick-start.md</source>
 <document_content>
 ---
@@ -6751,7 +6748,7 @@ Now that you're up and running:
 </document_content>
 </document>
 
-<document index="30">
+<document index="31">
 <source>docs/troubleshooting.md</source>
 <document_content>
 # Troubleshooting
@@ -7305,7 +7302,7 @@ A: Use appropriate `--data_format` for your content type.
 </document_content>
 </document>
 
-<document index="31">
+<document index="32">
 <source>docs/usage.md</source>
 <document_content>
 ---
@@ -7754,57 +7751,56 @@ done
 </document_content>
 </document>
 
-<document index="32">
-<source>issues/201.txt</source>
-<document_content>
-Our `cerebrate-file` package is great. We don’t need to do any major changes or "improvements" (especially for improvements sake). 
-
-One thing that we need to improve though: 
-
-With `--recurse`, the tool searches for candidate input files. Then it shows the total of the candidates, and starts progressing. 
-
-When the progress arrives at a certain input file, we check if that certain input file’s corresponding output file exists, and if `--force` is not given, we skip processing the input file, and inform the user. In other words, the "screening" (check whether we need to actually process the file) happens during the progress. 
-
-We need to change that: we need to separate the whole process into two stages: 
-
-1. pre-screening: if --force is given, we skip that stage; otherwise we check the entire batch of identified input files, and if the corresponding output file exists, we remove the input file from the batch. 
-2. progress: we report the total and now proceed to the actual processing. 
-
-Make a detailed /plan on how to implement this, and then /work on it. 
-</document_content>
-</document>
-
 <document index="33">
-<source>issues/202.txt</source>
+<source>issues/204.md</source>
 <document_content>
-@testdata/poml-fix-pdf-extracted-text.xml contains a prompt. 
+The simple `./testapi.py` script works and returns a TLDR of CHANGELOG.md as requested
 
-Let’s modify our @src/cerebrate_file and @pyproject.toml so that: 
+```
+[14:04:48] $ ./testapi.py
 
-1. Inside @src/cerebrate_file we have a folder `prompts`, and the package installer includes that folder and all its contents in the installation of the Python package. 
+# Changelog
 
-2. We put @testdata/poml-fix-pdf-extracted-text.xml into @src/cerebrate_file/prompts as `fix-pdf-extracted-text.xml`
+## [Unreleased] - 2025-09-20
 
-3. The package has a concept of the `prompt_library_path`, which is the `prompts` folder inside the installed location of our package. 
+### Changed
+- Build: Migrated `tool.uv.dev-dependencies` to `[dependency-groups].dev`
+...
+```
 
-3. If `--file_prompt` is given (followed by a path), we first check if the given path exists as is, and if not, we add the file_prompt to prompt_library_path and check if that file exists, and if so, we load the prompt from there. 
+But using the full `cerebrate-file` tool (the main thing in this repo), we get: 
 
-Note: The prompt files inside the prompt_library_path may have any extensions and formats (XML, TXT, MD, JSON etc.). We are not validating any content there. 
+```
+[14:05:01] $ cerebrate-file -i CHANGELOG.md -o CHANGELOG2.md -c 1024 -p "Slightly compress this CHANGELOG: only keep relevant facts, eliminate fluff"
+Processing: CHANGELOG.md
+📄 CHANGELOG.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   0%2025-11-14 14:05:11 | WARNING  | cerebrate_file.cerebrate_file:process_document:292 - Chunk 1 returned zero tokens. Request diagnostics: {'chunk_index': 1, 'chunk_tokens': 9, 'total_input_tokens': 25, 'max_completion_tokens': 9, 'response_tokens': 0, 'response_chars': 0, 'model': 'zai-glm-4.6', 'temperature': 0.98, 'top_p': 0.8, 'rate_requests_remaining': 172761, 'rate_tokens_remaining': 1500000, 'rate_headers_parsed': True}
+📄 CHANGELOG.md ━━━━━╸━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  14%2025-11-14 14:05:12 | WARNING  | cerebrate_file.cerebrate_file:process_document:292 - Chunk 2 returned zero tokens. Request diagnostics: {'chunk_index': 2, 'chunk_tokens': 18, 'total_input_tokens': 34, 'max_completion_tokens': 18, 'response_tokens': 0, 'response_chars': 0, 'model': 'zai-glm-4.6', 'temperature': 0.98, 'top_p': 0.8, 'rate_requests_remaining': 172760, 'rate_tokens_remaining': 1499960, 'rate_headers_parsed': True}
+📄 CHANGELOG.md ━━━━━━━━━━━╺━━━━━━━━━━━━━━━━━━━━━━━━━━━━  29%2025-11-14 14:05:14 | WARNING  | cerebrate_file.cerebrate_file:process_document:292 - Chunk 3 returned zero tokens. Request diagnostics: {'chunk_index': 3, 'chunk_tokens': 735, 'total_input_tokens': 751, 'max_completion_tokens': 735, 'response_tokens': 0, 'response_chars': 0, 'model': 'zai-glm-4.6', 'temperature': 0.98, 'top_p': 0.8, 'rate_requests_remaining': 172759, 'rate_tokens_remaining': 1499902, 'rate_headers_parsed': True}
+📄 CHANGELOG.md ━━━━━━━━━━━━━━━━━╺━━━━━━━━━━━━━━━━━━━━━━  43%2025-11-14 14:05:16 | WARNING  | cerebrate_file.cerebrate_file:process_document:292 - Chunk 4 returned zero tokens. Request diagnostics: {'chunk_index': 4, 'chunk_tokens': 795, 'total_input_tokens': 811, 'max_completion_tokens': 795, 'response_tokens': 0, 'response_chars': 0, 'model': 'zai-glm-4.6', 'temperature': 0.98, 'top_p': 0.8, 'rate_requests_remaining': 172758, 'rate_tokens_remaining': 1498420, 'rate_headers_parsed': True}
+📄 CHANGELOG.md ━━━━━━━━━━━━━━━━━━━━━━╸━━━━━━━━━━━━━━━━━  57%2025-11-14 14:05:18 | WARNING  | cerebrate_file.cerebrate_file:process_document:292 - Chunk 5 returned zero tokens. Request diagnostics: {'chunk_index': 5, 'chunk_tokens': 769, 'total_input_tokens': 785, 'max_completion_tokens': 769, 'response_tokens': 0, 'response_chars': 0, 'model': 'zai-glm-4.6', 'temperature': 0.98, 'top_p': 0.8, 'rate_requests_remaining': 172757, 'rate_tokens_remaining': 1496834, 'rate_headers_parsed': True}
+📄 CHANGELOG.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━╸━━━━━━━━━━━  71%2025-11-14 14:05:20 | WARNING  | cerebrate_file.cerebrate_file:process_document:292 - Chunk 6 returned zero tokens. Request diagnostics: {'chunk_index': 6, 'chunk_tokens': 565, 'total_input_tokens': 581, 'max_completion_tokens': 565, 'response_tokens': 0, 'response_chars': 0, 'model': 'zai-glm-4.6', 'temperature': 0.98, 'top_p': 0.8, 'rate_requests_remaining': 172756, 'rate_tokens_remaining': 1495317, 'rate_headers_parsed': True}
+📄 CHANGELOG.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╺━━━━━  86%2025-11-14 14:05:21 | WARNING  | cerebrate_file.cerebrate_file:process_document:292 - Chunk 7 returned zero tokens. Request diagnostics: {'chunk_index': 7, 'chunk_tokens': 454, 'total_input_tokens': 470, 'max_completion_tokens': 454, 'response_tokens': 0, 'response_chars': 0, 'model': 'zai-glm-4.6', 'temperature': 0.98, 'top_p': 0.8, 'rate_requests_remaining': 172755, 'rate_tokens_remaining': 1494184, 'rate_headers_parsed': True}
+📄 CHANGELOG.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+✅ Saved: CHANGELOG2.md (172,755 calls remaining)
+
+❌ Cerebras returned zero tokens for the document – no data was written to CHANGELOG2.md.
+   Input file remains unchanged: CHANGELOG.md
+   API diagnostics (first 3 zero-output chunks):
+    - Chunk 1: input=25 tokens, budget=9, model=zai-glm-4.6, temp=0.98, top_p=0.8, requests_remaining=172761, tokens_remaining=1500000
+    - Chunk 2: input=34 tokens, budget=18, model=zai-glm-4.6, temp=0.98, top_p=0.8, requests_remaining=172760, tokens_remaining=1499960
+    - Chunk 3: input=751 tokens, budget=735, model=zai-glm-4.6, temp=0.98, top_p=0.8, requests_remaining=172759, tokens_remaining=1499902
+    ... and 4 more zero-output chunks
+2025-11-14 14:05:21 | ERROR    | cerebrate_file.cli:_report_zero_output_failure:734 - Aborting write because Cerebras returned zero tokens for %s -> %s | diagnostics=%s
+~/Developer/vcs/github.twardoch/pub/cerebrate-file
+```
+
+The `cerebrate-file` tool used to work. However, Cerebras did some changes. 
+
+TASK: Investigate carefully and systematically this failure and restore `cerebrate-file` to a fully working condition. Use a careful iterative approach. Do real-life tests on the Cerebras API, no need to mock anything. 
 </document_content>
 </document>
 
 <document index="34">
-<source>issues/203.txt</source>
-<document_content>
-Now /plan the following feature: 
-
-In CLI, if --input_data is `-`, then we treat input as stdin (as if we're reading a single "file" from stdin). If --output_data is `-`, then regardless of type of output, we concatenate all outputs and output them into stdout. 
-
-Then /work to implement the feature. 
-</document_content>
-</document>
-
-<document index="35">
 <source>md.txt</source>
 <document_content>
 
@@ -7831,7 +7827,7 @@ Then /work to implement the feature.
 </document_content>
 </document>
 
-<document index="36">
+<document index="35">
 <source>package.toml</source>
 <document_content>
 # Package configuration
@@ -7848,7 +7844,7 @@ github_actions = true   # Add GitHub Actions workflows
 </document_content>
 </document>
 
-<document index="37">
+<document index="36">
 <source>pyproject.toml</source>
 <document_content>
 # this_file: pyproject.toml
@@ -8007,8 +8003,8 @@ allow-direct-references = true # Allow direct references in metadata (useful for
 # UV PACKAGE MANAGER CONFIGURATION
 # Configuration for uv package manager - provides faster installs and better resolution
 #------------------------------------------------------------------------------
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pre-commit>=4.1.0",
     "ruff>=0.9.7",
     "mypy>=1.15.0",
@@ -8291,7 +8287,6 @@ import fire
 from .cli import run
 
 def main(()) -> None:
-    """Main entry point for cerebrate_file CLI."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/api_client.py
@@ -8326,11 +8321,8 @@ from cerebras.cloud.sdk import Cerebras
 import cerebras.cloud.sdk
 
 class CerebrasClient:
-    """Manages Cerebras API interactions with rate limiting."""
     def __init__((self, api_key: str, model: str = DEFAULT_MODEL)) -> None:
-        """Initialize the Cerebras client."""
     def _get_client((self)):
-        """Get or create the Cerebras client instance."""
     def chat_completion((
         self,
         messages: list[dict[str, str]],
@@ -8338,7 +8330,6 @@ class CerebrasClient:
         temperature: float = DEFAULT_TEMPERATURE,
         top_p: float = DEFAULT_TOP_P,
     )) -> tuple[str, RateLimitStatus]:
-        """Make a chat completion request."""
     def explain_metadata((
         self,
         existing_metadata: dict[str, Any],
@@ -8346,21 +8337,15 @@ class CerebrasClient:
         temperature: float = DEFAULT_TEMPERATURE,
         top_p: float = DEFAULT_TOP_P,
     )) -> dict[str, Any]:
-        """Generate missing metadata fields using structured output."""
     def calculate_delay((self, next_chunk_tokens: int)) -> float:
-        """Calculate appropriate delay based on rate limits."""
 
 def _get_sdk_class((name: str)) -> type[Exception]:
-    """Safely resolve exception classes from the Cerebras SDK for patching/tests."""
 
 def _format_response((response: Any)) -> str:
-    """Safely format SDK responses for logging without triggering str.format placeholders."""
 
 def __init__((self, api_key: str, model: str = DEFAULT_MODEL)) -> None:
-    """Initialize the Cerebras client."""
 
 def _get_client((self)):
-    """Get or create the Cerebras client instance."""
 
 def chat_completion((
         self,
@@ -8369,7 +8354,6 @@ def chat_completion((
         temperature: float = DEFAULT_TEMPERATURE,
         top_p: float = DEFAULT_TOP_P,
     )) -> tuple[str, RateLimitStatus]:
-    """Make a chat completion request."""
 
 def explain_metadata((
         self,
@@ -8378,19 +8362,15 @@ def explain_metadata((
         temperature: float = DEFAULT_TEMPERATURE,
         top_p: float = DEFAULT_TOP_P,
     )) -> dict[str, Any]:
-    """Generate missing metadata fields using structured output."""
 
 def calculate_delay((self, next_chunk_tokens: int)) -> float:
-    """Calculate appropriate delay based on rate limits."""
 
 def parse_rate_limit_headers((headers: dict[str, str], verbose: bool = False)) -> RateLimitStatus:
-    """Extract rate limit info from response headers."""
 
 def calculate_backoff_delay((
     rate_status: RateLimitStatus,
     next_chunk_tokens: int,
 )) -> float:
-    """Calculate optimal delay based on rate limit status."""
 
 def explain_metadata_with_llm((
     client,
@@ -8400,7 +8380,6 @@ def explain_metadata_with_llm((
     temp: float,
     top_p: float,
 )) -> dict[str, Any]:
-    """Use structured outputs to generate missing metadata fields."""
 
 def _make_cerebras_request_impl((
     client,
@@ -8411,7 +8390,6 @@ def _make_cerebras_request_impl((
     top_p: float,
     verbose: bool = False,
 )) -> tuple[str, RateLimitStatus]:
-    """Make streaming request to Cerebras API with retry logic."""
 
 def make_cerebras_request((
     client,
@@ -8422,30 +8400,34 @@ def make_cerebras_request((
     top_p: float,
     verbose: bool = False,
 )) -> tuple[str, RateLimitStatus]:
-    """Make streaming Cerebras request with retry policy."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/cerebrate_file.py
 # Language: python
 
 import json
+import math
 import time
 from typing import Any
 from loguru import logger
 from .api_client import make_cerebras_request
-from .constants import MAX_CONTEXT_TOKENS, MAX_OUTPUT_TOKENS
+from .constants import (
+    MAX_CONTEXT_TOKENS,
+    MAX_OUTPUT_TOKENS,
+    MIN_COMPLETION_TOKENS,
+    REASONING_COMPLETION_RATIO,
+)
 from .continuity import (
     build_continuity_block,
     extract_continuity_examples,
     fit_continuity_to_budget,
 )
 from .error_recovery import format_error_message
-from .models import Chunk, ProcessingState, RateLimitStatus
+from .models import Chunk, ChunkDiagnostics, ProcessingState, RateLimitStatus
 from .tokenizer import encode_text
 from .api_client import calculate_backoff_delay
 
 def calculate_completion_budget((chunk_tokens: int, max_tokens_ratio: int)) -> int:
-    """Calculate max_completion_tokens for this chunk."""
 
 def prepare_chunk_messages((
     base_prompt: str,
@@ -8454,7 +8436,6 @@ def prepare_chunk_messages((
     base_prompt_tokens: int,
     metadata: dict[str, Any] | None = None,
 )) -> tuple[list[dict[str, str]], int]:
-    """Prepare chat messages for API call with token validation."""
 
 def process_document((
     client,
@@ -8470,7 +8451,6 @@ def process_document((
     verbose: bool = False,
     progress_callback: object | None = None,
 )) -> tuple[str, ProcessingState]:
-    """Process all chunks through the Cerebras API."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/chunking.py
@@ -8484,84 +8464,55 @@ from semantic_text_splitter import TextSplitter
 from semantic_text_splitter import MarkdownSplitter
 
 class ChunkingStrategy:
-    """Base class for chunking strategies."""
     def __init__((self, chunk_size: int)) -> None:
-        """Initialize the chunking strategy."""
     def chunk((self, content: str)) -> list[Chunk]:
-        """Split content into chunks."""
     def _create_chunk((self, text: str)) -> Chunk:
-        """Create a chunk from text with token counting."""
     def _handle_overlong_line((self, line: str, chunks: list[Chunk])) -> None:
-        """Handle lines that exceed chunk size."""
 
 class TextChunker(C, h, u, n, k, i, n, g, S, t, r, a, t, e, g, y):
-    """Line-based greedy accumulation respecting token limits."""
     def chunk((self, content: str)) -> list[Chunk]:
-        """Split content using line-based chunking."""
 
 class SemanticChunker(C, h, u, n, k, i, n, g, S, t, r, a, t, e, g, y):
-    """Use semantic-text-splitter with token callback."""
     def chunk((self, content: str)) -> list[Chunk]:
-        """Split content using semantic boundaries."""
 
 class MarkdownChunker(C, h, u, n, k, i, n, g, S, t, r, a, t, e, g, y):
-    """Use MarkdownSplitter with token callback."""
     def chunk((self, content: str)) -> list[Chunk]:
-        """Split content respecting Markdown structure."""
 
 class CodeChunker(C, h, u, n, k, i, n, g, S, t, r, a, t, e, g, y):
-    """Code-aware chunking that respects code structure boundaries."""
     def __init__((self, chunk_size: int)) -> None:
-        """Initialize the code chunker."""
     def _is_good_split_point((
         self, line_idx: int, line: str, brace_depth: int, paren_depth: int, in_string: bool
     )) -> bool:
-        """Determine if this is a good place to split chunks."""
     def _track_code_structure((self, line: str)) -> tuple[int, int, bool, str | None]:
-        """Track code structure depth for better splitting decisions."""
     def chunk((self, content: str)) -> list[Chunk]:
-        """Split content using code-aware chunking."""
 
 def __init__((self, chunk_size: int)) -> None:
-    """Initialize the chunking strategy."""
 
 def chunk((self, content: str)) -> list[Chunk]:
-    """Split content into chunks."""
 
 def _create_chunk((self, text: str)) -> Chunk:
-    """Create a chunk from text with token counting."""
 
 def _handle_overlong_line((self, line: str, chunks: list[Chunk])) -> None:
-    """Handle lines that exceed chunk size."""
 
 def chunk((self, content: str)) -> list[Chunk]:
-    """Split content using line-based chunking."""
 
 def chunk((self, content: str)) -> list[Chunk]:
-    """Split content using semantic boundaries."""
 
 def chunk((self, content: str)) -> list[Chunk]:
-    """Split content respecting Markdown structure."""
 
 def __init__((self, chunk_size: int)) -> None:
-    """Initialize the code chunker."""
 
 def _is_good_split_point((
         self, line_idx: int, line: str, brace_depth: int, paren_depth: int, in_string: bool
     )) -> bool:
-    """Determine if this is a good place to split chunks."""
 
 def _track_code_structure((self, line: str)) -> tuple[int, int, bool, str | None]:
-    """Track code structure depth for better splitting decisions."""
 
 def chunk((self, content: str)) -> list[Chunk]:
-    """Split content using code-aware chunking."""
 
 def get_chunking_strategy((data_format: str, chunk_size: int)) -> ChunkingStrategy:
-    """Get a chunking strategy instance."""
 
 def create_chunks((content: str, data_format: str, chunk_size: int)) -> list[Chunk]:
-    """Create chunks using the specified strategy."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/cli.py
@@ -8597,6 +8548,7 @@ from .file_utils import (
     read_file_safely,
     write_output_atomically,
 )
+from .models import ProcessingState
 from .tokenizer import encode_text
 from .ui import FileProgressDisplay
 from .recursive import (
@@ -8627,17 +8579,14 @@ def run((
     workers: int = 4,
     force: bool = False,
 )) -> None:
-    """Process large documents by chunking for Cerebras zai-glm-4.6."""
 
 def _redirect_print_to_stderr(()):
 
 def _streaming_print((*args, **kwargs)):
 
 def _execute(()) -> None:
-    """Execute the main CLI workflow."""
 
 def process_file_wrapper((input_file: Path, output_file: Path)):
-    """Process a single file."""
 
 def file_progress_callback((chunks_done: int, remaining_calls: int)):
 
@@ -8652,7 +8601,8 @@ def _show_dry_run_analysis((
     max_tokens_ratio: int,
     metadata,
 )) -> None:
-    """Show dry-run analysis output."""
+
+def _report_zero_output_failure((state: ProcessingState, input_path: str, output_path: str)) -> None:
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/config.py
@@ -8665,40 +8615,31 @@ from loguru import logger
 from .constants import (
     LOG_FORMAT,
     MAX_CONTEXT_TOKENS,
+    MAX_OUTPUT_TOKENS,
     VALID_DATA_FORMATS,
     ConfigurationError,
     ValidationError,
 )
 
 class EnvironmentConfig:
-    """Environment configuration manager."""
     def __init__((self)) -> None:
     def _load_environment((self)) -> None:
-        """Load configuration from environment variables."""
     def validate((self, strict: bool = True)) -> bool:
-        """Validate the environment configuration."""
     def get_api_key((self)) -> str:
-        """Get the validated API key."""
 
 def __init__((self)) -> None:
 
 def _load_environment((self)) -> None:
-    """Load configuration from environment variables."""
 
 def validate((self, strict: bool = True)) -> bool:
-    """Validate the environment configuration."""
 
 def get_api_key((self)) -> str:
-    """Get the validated API key."""
 
 def setup_logging((verbose: bool = False, level: str | None = None)) -> None:
-    """Configure Loguru logging with appropriate verbosity."""
 
 def validate_api_key((api_key: str)) -> bool:
-    """Validate API key format and content."""
 
 def validate_environment((strict: bool = True)) -> None:
-    """Validate required environment variables and dependencies."""
 
 def validate_inputs((
     input_data: str,
@@ -8708,10 +8649,8 @@ def validate_inputs((
     data_format: str = "text",
     strict: bool = True,
 )) -> None:
-    """Validate CLI input parameters with user-friendly error messages."""
 
 def get_environment_info(()) -> dict:
-    """Get information about the current environment."""
 
 def validate_model_parameters((
     temperature: float,
@@ -8719,7 +8658,6 @@ def validate_model_parameters((
     model: str,
     strict: bool = True,
 )) -> None:
-    """Validate model parameters."""
 
 def validate_recursive_inputs((
     input_data: str,
@@ -8728,7 +8666,6 @@ def validate_recursive_inputs((
     output_data: str | None = None,
     strict: bool = True,
 )) -> None:
-    """Validate CLI parameters for recursive processing mode."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/constants.py
@@ -8738,26 +8675,40 @@ import re
 from re import Pattern
 from typing import Any
 
+MAX_CONTEXT_TOKENS = =
+MAX_OUTPUT_TOKENS = =
+DEFAULT_CHUNK_SIZE = =
+MIN_COMPLETION_TOKENS = =
+REASONING_COMPLETION_RATIO = =
+REQUIRED_METADATA_FIELDS = :
+METADATA_SCHEMA = :
+CODE_BOUNDARY_PATTERNS = :
+COMPILED_BOUNDARY_PATTERNS = :
+TOKENS_SAFETY_MARGIN = =
+REQUESTS_SAFETY_MARGIN = =
+CHARS_PER_TOKEN_FALLBACK = =
+LOG_FORMAT = =
+DEFAULT_MODEL = =
+DEFAULT_TEMPERATURE = =
+DEFAULT_TOP_P = =
+DEFAULT_MAX_TOKENS_RATIO = =
+DEFAULT_SAMPLE_SIZE = =
+VALID_DATA_FORMATS = :
+CONTINUITY_TEMPLATE = =
+
 class CerebrateError(E, x, c, e, p, t, i, o, n):
-    """Base exception class for cerebrate_file package."""
 
 class TokenizationError(C, e, r, e, b, r, a, t, e, E, r, r, o, r):
-    """Exception raised when tokenization fails."""
 
 class ChunkingError(C, e, r, e, b, r, a, t, e, E, r, r, o, r):
-    """Exception raised when chunking fails."""
 
 class APIError(C, e, r, e, b, r, a, t, e, E, r, r, o, r):
-    """Exception raised when API calls fail."""
 
 class ValidationError(C, e, r, e, b, r, a, t, e, E, r, r, o, r):
-    """Exception raised when input validation fails."""
 
 class ConfigurationError(C, e, r, e, b, r, a, t, e, E, r, r, o, r):
-    """Exception raised when configuration is invalid."""
 
 class FileError(C, e, r, e, b, r, a, t, e, E, r, r, o, r):
-    """Exception raised when file operations fail."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/continuity.py
@@ -8768,9 +8719,7 @@ from .constants import CONTINUITY_TEMPLATE, MAX_CONTEXT_TOKENS
 from .tokenizer import decode_tokens_safely, encode_text
 
 class ContinuityManager:
-    """Manages continuity context across chunk processing."""
     def __init__((self, sample_size: int = 200)) -> None:
-        """Initialize the continuity manager."""
     def update((
         self,
         input_text: str,
@@ -8778,20 +8727,14 @@ class ContinuityManager:
         input_tokens: list[int] | None = None,
         output_tokens: list[int] | None = None,
     )) -> None:
-        """Update continuity state after processing a chunk."""
     def has_context((self)) -> bool:
-        """Check if continuity context is available."""
     def get_continuity_block((self)) -> str | None:
-        """Get the current continuity block."""
     def get_fitted_continuity((
         self, base_input_tokens: int, max_input_tokens: int = MAX_CONTEXT_TOKENS
     )) -> str:
-        """Get continuity block fitted to token budget."""
     def reset((self)) -> None:
-        """Reset continuity state."""
 
 def __init__((self, sample_size: int = 200)) -> None:
-    """Initialize the continuity manager."""
 
 def update((
         self,
@@ -8800,34 +8743,26 @@ def update((
         input_tokens: list[int] | None = None,
         output_tokens: list[int] | None = None,
     )) -> None:
-    """Update continuity state after processing a chunk."""
 
 def has_context((self)) -> bool:
-    """Check if continuity context is available."""
 
 def get_continuity_block((self)) -> str | None:
-    """Get the current continuity block."""
 
 def get_fitted_continuity((
         self, base_input_tokens: int, max_input_tokens: int = MAX_CONTEXT_TOKENS
     )) -> str:
-    """Get continuity block fitted to token budget."""
 
 def reset((self)) -> None:
-    """Reset continuity state."""
 
 def extract_continuity_examples((prev_text: str, prev_tokens: list[int], sample_size: int)) -> str:
-    """Extract last N tokens from previous text as continuity example."""
 
 def build_continuity_block((input_example: str, output_example: str)) -> str:
-    """Build continuity block using exact template from spec."""
 
 def fit_continuity_to_budget((
     continuity_block: str,
     base_input_tokens: int,
     max_input_tokens: int = MAX_CONTEXT_TOKENS,
 )) -> str:
-    """Truncate continuity examples to fit within token budget."""
 
 def calculate_continuity_budget((
     chunk_tokens: int,
@@ -8835,7 +8770,6 @@ def calculate_continuity_budget((
     sample_size: int,
     max_context_tokens: int = MAX_CONTEXT_TOKENS,
 )) -> int:
-    """Calculate available token budget for continuity."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/error_recovery.py
@@ -8850,8 +8784,9 @@ from typing import Any, TypeVar
 from .constants import APIError, ValidationError
 import random
 
+T = =
+
 class RetryConfig:
-    """Configuration for retry behavior."""
     def __init__((
         self,
         max_attempts: int = 3,
@@ -8860,27 +8795,19 @@ class RetryConfig:
         exponential_base: float = 2.0,
         jitter: bool = True,
     )):
-        """Initialize retry configuration."""
     def get_delay((self, attempt: int)) -> float:
-        """Calculate delay for given attempt number."""
 
 class RecoverableOperation:
-    """Context manager for operations that support checkpointing."""
     def __init__((
         self,
         operation_name: str,
         checkpoint_interval: int = 10,
         enable_checkpoints: bool = True,
     )):
-        """Initialize recoverable operation."""
     def __enter__((self)):
-        """Enter context and load any existing checkpoint."""
     def __exit__((self, exc_type, exc_val, exc_tb)):
-        """Clean up checkpoints on successful completion."""
     def update((self, **kwargs)):
-        """Update checkpoint data and save if needed."""
     def should_skip((self, item_id: Any)) -> bool:
-        """Check if item should be skipped based on checkpoint."""
 
 def __init__((
         self,
@@ -8890,10 +8817,8 @@ def __init__((
         exponential_base: float = 2.0,
         jitter: bool = True,
     )):
-    """Initialize retry configuration."""
 
 def get_delay((self, attempt: int)) -> float:
-    """Calculate delay for given attempt number."""
 
 def with_retry((
     func: Callable | None = None,
@@ -8902,38 +8827,32 @@ def with_retry((
     retryable_errors: tuple = (APIError, ConnectionError, TimeoutError),
     on_retry: Callable[[Exception, int], None] | None = None,
 )) -> Callable:
-    """Decorator to add retry logic to functions."""
 
 def decorator((f: Callable[..., T])) -> Callable[..., T]:
 
 def wrapper((*args, **kwargs)) -> T:
 
 def format_error_with_suggestions((error: Exception)) -> Exception:
-    """Format error with helpful suggestions for resolution."""
 
 def format_error_message((error: Exception)) -> str:
-    """Format error message with helpful context."""
 
 def save_checkpoint((
     data: dict,
     checkpoint_dir: str = ".cerebrate_checkpoints",
     checkpoint_name: str = "checkpoint",
 )) -> Path:
-    """Save processing checkpoint for recovery."""
 
 def load_checkpoint((
     checkpoint_dir: str = ".cerebrate_checkpoints",
     checkpoint_name: str = "checkpoint",
     max_age_hours: float = 24,
 )) -> dict | None:
-    """Load processing checkpoint if available and recent."""
 
 def check_optional_dependency((
     module_name: str,
     package_name: str | None = None,
     feature_name: str | None = None,
 )) -> tuple[bool, str | None]:
-    """Check if optional dependency is available with helpful message."""
 
 def __init__((
         self,
@@ -8941,19 +8860,14 @@ def __init__((
         checkpoint_interval: int = 10,
         enable_checkpoints: bool = True,
     )):
-    """Initialize recoverable operation."""
 
 def __enter__((self)):
-    """Enter context and load any existing checkpoint."""
 
 def __exit__((self, exc_type, exc_val, exc_tb)):
-    """Clean up checkpoints on successful completion."""
 
 def update((self, **kwargs)):
-    """Update checkpoint data and save if needed."""
 
 def should_skip((self, item_id: Any)) -> bool:
-    """Check if item should be skipped based on checkpoint."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/file_utils.py
@@ -8971,13 +8885,10 @@ from .tokenizer import encode_text
 from .prompt_library import resolve_prompt_file
 
 def read_file_safely((file_path: str | Path)) -> str:
-    """Read file content with error handling."""
 
 def ensure_parent_directory((file_path: str | Path)) -> None:
-    """Ensure the parent directory of a file exists."""
 
 def backup_file((file_path: str | Path, backup_suffix: str = ".bak")) -> Path | None:
-    """Create a backup of an existing file."""
 
 def write_output_atomically((
     content: str,
@@ -8985,25 +8896,18 @@ def write_output_atomically((
     metadata: dict[str, Any] | None = None,
     create_backup: bool = False,
 )) -> None:
-    """Write output using temporary file for atomicity."""
 
 def parse_frontmatter_content((content: str)) -> tuple[dict[str, Any], str]:
-    """Parse frontmatter from content using python-frontmatter."""
 
 def check_metadata_completeness((metadata: dict[str, Any])) -> tuple[bool, list[str]]:
-    """Check if metadata contains all required fields."""
 
 def validate_file_path((file_path: str | Path, must_exist: bool = True)) -> Path:
-    """Validate a file path and return as Path object."""
 
 def get_file_info((file_path: str | Path)) -> dict[str, Any]:
-    """Get information about a file."""
 
 def output_file_exists((input_path: Path, output_path: Path)) -> bool:
-    """Check if output file exists and needs to be considered for pre-screening."""
 
 def build_base_prompt((file_prompt: str | None, text_prompt: str | None)) -> tuple[str, int]:
-    """Assemble base prompt from file and text components."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/models.py
@@ -9014,27 +8918,20 @@ from datetime import datetime, timedelta
 from typing import Any, Optional
 
 class Chunk:
-    """Represents a text chunk with its token count."""
     def __len__((self)) -> int:
-        """Return the token count for convenient length checking."""
     def is_empty((self)) -> bool:
-        """Check if the chunk is empty or only whitespace."""
+
+class ChunkDiagnostics:
+    def to_log_dict((self)) -> dict[str, Any]:
 
 class RateLimitStatus:
-    """Rate limit information from API response headers."""
     def __post_init__((self)) -> None:
-        """Initialize default values for reset times."""
     def is_tokens_exhausted((self, next_request_tokens: int = 0)) -> bool:
-        """Check if we're out of tokens for the current minute."""
     def is_requests_exhausted((self)) -> bool:
-        """Check if we're out of requests for the current day."""
     def time_until_token_reset((self)) -> float:
-        """Get seconds until token limit resets."""
     def time_until_request_reset((self)) -> float:
-        """Get seconds until request limit resets."""
 
 class ProcessingState:
-    """Tracks state across chunk processing."""
     def update_from_chunk((
         self,
         input_text: str,
@@ -9043,53 +8940,37 @@ class ProcessingState:
         output_tokens: list[int],
         total_input_tokens: int,
     )) -> None:
-        """Update state after processing a chunk."""
     def get_average_input_tokens((self)) -> float:
-        """Get average input tokens per chunk."""
     def get_average_output_tokens((self)) -> float:
-        """Get average output tokens per chunk."""
     def has_previous_context((self)) -> bool:
-        """Check if we have previous context for continuity."""
+    def add_chunk_diagnostic((self, diagnostic: ChunkDiagnostics)) -> None:
 
 class ProcessingResult:
-    """Result of processing a document."""
     def add_error((self, error: str)) -> None:
-        """Add an error to the result."""
     def has_errors((self)) -> bool:
-        """Check if there were any errors."""
     def get_tokens_per_second((self)) -> float:
-        """Calculate processing rate in tokens per second."""
 
 class ChunkingConfig:
-    """Configuration for chunking strategies."""
     def __post_init__((self)) -> None:
-        """Validate configuration values."""
 
 class APIConfig:
-    """Configuration for API calls."""
     def __post_init__((self)) -> None:
-        """Validate configuration values."""
 
 def __len__((self)) -> int:
-    """Return the token count for convenient length checking."""
 
 def is_empty((self)) -> bool:
-    """Check if the chunk is empty or only whitespace."""
+
+def to_log_dict((self)) -> dict[str, Any]:
 
 def __post_init__((self)) -> None:
-    """Initialize default values for reset times."""
 
 def is_tokens_exhausted((self, next_request_tokens: int = 0)) -> bool:
-    """Check if we're out of tokens for the current minute."""
 
 def is_requests_exhausted((self)) -> bool:
-    """Check if we're out of requests for the current day."""
 
 def time_until_token_reset((self)) -> float:
-    """Get seconds until token limit resets."""
 
 def time_until_request_reset((self)) -> float:
-    """Get seconds until request limit resets."""
 
 def update_from_chunk((
         self,
@@ -9099,31 +8980,24 @@ def update_from_chunk((
         output_tokens: list[int],
         total_input_tokens: int,
     )) -> None:
-    """Update state after processing a chunk."""
 
 def get_average_input_tokens((self)) -> float:
-    """Get average input tokens per chunk."""
 
 def get_average_output_tokens((self)) -> float:
-    """Get average output tokens per chunk."""
 
 def has_previous_context((self)) -> bool:
-    """Check if we have previous context for continuity."""
+
+def add_chunk_diagnostic((self, diagnostic: ChunkDiagnostics)) -> None:
 
 def add_error((self, error: str)) -> None:
-    """Add an error to the result."""
 
 def has_errors((self)) -> bool:
-    """Check if there were any errors."""
 
 def get_tokens_per_second((self)) -> float:
-    """Calculate processing rate in tokens per second."""
 
 def __post_init__((self)) -> None:
-    """Validate configuration values."""
 
 def __post_init__((self)) -> None:
-    """Validate configuration values."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/prompt_library.py
@@ -9134,13 +9008,11 @@ from loguru import logger
 import cerebrate_file
 
 def get_prompt_library_path(()) -> Path:
-    """Get the path to the built-in prompt library."""
 
 def resolve_prompt_file((file_prompt: str)) -> Path | None:
-    """Resolve a prompt file path, checking both absolute and library paths."""
 
 
-<document index="38">
+<document index="37">
 <source>src/cerebrate_file/prompts/README.md</source>
 <document_content>
 # Prompt Library
@@ -9205,7 +9077,7 @@ The file prompt loads first, then the text prompt.
 </document_content>
 </document>
 
-<document index="39">
+<document index="38">
 <source>src/cerebrate_file/prompts/fix-pdf-extracted-text.xml</source>
 <document_content>
 <poml><role>You are a meticulous document restoration specialist who cleans up poorly extracted PDF        text while preserving every word of the original content.</role><task>Clean and format extracted PDF text into proper Markdown while maintaining absolute        fidelity to the original content.</task><h>Processing Instructions</h><stepwise-instructions><list listStyle="decimal"><item><b>Line Merging:</b><list><item>Join lines that were artificially broken mid-sentence by PDF column width</item><item>Preserve intentional line breaks between paragraphs</item><item>Maintain list structures and indentation where clearly intended</item></list></item><item><b>Structure & pagination:</b><list><item>Remove empty paragraphs</item><item>Remove visible page numbers, headers, and footers</item><item>If page numbers or page breaks exist in the source, only retain then in                        form of a free-standing separate line that says `<a id="page_NNN"></a>`                        (where NNN is the page number), with a newline above and a newline below,                        and move them down (that is, place them before the first paragraph of the                        page, separating with a newline).</item><item>Join paragraphs that were artificially broken, especially due to column or                        page breaks. If a page break existed mid-paragraph, move the page break                        after the paragraph.</item><item>Preserve all narrative content parts, including table-of-contents,                        footnotes, and other content that is not part of the main text. Only remove                        visible page numbers, headers, and footers that make no sense in a                        non-paginated document.</item></list></item><item><b>Artifact Removal:</b><list><item>Remove hard hyphenation at line endings (e.g., "docu-\nment" → "document")</item><item>Delete page numbers, headers, and footers that repeat across pages</item><item>Remove garbled character sequences that are clearly extraction errors                        (e.g., "■□▪▫" or "????")</item><item>Clean up spacing artifacts (multiple spaces, tabs mixed with spaces)</item></list></item><item><b>OCR Correction:</b><list><item>Fix obvious character substitution errors (e.g., "rn" misread as "m", "cl"                        as "d")</item><item>Correct clearly misspelled words only when the intended word is                        unambiguous</item><item>Fix number/letter confusion in obvious contexts (e.g., "0" vs "O", "1" vs                        "l")</item><item>If it’s obvious from the context, fix the writing system of the text (СССР                        and not CCCP)</item><item>If it’s obvious from the context, enrich text with diacritics that have                        been omitted lazily (e.g. write Wałęsa and not Walesa)</item></list></item><item><b>Orthotypography:</b><list><item>Use proper high-end punctuation, especially the correct typographic                        quotation marks appropriate for the language of the text.</item><item>Use em dashes appropriately, but ALWAYS separate them by spaces from                        neighboring text on left and right. Never glue an em dash directly to a                        word.</item><item>Use en dashes (without surrounding spaces) to indicate ranges or spans.</item><item>However, do not overcorrect punctuation.</item></list></item><item><b>Markdown Formatting (Conservative):</b><list><item>Add heading markers (#, ##, etc.) ONLY for text that is clearly a title or                        section header</item><item>Use **bold** ONLY where emphasis was clearly intended in the original</item><item>Format obvious lists with - or 1. notation</item><item>Use code blocks for clearly technical content or code samples</item><item>Add blockquotes (>) for clearly quoted material</item><item>Use Markdown tables if you know what you’re doing</item></list></item></list></stepwise-instructions><cp caption="Critical Preservation Rules"><list><item>NEVER delete sentences, phrases, or meaningful words</item><item>NEVER paraphrase or rewrite sentences for clarity</item><item>NEVER add explanatory text or context</item><item>NEVER change technical terms, proper nouns, or specialized vocabulary</item><item>NEVER merge or split paragraphs unless fixing obvious extraction errors</item><item>PRESERVE all numerical data exactly as written</item></list></cp><examples><example caption="Line merge correction"><input>The quick brown fox jum-                ped over the lazy dog which                was sleeping in the garden.</input><output>The quick brown fox jumped over the lazy dog which was sleeping in the garden.</output></example><example caption="OCR and formatting"><input>Chapter l: lntroduction                This chapfer discusses the rnain concepts...</input><output># Chapter 1: Introduction                This chapter discusses the main concepts...</output></example><example caption="Artifact removal"><input>The report■□▪ shows that sales                - - - Page 42 - - -                increased by 15% this quarter.</input><output>The report shows that sales increased by 15% this quarter.</output></example></examples><cp caption="Decision Framework"><p>When uncertain about whether text is an error or intentional:</p><list><item>If it could be meaningful content → KEEP IT</item><item>If clearly garbled/repeated/artifactual → REMOVE IT</item><item>If unsure about formatting → LEAVE UNFORMATTED</item><item>If unsure about spelling → KEEP ORIGINAL</item></list></cp><output-format>Clean Markdown text with proper paragraph separation, conservative heading        hierarchy, minimal formatting markup, all original content preserved</output-format></poml>
@@ -9224,26 +9096,19 @@ from .models import ProcessingState
 from .file_utils import output_file_exists
 
 class ProcessingResult:
-    """Result container for parallel file processing."""
     def __init__((self)) -> None:
-        """Initialize processing result container."""
 
 def __init__((self)) -> None:
-    """Initialize processing result container."""
 
 def pre_screen_files((file_pairs: list[tuple[Path, Path]], force: bool)) -> list[tuple[Path, Path]]:
-    """Pre-screen file pairs, removing those with existing outputs if force=False."""
 
 def expand_brace_patterns((pattern: str)) -> list[str]:
-    """Expand brace patterns like '*.{md,py,js}' into separate patterns."""
 
 def find_files_recursive((
     input_dir: Path, pattern: str, output_dir: Path | None = None
 )) -> list[tuple[Path, Path]]:
-    """Find files matching glob pattern and generate output paths."""
 
 def replicate_directory_structure((file_pairs: list[tuple[Path, Path]])) -> None:
-    """Create output directory structure for all file pairs."""
 
 def process_single_file((
     input_path: Path,
@@ -9251,7 +9116,6 @@ def process_single_file((
     processing_func: Callable[[Path, Path], ProcessingState],
     progress_callback: Callable[[str, int], None] | None = None,
 )) -> tuple[Path, Path, ProcessingState, Exception | None]:
-    """Process a single file with error handling."""
 
 def process_files_parallel((
     file_pairs: list[tuple[Path, Path]],
@@ -9259,7 +9123,6 @@ def process_files_parallel((
     workers: int = 4,
     progress_callback: Callable[[str, int], None] | None = None,
 )) -> ProcessingResult:
-    """Process multiple files in parallel with progress tracking."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/tokenizer.py
@@ -9270,52 +9133,34 @@ from .constants import CHARS_PER_TOKEN_FALLBACK, TokenizationError
 from qwen_tokenizer import get_tokenizer
 
 class TokenizerManager:
-    """Manages tokenizer initialization and provides fallback mechanisms."""
     def __init__((self, model_name: str = "qwen-max", strict: bool = False)) -> None:
-        """Initialize the tokenizer manager."""
     def _initialize_tokenizer((self)) -> None:
-        """Initialize the qwen tokenizer with fallback handling."""
     def encode((self, text: str)) -> list[int]:
-        """Encode text to tokens with fallback handling."""
     def decode((self, tokens: list[int])) -> str:
-        """Decode tokens back to text with fallback handling."""
     def estimate_tokens((self, text: str)) -> int:
-        """Estimate the number of tokens in text."""
     def get_info((self)) -> dict:
-        """Get information about the tokenizer state."""
 
 def __init__((self, model_name: str = "qwen-max", strict: bool = False)) -> None:
-    """Initialize the tokenizer manager."""
 
 def _initialize_tokenizer((self)) -> None:
-    """Initialize the qwen tokenizer with fallback handling."""
 
 def is_available((self)) -> bool:
-    """Check if the actual tokenizer is available."""
 
 def is_fallback((self)) -> bool:
-    """Check if we're using fallback tokenization."""
 
 def encode((self, text: str)) -> list[int]:
-    """Encode text to tokens with fallback handling."""
 
 def decode((self, tokens: list[int])) -> str:
-    """Decode tokens back to text with fallback handling."""
 
 def estimate_tokens((self, text: str)) -> int:
-    """Estimate the number of tokens in text."""
 
 def get_info((self)) -> dict:
-    """Get information about the tokenizer state."""
 
 def get_tokenizer_manager(()) -> TokenizerManager:
-    """Get the global tokenizer manager instance."""
 
 def encode_text((text: str)) -> list[int]:
-    """Encode text to tokens with fallback handling."""
 
 def decode_tokens_safely((tokens: list[int])) -> str:
-    """Decode tokens back to text with fallback handling."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/ui.py
@@ -9327,74 +9172,48 @@ from rich.progress import BarColumn, Progress, TextColumn
 from rich.text import Text
 
 class FileProgressDisplay:
-    """Minimalistic two-row file progress display using Rich."""
     def __init__((self, console: Console | None = None)):
-        """Initialize the progress display."""
     def start_file_processing((self, input_path: str, output_path: str, total_chunks: int)) -> None:
-        """Start processing a new file."""
     def update_progress((self, chunks_completed: int, remaining_calls: int = 0)) -> None:
-        """Update progress for current file."""
     def finish_file_processing((self)) -> None:
-        """Finish processing current file and clean up display."""
     def _update_display((self)) -> None:
-        """Update the two-row display with current status."""
     def _show_completion((self)) -> None:
-        """Show completion status for the file."""
 
 class MultiFileProgressDisplay:
-    """Progress display for multiple files being processed in parallel."""
     def __init__((self, console: Console | None = None)):
-        """Initialize multi-file progress display."""
     def start_overall_processing((self, total_files: int)) -> None:
-        """Start overall processing tracking."""
     def start_file((self, input_path: str, output_path: str, total_chunks: int)) -> None:
-        """Start processing a specific file."""
     def update_file_progress((
         self, input_path: str, chunks_completed: int, remaining_calls: int = 0
     )) -> None:
-        """Update progress for a specific file."""
     def finish_file((self, input_path: str)) -> None:
-        """Finish processing a specific file."""
     def finish_overall_processing((self)) -> None:
-        """Finish overall processing and show summary."""
 
 def __init__((self, console: Console | None = None)):
-    """Initialize the progress display."""
 
 def start_file_processing((self, input_path: str, output_path: str, total_chunks: int)) -> None:
-    """Start processing a new file."""
 
 def update_progress((self, chunks_completed: int, remaining_calls: int = 0)) -> None:
-    """Update progress for current file."""
 
 def finish_file_processing((self)) -> None:
-    """Finish processing current file and clean up display."""
 
 def _update_display((self)) -> None:
-    """Update the two-row display with current status."""
 
 def _show_completion((self)) -> None:
-    """Show completion status for the file."""
 
 def __init__((self, console: Console | None = None)):
-    """Initialize multi-file progress display."""
 
 def start_overall_processing((self, total_files: int)) -> None:
-    """Start overall processing tracking."""
 
 def start_file((self, input_path: str, output_path: str, total_chunks: int)) -> None:
-    """Start processing a specific file."""
 
 def update_file_progress((
         self, input_path: str, chunks_completed: int, remaining_calls: int = 0
     )) -> None:
-    """Update progress for a specific file."""
 
 def finish_file((self, input_path: str)) -> None:
-    """Finish processing a specific file."""
 
 def finish_overall_processing((self)) -> None:
-    """Finish overall processing and show summary."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/validators.py
@@ -9405,20 +9224,24 @@ import os
 from pathlib import Path
 from .constants import MAX_CONTEXT_TOKENS, ValidationError
 
+MIN_CHUNK_SIZE = =
+MAX_CHUNK_SIZE = =
+MIN_TEMPERATURE = =
+MAX_TEMPERATURE = =
+MIN_TOP_P = =
+MAX_TOP_P = =
+MAX_FILE_SIZE_MB = =
+MAX_FILE_SIZE_BYTES = =
+
 def validate_chunk_size((chunk_size: int)) -> int:
-    """Validate chunk size is within acceptable bounds."""
 
 def validate_temperature((temperature: float)) -> float:
-    """Validate temperature parameter."""
 
 def validate_top_p((top_p: float)) -> float:
-    """Validate top_p (nucleus sampling) parameter."""
 
 def validate_file_size((file_path: str)) -> None:
-    """Check if file size is within acceptable limits."""
 
 def validate_file_path_safe((file_path: str)) -> Path:
-    """Validate file path for safety and accessibility."""
 
 def validate_model_parameters((
     chunk_size: int,
@@ -9426,10 +9249,9 @@ def validate_model_parameters((
     top_p: float,
     max_tokens_ratio: int,
 )) -> tuple[int, float, float, int]:
-    """Validate all model parameters together."""
 
 
-<document index="40">
+<document index="39">
 <source>test1.sh</source>
 <document_content>
 #!/usr/bin/env bash
@@ -9438,7 +9260,7 @@ python -m cerebrate_file --workers=4 --input_data=testdata/ex/01.md --output_dat
 </document_content>
 </document>
 
-<document index="41">
+<document index="40">
 <source>test2.sh</source>
 <document_content>
 #!/usr/bin/env bash
@@ -9452,14 +9274,24 @@ python -m cerebrate_file --recurse="*.md" --workers=4 --input_data=testdata/in/ 
 # Language: python
 
 import sys
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from cerebrate_file.constants import APIError
 from cerebrate_file.api_client import make_cerebras_request
 
 def test_503_retry(()):
-    """Test that 503 errors are properly retried."""
 
 def side_effect((*args, **kwargs)):
+
+
+# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/testapi.py
+# Language: python
+
+import os
+import sys
+from pathlib import Path
+from cerebras.cloud.sdk import Cerebras
+
+def main(()) -> int:
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_api_retry.py
@@ -9471,25 +9303,19 @@ from cerebrate_file.api_client import make_cerebras_request
 from cerebrate_file.constants import APIError
 
 class MockAPIStatusError(E, x, c, e, p, t, i, o, n):
-    """Mock API status error for testing."""
     def __init__((self, status_code, response)):
 
 class DummyStream(l, i, s, t):
-    """List subclass that allows attaching metadata attributes."""
 
 def __init__((self, status_code, response)):
 
 def test_503_error_triggers_retry(()):
-    """Test that 503 errors are converted to retryable APIErrors."""
 
 def test_non_retryable_errors_not_converted(()):
-    """Test that 400-level errors are not converted to retryable APIErrors."""
 
 def test_retryable_status_codes(()):
-    """Test that all expected status codes are marked as retryable."""
 
 def test_successful_request(()):
-    """Test that successful requests work normally."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_brace_patterns.py
@@ -9499,67 +9325,60 @@ import pytest
 from cerebrate_file.recursive import expand_brace_patterns
 
 class TestBracePatternExpansion:
-    """Test brace pattern expansion functionality."""
     def test_simple_brace_pattern((self)):
-        """Test basic brace pattern expansion."""
     def test_complex_brace_pattern((self)):
-        """Test complex recursive brace pattern."""
     def test_single_extension((self)):
-        """Test pattern with single extension in braces."""
     def test_no_braces((self)):
-        """Test pattern without braces returns as-is."""
     def test_empty_options((self)):
-        """Test handling of empty options in braces."""
     def test_whitespace_in_options((self)):
-        """Test handling of whitespace in brace options."""
     def test_nested_directories((self)):
-        """Test brace patterns with nested directory structures."""
     def test_multiple_directory_levels((self)):
-        """Test complex directory patterns with braces."""
     def test_mixed_patterns((self)):
-        """Test patterns that mix regular and brace patterns."""
     def test_malformed_braces((self)):
-        """Test handling of malformed brace patterns."""
     def test_empty_braces((self)):
-        """Test handling of empty braces."""
     def test_numeric_extensions((self)):
-        """Test brace patterns with numeric extensions."""
 
 def test_simple_brace_pattern((self)):
-    """Test basic brace pattern expansion."""
 
 def test_complex_brace_pattern((self)):
-    """Test complex recursive brace pattern."""
 
 def test_single_extension((self)):
-    """Test pattern with single extension in braces."""
 
 def test_no_braces((self)):
-    """Test pattern without braces returns as-is."""
 
 def test_empty_options((self)):
-    """Test handling of empty options in braces."""
 
 def test_whitespace_in_options((self)):
-    """Test handling of whitespace in brace options."""
 
 def test_nested_directories((self)):
-    """Test brace patterns with nested directory structures."""
 
 def test_multiple_directory_levels((self)):
-    """Test complex directory patterns with braces."""
 
 def test_mixed_patterns((self)):
-    """Test patterns that mix regular and brace patterns."""
 
 def test_malformed_braces((self)):
-    """Test handling of malformed brace patterns."""
 
 def test_empty_braces((self)):
-    """Test handling of empty braces."""
 
 def test_numeric_extensions((self)):
-    """Test brace patterns with numeric extensions."""
+
+
+# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_cerebrate_file.py
+# Language: python
+
+import math
+from cerebrate_file.cerebrate_file import calculate_completion_budget
+from cerebrate_file.constants import (
+    MAX_OUTPUT_TOKENS,
+    MIN_COMPLETION_TOKENS,
+    REASONING_COMPLETION_RATIO,
+)
+
+def test_calculate_completion_budget_enforces_minimum_floor(()) -> None:
+
+def test_calculate_completion_budget_applies_reasoning_multiplier(()) -> None:
+
+def test_calculate_completion_budget_caps_at_max_output(()) -> None:
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_chunking.py
@@ -9579,61 +9398,42 @@ from cerebrate_file.models import Chunk, ChunkingConfig
 from cerebrate_file.tokenizer import get_tokenizer_manager
 
 def sample_text(()):
-    """Sample text for testing."""
 
 def sample_markdown(()):
-    """Sample markdown for testing."""
 
 def sample_code(()):
-    """Sample code for testing."""
 
 def chunking_config(()):
-    """Basic chunking configuration."""
 
 def test_text_chunker_creation(()):
-    """Test TextChunker creation and basic functionality."""
 
 def test_text_chunker_basic_chunking((sample_text)):
-    """Test basic text chunking."""
 
 def test_semantic_chunker_creation(()):
-    """Test SemanticChunker creation."""
 
 def test_markdown_chunker_creation(()):
-    """Test MarkdownChunker creation."""
 
 def test_markdown_chunker_with_headers((sample_markdown)):
-    """Test MarkdownChunker with header-based splitting."""
 
 def test_code_chunker_creation(()):
-    """Test CodeChunker creation."""
 
 def test_code_chunker_with_functions((sample_code)):
-    """Test CodeChunker with function-based splitting."""
 
 def test_create_chunks_function((sample_text)):
-    """Test create_chunks function."""
 
 def test_create_chunks_with_different_formats((sample_text)):
-    """Test create_chunks with different data formats."""
 
 def test_get_chunking_strategy(()):
-    """Test get_chunking_strategy function."""
 
 def test_chunking_with_empty_text(()):
-    """Test chunking with empty text."""
 
 def test_chunking_with_very_large_chunk_size((sample_text)):
-    """Test chunking with chunk size larger than text."""
 
 def test_chunking_with_very_small_chunk_size(()):
-    """Test chunking with very small chunk size."""
 
 def test_chunk_token_counts((sample_text)):
-    """Test that chunks have reasonable token counts."""
 
 def test_chunk_text_content((sample_text)):
-    """Test that chunk text content is preserved."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_cli_streams.py
@@ -9646,15 +9446,12 @@ import pytest
 from cerebrate_file.cli import run as cli_run
 
 def stubbed_chunks(()) -> list:
-    """Provide a minimal chunk list used by the CLI during streaming tests."""
 
 def _stub_state(()) -> SimpleNamespace:
-    """Create a minimal processing state object for mocks."""
 
 def test_cli_run_streams_stdin_to_stdout((
     monkeypatch: pytest.MonkeyPatch, stubbed_chunks: list, capsys: pytest.CaptureFixture[str]
 )) -> None:
-    """Running with input_data='-' and output_data='-' should pipe stdin through the pipeline."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_constants.py
@@ -9677,25 +9474,18 @@ from cerebrate_file.constants import (
 )
 
 def test_constants_values(()):
-    """Test that constants have expected values."""
 
 def test_required_metadata_fields(()):
-    """Test required metadata fields."""
 
 def test_metadata_schema(()):
-    """Test metadata schema structure."""
 
 def test_error_classes(()):
-    """Test error classes."""
 
 def test_boundary_patterns(()):
-    """Test code boundary patterns."""
 
 def test_cerebrate_error(()):
-    """Test CerebrateError exception class."""
 
 def test_specific_error_classes(()):
-    """Test specific error classes."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_error_recovery.py
@@ -9720,72 +9510,52 @@ from cerebrate_file.error_recovery import (
 )
 
 def test_retry_config_default(()):
-    """Test RetryConfig with default values."""
 
 def test_retry_config_get_delay(()):
-    """Test delay calculation with exponential backoff."""
 
 def test_retry_config_max_delay(()):
-    """Test that delay is capped at max_delay."""
 
 def test_with_retry_success_first_try(()):
-    """Test successful function call on first try."""
 
 def test_func(()):
 
 def test_with_retry_success_after_failures(()):
-    """Test retry succeeds after transient failures."""
 
 def test_func(()):
 
 def test_with_retry_all_attempts_fail(()):
-    """Test that exception is raised after all retries fail."""
 
 def test_func(()):
 
 def test_with_retry_non_retryable_error(()):
-    """Test that non-retryable errors are raised immediately."""
 
 def test_func(()):
 
 def test_format_error_with_suggestions_api_error(()):
-    """Test error formatting for API errors."""
 
 def test_format_error_with_suggestions_file_error(()):
-    """Test error formatting for file not found errors."""
 
 def test_format_error_with_suggestions_validation_chunk_size(()):
-    """Test error formatting for chunk size validation errors."""
 
 def test_format_error_message(()):
-    """Test format_error_message function."""
 
 def test_save_and_load_checkpoint(()):
-    """Test saving and loading checkpoints."""
 
 def test_load_checkpoint_not_found(()):
-    """Test loading non-existent checkpoint returns None."""
 
 def test_load_checkpoint_expired(()):
-    """Test that expired checkpoints are not loaded."""
 
 def test_check_optional_dependency_available(()):
-    """Test checking available optional dependency."""
 
 def test_check_optional_dependency_missing(()):
-    """Test checking missing optional dependency."""
 
 def test_check_optional_dependency_with_feature(()):
-    """Test checking dependency with feature name."""
 
 def test_recoverable_operation_no_checkpoint(()):
-    """Test RecoverableOperation without existing checkpoint."""
 
 def test_recoverable_operation_with_checkpoint(()):
-    """Test RecoverableOperation resuming from checkpoint."""
 
 def test_recoverable_operation_should_skip(()):
-    """Test RecoverableOperation skip logic."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_file_utils.py
@@ -9798,26 +9568,20 @@ import pytest
 from cerebrate_file.file_utils import read_file_safely, write_output_atomically
 
 def temporary_text_file(()) -> Path:
-    """Provide a temporary UTF-8 text file with sample content."""
 
 def test_read_file_safely_when_path_dash_reads_from_stdin((monkeypatch: pytest.MonkeyPatch)) -> None:
-    """`read_file_safely('-')` should consume stdin instead of touching the filesystem."""
 
 def test_write_output_atomically_when_path_dash_writes_to_stdout((
     monkeypatch: pytest.MonkeyPatch,
 )) -> None:
-    """`write_output_atomically` should stream to stdout when given '-' as the destination."""
 
 def test_write_output_atomically_when_path_dash_preserves_metadata((
     monkeypatch: pytest.MonkeyPatch,
 )) -> None:
-    """Frontmatter metadata should still wrap content when streaming to stdout."""
 
 def test_read_file_safely_reads_regular_files((temporary_text_file: Path)) -> None:
-    """Ensure existing behaviour for filesystem paths still works."""
 
 def test_write_output_atomically_writes_regular_files((monkeypatch: pytest.MonkeyPatch)) -> None:
-    """Ensure file-system writes still occur for real paths."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_force_option.py
@@ -9830,37 +9594,26 @@ import pytest
 from cerebrate_file.cli import run as cli_run
 
 def sample_input_file(()):
-    """Create a temporary input file for testing."""
 
 def existing_output_file(()):
-    """Create a temporary output file that already exists."""
 
 def temp_directory(()):
-    """Create a temporary directory for recursive testing."""
 
 def test_force_option_when_output_exists_single_file((sample_input_file, existing_output_file)):
-    """Test that --force=False skips processing when output file exists."""
 
 def test_force_option_when_output_exists_force_true((sample_input_file, existing_output_file)):
-    """Test that --force=True processes file even when output exists."""
 
 def test_force_option_when_input_equals_output((sample_input_file)):
-    """Test that force option doesn't apply when input and output paths are the same."""
 
 def test_force_option_when_output_does_not_exist((sample_input_file)):
-    """Test that processing continues normally when output file doesn't exist."""
 
 def test_force_option_recursive_mode((temp_directory)):
-    """Test force option in recursive processing mode."""
 
 def test_force_option_dry_run_mode((sample_input_file, existing_output_file)):
-    """Test that force option works correctly in dry-run mode."""
 
 def test_force_option_parameter_validation(()):
-    """Test that force parameter is properly validated."""
 
 def test_force_option_logged_messages((sample_input_file, existing_output_file, capsys)):
-    """Test that appropriate messages are generated for force option."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_integration.py
@@ -9882,46 +9635,32 @@ from cerebrate_file.cli import run as cli_run
 from cerebrate_file.cli import run as cli_run
 
 def sample_text_file(()):
-    """Create a temporary text file for testing."""
 
 def mock_api_response(()):
-    """Mock successful API response."""
 
 def test_full_pipeline_dry_run((sample_text_file)):
-    """Test the full processing pipeline in dry-run mode."""
 
 def test_file_io_operations((sample_text_file)):
-    """Test file reading and writing operations."""
 
 def test_chunking_pipeline(()):
-    """Test the chunking pipeline with different strategies."""
 
 def test_configuration_validation(()):
-    """Test configuration validation and setup."""
 
 def test_api_client_integration((mock_client_class, sample_text_file)):
-    """Test API client integration with processing pipeline."""
 
 def test_error_handling_pipeline(()):
-    """Test error handling throughout the pipeline."""
 
 def test_markdown_with_frontmatter(()):
-    """Test processing markdown files with frontmatter."""
 
 def test_code_chunking_integration(()):
-    """Test code chunking with realistic code."""
 
 def test_large_file_handling(()):
-    """Test handling of large files that require multiple chunks."""
 
 def test_continuity_preservation(()):
-    """Test that continuity is maintained across chunks."""
 
 def test_cli_environment_integration(()):
-    """Test CLI integration with environment variables."""
 
 def test_explain_mode_integration(()):
-    """Test explain mode for metadata extraction."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_issue_104.py
@@ -9930,36 +9669,28 @@ def test_explain_mode_integration(()):
 import tempfile
 from pathlib import Path
 import pytest
-from src.cerebrate_file.api_client import parse_rate_limit_headers
-from src.cerebrate_file.file_utils import write_output_atomically
-from src.cerebrate_file.models import Chunk, ProcessingState, RateLimitStatus
-from src.cerebrate_file.file_utils import check_metadata_completeness
+from cerebrate_file.api_client import parse_rate_limit_headers
+from cerebrate_file.file_utils import write_output_atomically
+from cerebrate_file.models import Chunk, ProcessingState, RateLimitStatus
+from cerebrate_file.file_utils import check_metadata_completeness
 
 def test_call_counting_bug(()):
-    """Test that call counting decreases properly between requests."""
 
 def test_frontmatter_missing_when_metadata_empty(()):
-    """Test that frontmatter is still written even when metadata is empty."""
 
 def test_frontmatter_not_written_when_metadata_none(()):
-    """Test that frontmatter is not written when metadata is None."""
 
 def test_chunk_processing_double_processing_issue(()):
-    """Test that first chunk isn't processed twice in explain mode."""
 
 def mock_llm_call((chunk_text)):
-    """Mock LLM processing."""
 
 def test_progress_callback_uses_correct_remaining_count(()):
-    """Test that progress callback gets called with correct remaining count."""
 
 def mock_progress_callback((chunks_completed, remaining_calls)):
 
 def test_call_counting_issue_debug(()):
-    """Debug test to understand why call counting shows same value repeatedly."""
 
 def test_explain_mode_metadata_completeness_check(()):
-    """Test metadata completeness checking logic."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_models.py
@@ -9970,6 +9701,7 @@ import pytest
 from cerebrate_file.models import (
     APIConfig,
     Chunk,
+    ChunkDiagnostics,
     ChunkingConfig,
     ProcessingResult,
     ProcessingState,
@@ -9977,28 +9709,22 @@ from cerebrate_file.models import (
 )
 
 def test_chunk_creation(()):
-    """Test Chunk dataclass creation and methods."""
 
 def test_chunk_with_metadata(()):
-    """Test Chunk with metadata."""
 
 def test_chunk_empty(()):
-    """Test empty chunk detection."""
 
 def test_rate_limit_status(()):
-    """Test RateLimitStatus dataclass."""
 
 def test_processing_state(()):
-    """Test ProcessingState dataclass."""
 
 def test_processing_result(()):
-    """Test ProcessingResult dataclass."""
 
 def test_chunking_config(()):
-    """Test ChunkingConfig dataclass."""
 
 def test_api_config(()):
-    """Test APIConfig dataclass."""
+
+def test_chunk_diagnostics_to_log_dict(()):
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_package.py
@@ -10007,7 +9733,6 @@ def test_api_config(()):
 import cerebrate_file
 
 def test_version(()):
-    """Verify package exposes version."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_pre_screening.py
@@ -10020,65 +9745,41 @@ from cerebrate_file.file_utils import output_file_exists
 from cerebrate_file.recursive import pre_screen_files
 
 class TestOutputFileExists:
-    """Test the output_file_exists utility function."""
     def test_output_file_exists_when_same_path((self, tmp_path)):
-        """Test that in-place processing (same input/output path) returns False."""
     def test_output_file_exists_when_output_exists((self, tmp_path)):
-        """Test that returns True when output file exists and differs from input."""
     def test_output_file_exists_when_output_missing((self, tmp_path)):
-        """Test that returns False when output file doesn't exist."""
     def test_output_file_exists_handles_permission_error((self, tmp_path)):
-        """Test that permission errors are handled gracefully."""
 
 class TestPreScreenFiles:
-    """Test the pre_screen_files function."""
     def test_pre_screen_files_with_force_true((self, tmp_path)):
-        """Test that force=True returns all files unchanged."""
     def test_pre_screen_files_with_force_false_no_existing_outputs((self, tmp_path)):
-        """Test that force=False returns all files when no outputs exist."""
     def test_pre_screen_files_with_force_false_some_existing_outputs((self, tmp_path)):
-        """Test that force=False filters out files with existing outputs."""
     def test_pre_screen_files_with_force_false_all_existing_outputs((self, tmp_path)):
-        """Test that force=False returns empty list when all outputs exist."""
     def test_pre_screen_files_with_empty_list((self)):
-        """Test that empty file pairs list is handled correctly."""
     def test_pre_screen_files_with_in_place_processing((self, tmp_path)):
-        """Test that in-place processing (same input/output path) is not filtered."""
     def test_pre_screen_files_logs_appropriately((self, tmp_path)):
-        """Test that pre_screen_files returns correct results (logging verified by other tests)."""
 
 def test_output_file_exists_when_same_path((self, tmp_path)):
-    """Test that in-place processing (same input/output path) returns False."""
 
 def test_output_file_exists_when_output_exists((self, tmp_path)):
-    """Test that returns True when output file exists and differs from input."""
 
 def test_output_file_exists_when_output_missing((self, tmp_path)):
-    """Test that returns False when output file doesn't exist."""
 
 def test_output_file_exists_handles_permission_error((self, tmp_path)):
-    """Test that permission errors are handled gracefully."""
 
 def test_pre_screen_files_with_force_true((self, tmp_path)):
-    """Test that force=True returns all files unchanged."""
 
 def test_pre_screen_files_with_force_false_no_existing_outputs((self, tmp_path)):
-    """Test that force=False returns all files when no outputs exist."""
 
 def test_pre_screen_files_with_force_false_some_existing_outputs((self, tmp_path)):
-    """Test that force=False filters out files with existing outputs."""
 
 def test_pre_screen_files_with_force_false_all_existing_outputs((self, tmp_path)):
-    """Test that force=False returns empty list when all outputs exist."""
 
 def test_pre_screen_files_with_empty_list((self)):
-    """Test that empty file pairs list is handled correctly."""
 
 def test_pre_screen_files_with_in_place_processing((self, tmp_path)):
-    """Test that in-place processing (same input/output path) is not filtered."""
 
 def test_pre_screen_files_logs_appropriately((self, tmp_path)):
-    """Test that pre_screen_files returns correct results (logging verified by other tests)."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_pre_screening_integration.py
@@ -10089,32 +9790,21 @@ import pytest
 from cerebrate_file.cli import run
 
 class TestPreScreeningIntegration:
-    """Test pre-screening integration in CLI recursive mode."""
     def test_recursive_pre_screening_with_existing_outputs((self, tmp_path, capsys)):
-        """Test that recursive mode properly pre-screens files with existing outputs."""
     def test_recursive_pre_screening_with_force_true((self, tmp_path, capsys)):
-        """Test that force=True bypasses pre-screening in recursive mode."""
     def test_recursive_pre_screening_all_files_filtered((self, tmp_path, capsys)):
-        """Test behavior when all files are filtered out by pre-screening."""
     def test_recursive_pre_screening_dry_run_mode((self, tmp_path, capsys)):
-        """Test that dry-run mode works correctly with pre-screening."""
     def test_recursive_pre_screening_in_place_processing((self, tmp_path, capsys)):
-        """Test pre-screening works correctly with in-place processing."""
 
 def test_recursive_pre_screening_with_existing_outputs((self, tmp_path, capsys)):
-    """Test that recursive mode properly pre-screens files with existing outputs."""
 
 def test_recursive_pre_screening_with_force_true((self, tmp_path, capsys)):
-    """Test that force=True bypasses pre-screening in recursive mode."""
 
 def test_recursive_pre_screening_all_files_filtered((self, tmp_path, capsys)):
-    """Test behavior when all files are filtered out by pre-screening."""
 
 def test_recursive_pre_screening_dry_run_mode((self, tmp_path, capsys)):
-    """Test that dry-run mode works correctly with pre-screening."""
 
 def test_recursive_pre_screening_in_place_processing((self, tmp_path, capsys)):
-    """Test pre-screening works correctly with in-place processing."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_prompt_library.py
@@ -10131,60 +9821,38 @@ from cerebrate_file.prompt_library import (
 from cerebrate_file.cli import run
 
 class TestPromptLibrary:
-    """Test prompt library functionality."""
     def test_get_prompt_library_path((self)):
-        """Test that prompt library path is correctly determined."""
     def test_resolve_prompt_file_direct_path((self, tmp_path)):
-        """Test resolving a prompt file with a direct path."""
     def test_resolve_prompt_file_from_library((self)):
-        """Test resolving a prompt file from the library."""
     def test_resolve_prompt_file_not_found((self)):
-        """Test behavior when prompt file is not found."""
     def test_resolve_prompt_file_with_path_fallback((self)):
-        """Test that filename is tried if full path doesn't exist in library."""
     def test_build_base_prompt_with_library_file((self)):
-        """Test that build_base_prompt works with library files."""
     def test_build_base_prompt_with_direct_file((self, tmp_path)):
-        """Test that build_base_prompt works with direct file paths."""
     def test_build_base_prompt_with_missing_file((self)):
-        """Test that build_base_prompt fails gracefully with missing file."""
 
 class TestPromptLibraryIntegration:
-    """Integration tests for prompt library with CLI."""
     def test_cli_can_use_library_prompt((self, tmp_path)):
-        """Test that CLI can use prompts from the library."""
     def test_prompt_library_listing((self, capsys)):
-        """Test that available prompts are listed when file not found."""
 
 def test_get_prompt_library_path((self)):
-    """Test that prompt library path is correctly determined."""
 
 def test_resolve_prompt_file_direct_path((self, tmp_path)):
-    """Test resolving a prompt file with a direct path."""
 
 def test_resolve_prompt_file_from_library((self)):
-    """Test resolving a prompt file from the library."""
 
 def test_resolve_prompt_file_not_found((self)):
-    """Test behavior when prompt file is not found."""
 
 def test_resolve_prompt_file_with_path_fallback((self)):
-    """Test that filename is tried if full path doesn't exist in library."""
 
 def test_build_base_prompt_with_library_file((self)):
-    """Test that build_base_prompt works with library files."""
 
 def test_build_base_prompt_with_direct_file((self, tmp_path)):
-    """Test that build_base_prompt works with direct file paths."""
 
 def test_build_base_prompt_with_missing_file((self)):
-    """Test that build_base_prompt fails gracefully with missing file."""
 
 def test_cli_can_use_library_prompt((self, tmp_path)):
-    """Test that CLI can use prompts from the library."""
 
 def test_prompt_library_listing((self, capsys)):
-    """Test that available prompts are listed when file not found."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_recursive.py
@@ -10204,111 +9872,72 @@ from cerebrate_file.recursive import (
 )
 
 class TestFindFilesRecursive:
-    """Test find_files_recursive function."""
     def test_find_files_with_simple_pattern((self)):
-        """Test finding files with a simple pattern."""
     def test_find_files_with_recursive_pattern((self)):
-        """Test finding files with recursive pattern."""
     def test_find_files_with_output_directory((self)):
-        """Test finding files and generating output paths."""
     def test_find_files_no_matches((self)):
-        """Test finding files when no matches exist."""
     def test_find_files_nonexistent_directory((self)):
-        """Test error when directory doesn't exist."""
     def test_find_files_not_directory((self)):
-        """Test error when path is not a directory."""
 
 class TestReplicateDirectoryStructure:
-    """Test replicate_directory_structure function."""
     def test_replicate_simple_structure((self)):
-        """Test replicating a simple directory structure."""
     def test_replicate_existing_directories((self)):
-        """Test replicating when directories already exist."""
     def test_replicate_empty_list((self)):
-        """Test replicating with empty file list."""
 
 class TestProcessSingleFile:
-    """Test process_single_file function."""
     def test_process_successful((self)):
-        """Test successful file processing."""
     def test_process_with_exception((self)):
-        """Test file processing with exception."""
 
 class TestProcessFilesParallel:
-    """Test process_files_parallel function."""
     def test_parallel_processing_success((self)):
-        """Test successful parallel processing."""
     def test_parallel_processing_with_failures((self)):
-        """Test parallel processing with some failures."""
     def test_parallel_processing_empty_list((self)):
-        """Test parallel processing with empty file list."""
     def test_parallel_processing_with_progress((self)):
-        """Test parallel processing with progress callback."""
 
 class TestProcessingResult:
-    """Test ProcessingResult class."""
     def test_initialization((self)):
-        """Test ProcessingResult initialization."""
 
 class TestRecursiveIntegration:
-    """Integration tests for recursive processing."""
 
 def test_find_files_with_simple_pattern((self)):
-    """Test finding files with a simple pattern."""
 
 def test_find_files_with_recursive_pattern((self)):
-    """Test finding files with recursive pattern."""
 
 def test_find_files_with_output_directory((self)):
-    """Test finding files and generating output paths."""
 
 def test_find_files_no_matches((self)):
-    """Test finding files when no matches exist."""
 
 def test_find_files_nonexistent_directory((self)):
-    """Test error when directory doesn't exist."""
 
 def test_find_files_not_directory((self)):
-    """Test error when path is not a directory."""
 
 def test_replicate_simple_structure((self)):
-    """Test replicating a simple directory structure."""
 
 def test_replicate_existing_directories((self)):
-    """Test replicating when directories already exist."""
 
 def test_replicate_empty_list((self)):
-    """Test replicating with empty file list."""
 
 def test_process_successful((self)):
-    """Test successful file processing."""
 
 def test_process_with_exception((self)):
-    """Test file processing with exception."""
 
 def test_parallel_processing_success((self)):
-    """Test successful parallel processing."""
 
 def mock_process((input_path: Path, output_path: Path)):
 
 def test_parallel_processing_with_failures((self)):
-    """Test parallel processing with some failures."""
 
 def mock_process((input_path: Path, output_path: Path)):
 
 def test_parallel_processing_empty_list((self)):
-    """Test parallel processing with empty file list."""
 
 def test_parallel_processing_with_progress((self)):
-    """Test parallel processing with progress callback."""
 
 def mock_process((input_path: Path, output_path: Path)):
 
 def test_initialization((self)):
-    """Test ProcessingResult initialization."""
 
 def test_full_recursive_workflow((self, mock_executor)):
-    """Test complete recursive processing workflow."""
 
 def mock_process((input_path: Path, output_path: Path)):
 
@@ -10328,90 +9957,62 @@ from cerebrate_file.recursive import (
 )
 
 class TestRecursiveIntegration:
-    """Integration tests for recursive processing functionality."""
     def test_simple_markdown_processing((self, temp_dir_structure)):
-        """Test basic recursive processing of markdown files."""
     def test_complex_glob_patterns((self, temp_dir_structure)):
-        """Test brace expansion and complex patterns."""
     def test_directory_structure_replication((self, temp_dir_structure)):
-        """Test directory structure replication."""
     def test_pattern_edge_cases((self, temp_dir_structure)):
-        """Test edge cases in pattern matching."""
     def test_in_place_processing((self, temp_dir_structure)):
-        """Test in-place processing (no output directory)."""
     def test_parallel_processing_mock((self, temp_dir_structure)):
-        """Test parallel processing with mocked processing function."""
     def test_parallel_processing_with_failures((self, temp_dir_structure)):
-        """Test parallel processing with some failures."""
     def test_empty_directory_handling((self)):
-        """Test handling of empty directories."""
     def test_special_characters_in_filenames((self)):
-        """Test handling of files with special characters."""
     def test_error_handling_invalid_directory((self)):
-        """Test error handling for invalid directories."""
     def test_progress_callback_integration((self, temp_dir_structure)):
-        """Test progress callback integration."""
     def test_worker_count_variation((self, temp_dir_structure)):
-        """Test processing with different worker counts."""
     def test_large_file_set_simulation((self)):
-        """Test processing a large number of files (simulated)."""
 
 def temp_dir_structure((self)):
-    """Create a temporary directory structure for testing."""
 
 def test_simple_markdown_processing((self, temp_dir_structure)):
-    """Test basic recursive processing of markdown files."""
 
 def test_complex_glob_patterns((self, temp_dir_structure)):
-    """Test brace expansion and complex patterns."""
 
 def test_directory_structure_replication((self, temp_dir_structure)):
-    """Test directory structure replication."""
 
 def test_pattern_edge_cases((self, temp_dir_structure)):
-    """Test edge cases in pattern matching."""
 
 def test_in_place_processing((self, temp_dir_structure)):
-    """Test in-place processing (no output directory)."""
 
 def test_parallel_processing_mock((self, temp_dir_structure)):
-    """Test parallel processing with mocked processing function."""
 
 def mock_processing_func((input_path: Path, output_path: Path)) -> ProcessingState:
 
 def test_parallel_processing_with_failures((self, temp_dir_structure)):
-    """Test parallel processing with some failures."""
 
 def mock_processing_func((input_path: Path, output_path: Path)) -> ProcessingState:
 
 def test_empty_directory_handling((self)):
-    """Test handling of empty directories."""
 
 def test_special_characters_in_filenames((self)):
-    """Test handling of files with special characters."""
 
 def test_error_handling_invalid_directory((self)):
-    """Test error handling for invalid directories."""
 
 def test_progress_callback_integration((self, temp_dir_structure)):
-    """Test progress callback integration."""
 
 def progress_callback((file_path: str, completed: int)):
 
 def mock_processing_func((input_path: Path, output_path: Path)) -> ProcessingState:
 
 def test_worker_count_variation((self, temp_dir_structure)):
-    """Test processing with different worker counts."""
 
 def mock_processing_func((input_path: Path, output_path: Path)) -> ProcessingState:
 
 def test_large_file_set_simulation((self)):
-    """Test processing a large number of files (simulated)."""
 
 def mock_processing_func((input_path: Path, output_path: Path)) -> ProcessingState:
 
 
-<document index="42">
+<document index="41">
 <source>tests/test_sample.txt</source>
 <document_content>
 This is a test document for cerebrate-file CLI testing.
@@ -10440,46 +10041,32 @@ from cerebrate_file.tokenizer import (
 )
 
 def test_tokenizer_manager_initialization(()):
-    """Test TokenizerManager initialization."""
 
 def test_tokenizer_manager_fallback_mode(()):
-    """Test TokenizerManager works in fallback mode when qwen-tokenizer not available."""
 
 def test_encode_text_function(()):
-    """Test standalone encode_text function."""
 
 def test_decode_tokens_safely_function(()):
-    """Test standalone decode_tokens_safely function."""
 
 def test_decode_tokens_safely_with_empty_list(()):
-    """Test decode_tokens_safely with empty token list."""
 
 def test_get_tokenizer_manager(()):
-    """Test get_tokenizer_manager function."""
 
 def test_tokenizer_manager_estimate_tokens(()):
-    """Test token estimation functionality."""
 
 def test_tokenizer_manager_with_empty_text(()):
-    """Test TokenizerManager with empty text."""
 
 def test_tokenizer_fallback_approximation(()):
-    """Test fallback character-based approximation."""
 
 def test_tokenizer_manager_decode(()):
-    """Test TokenizerManager decode functionality."""
 
 def test_tokenizer_edge_cases(()):
-    """Test tokenizer edge cases."""
 
 def test_tokenizer_properties(()):
-    """Test tokenizer properties."""
 
 def test_encode_text_with_long_text(()):
-    """Test encoding with longer text."""
 
 def test_encode_text_with_special_characters(()):
-    """Test encoding with special characters."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_ui.py
@@ -10491,103 +10078,64 @@ from rich.console import Console
 from cerebrate_file.ui import FileProgressDisplay, MultiFileProgressDisplay
 
 class TestFileProgressDisplay:
-    """Test FileProgressDisplay class."""
     def test_init_default_console((self)):
-        """Test initialization with default console."""
     def test_init_custom_console((self)):
-        """Test initialization with custom console."""
     def test_start_file_processing((self)):
-        """Test starting file processing."""
     def test_update_progress((self)):
-        """Test updating progress."""
     def test_update_progress_no_active_task((self)):
-        """Test updating progress when no active task."""
     def test_finish_file_processing((self)):
-        """Test finishing file processing."""
     def test_complete_workflow((self)):
-        """Test complete workflow from start to finish."""
 
 class TestMultiFileProgressDisplay:
-    """Test MultiFileProgressDisplay class."""
     def test_init_default_console((self)):
-        """Test initialization with default console."""
     def test_init_custom_console((self)):
-        """Test initialization with custom console."""
     def test_start_overall_processing((self)):
-        """Test starting overall processing."""
     def test_start_file((self)):
-        """Test starting individual file processing."""
     def test_update_file_progress((self)):
-        """Test updating progress for specific file."""
     def test_update_file_progress_unknown_file((self)):
-        """Test updating progress for unknown file."""
     def test_finish_file((self)):
-        """Test finishing individual file processing."""
     def test_finish_overall_processing((self)):
-        """Test finishing overall processing."""
     def test_complete_multi_file_workflow((self)):
-        """Test complete multi-file processing workflow."""
 
 class TestUIIntegration:
-    """Integration tests for UI components."""
     def test_progress_display_renders_without_error((self)):
-        """Test that progress displays render without throwing exceptions."""
     def test_ui_with_edge_case_paths((self)):
-        """Test UI with edge case file paths."""
 
 def test_init_default_console((self)):
-    """Test initialization with default console."""
 
 def test_init_custom_console((self)):
-    """Test initialization with custom console."""
 
 def test_start_file_processing((self)):
-    """Test starting file processing."""
 
 def test_update_progress((self)):
-    """Test updating progress."""
 
 def test_update_progress_no_active_task((self)):
-    """Test updating progress when no active task."""
 
 def test_finish_file_processing((self)):
-    """Test finishing file processing."""
 
 def test_complete_workflow((self)):
-    """Test complete workflow from start to finish."""
 
 def test_init_default_console((self)):
-    """Test initialization with default console."""
 
 def test_init_custom_console((self)):
-    """Test initialization with custom console."""
 
 def test_start_overall_processing((self)):
-    """Test starting overall processing."""
 
 def test_start_file((self)):
-    """Test starting individual file processing."""
 
 def test_update_file_progress((self)):
-    """Test updating progress for specific file."""
 
 def test_update_file_progress_unknown_file((self)):
-    """Test updating progress for unknown file."""
 
 def test_finish_file((self)):
-    """Test finishing individual file processing."""
 
 def test_finish_overall_processing((self)):
-    """Test finishing overall processing."""
 
 def test_complete_multi_file_workflow((self)):
-    """Test complete multi-file processing workflow."""
 
 def test_progress_display_renders_without_error((self)):
-    """Test that progress displays render without throwing exceptions."""
 
 def test_ui_with_edge_case_paths((self)):
-    """Test UI with edge case file paths."""
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_validators.py
@@ -10607,61 +10155,67 @@ from cerebrate_file.validators import (
 )
 
 def test_validate_chunk_size_valid(()):
-    """Test chunk size validation with valid values."""
 
 def test_validate_chunk_size_too_small(()):
-    """Test chunk size validation with too small value."""
 
 def test_validate_chunk_size_too_large(()):
-    """Test chunk size validation with too large value."""
 
 def test_validate_chunk_size_invalid_type(()):
-    """Test chunk size validation with invalid type."""
 
 def test_validate_temperature_valid(()):
-    """Test temperature validation with valid values."""
 
 def test_validate_temperature_too_low(()):
-    """Test temperature validation with too low value."""
 
 def test_validate_temperature_too_high(()):
-    """Test temperature validation with too high value."""
 
 def test_validate_temperature_invalid_type(()):
-    """Test temperature validation with invalid type."""
 
 def test_validate_top_p_valid(()):
-    """Test top_p validation with valid values."""
 
 def test_validate_top_p_too_low(()):
-    """Test top_p validation with too low value."""
 
 def test_validate_top_p_too_high(()):
-    """Test top_p validation with too high value."""
 
 def test_validate_file_size_small_file(()):
-    """Test file size validation with small file."""
 
 def test_validate_file_size_nonexistent_file(()):
-    """Test file size validation with nonexistent file."""
 
 def test_validate_file_path_safe_valid(()):
-    """Test file path validation with valid file."""
 
 def test_validate_file_path_safe_nonexistent(()):
-    """Test file path validation with nonexistent file."""
 
 def test_validate_file_path_safe_directory(()):
-    """Test file path validation with directory instead of file."""
 
 def test_validate_model_parameters_valid(()):
-    """Test combined model parameter validation with valid values."""
 
 def test_validate_model_parameters_invalid_ratio(()):
-    """Test model parameter validation with invalid ratio."""
 
 def test_validate_model_parameters_multiple_invalid(()):
-    """Test model parameter validation with multiple invalid values."""
+
+
+# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_zero_output_guard.py
+# Language: python
+
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+import pytest
+from loguru import logger
+from cerebrate_file.cerebrate_file import process_document
+from cerebrate_file.cli import run as cli_run
+from cerebrate_file.models import Chunk, ChunkDiagnostics, RateLimitStatus
+
+def test_process_document_logs_diagnostics_for_zero_token_chunk((
+    monkeypatch: pytest.MonkeyPatch,
+)) -> None:
+
+def fake_request((*_args, **_kwargs)):
+
+def _sink((message)):
+
+def test_cli_aborts_before_overwriting_when_total_output_zero((
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+)) -> None:
 
 
 </documents>

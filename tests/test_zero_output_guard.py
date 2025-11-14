@@ -17,7 +17,9 @@ from cerebrate_file.cli import run as cli_run
 from cerebrate_file.models import Chunk, ChunkDiagnostics, RateLimitStatus
 
 
-def test_process_document_logs_diagnostics_for_zero_token_chunk(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_process_document_logs_diagnostics_for_zero_token_chunk(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Ensure zero-token chunks emit diagnostics and warnings."""
 
     chunk = Chunk(text="hello world", token_count=5)

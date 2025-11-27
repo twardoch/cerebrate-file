@@ -125,24 +125,30 @@ def test_successful_request():
 
 
 def test_full_retry_flow(mocker):
-    """Test the full tenacity retry flow by simulating a 503 and then success."""
+    """Test retry flow with make_request_with_fallback."""
+    from cerebrate_file.api_client import make_request_with_fallback
 
-    # We need to mock the inner function that is decorated with @retry
+    # Mock the implementation function
     mocked_impl = mocker.patch("cerebrate_file.api_client._make_cerebras_request_impl")
 
-    # Configure the side effect of the mocked function
+    # Configure: first call raises rate limit error, second call succeeds
     mocked_impl.side_effect = [
-        APIError("Simulating a 503 error"),  # First call raises an error
-        ("Successful response", RateLimitStatus()),  # Second call returns a successful response
+        APIError("Error code: 429 - rate limit exceeded"),  # First call fails
+        ("Successful response", RateLimitStatus()),  # Second call succeeds
     ]
+
+    # Mock time.sleep to avoid delays in tests
+    mocker.patch("cerebrate_file.api_client.time.sleep")
 
     mock_client = Mock()
     messages = [{"role": "user", "content": "test"}]
 
-    # Call the parent function which handles the retry logic
-    result, _ = make_cerebras_request(mock_client, messages, "llama3.1-8b", 1000, 0.7, 0.9)
+    # Call the fallback function which handles retries
+    result, _, model_used = make_request_with_fallback(
+        mock_client, messages, "llama3.1-8b", 1000, 0.7, 0.9
+    )
 
-    # Assert that the inner function was called twice (initial + 1 retry)
+    # Assert we retried and got the successful response
     assert mocked_impl.call_count == 2
-    # Assert that we got the successful response from the second call
     assert result == "Successful response"
+    assert model_used == "llama3.1-8b"

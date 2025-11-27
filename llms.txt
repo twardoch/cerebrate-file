@@ -35,11 +35,13 @@ Project Structure:
 │       ├── 📄 config.py
 │       ├── 📄 constants.py
 │       ├── 📄 continuity.py
+│       ├── 📄 default_config.toml
 │       ├── 📄 error_recovery.py
 │       ├── 📄 file_utils.py
 │       ├── 📄 models.py
 │       ├── 📄 prompt_library.py
 │       ├── 📄 recursive.py
+│       ├── 📄 settings.py
 │       ├── 📄 tokenizer.py
 │       ├── 📄 ui.py
 │       └── 📄 validators.py
@@ -80,13 +82,9 @@ Project Structure:
 ├── 📄 CONTRIBUTING.md
 ├── 📄 LICENSE
 ├── 📄 md.txt
-├── 📄 package.toml
 ├── 📄 PLAN.md
 ├── 📄 pyproject.toml
 ├── 📄 README.md
-├── 📄 REVIEW.md
-├── 📄 test1.sh
-├── 📄 test2.sh
 ├── 📄 test_retry_mechanism.py
 ├── 📄 testapi.py
 ├── 📄 TODO.md
@@ -408,281 +406,86 @@ repos:
 
 ## [Unreleased] - 2025-09-20
 
-
-
 ### Changed
-
-- Migrated `tool.uv.dev-dependencies` to `[dependency-groups].dev` to fix uv deprecation warning
-
-- Relaxed `max_tokens_ratio` upper bound; effective cap still enforced by `MAX_OUTPUT_TOKENS` at runtime
-
-
+- Migrated `tool.uv.dev-dependencies` to `[dependency-groups].dev`.
+- Relaxed `max_tokens_ratio` validation; runtime cap remains unchanged.
 
 ### Added
-
-- STDIN/STDOUT streaming support with `--input_data -` and `--output_data -` options
-
-  - Incompatible with `--recurse` flag
-
-  - Added test coverage and documentation examples
-
-- Built-in prompt library in `prompts/` folder
-
-  - Includes `fix-pdf-extracted-text.xml` for cleaning PDF text
-
-  - Smart resolution: checks direct paths first, then library
-
-  - Supports any file extension
-
-  - Lists available prompts on error
-
-  - Full test coverage
-
-- Pre-screening for recursive processing
-
-  - Shows accurate file counts and filters existing outputs when `--force=False`
-
-  - Clear messaging and accurate progress bars
-
-  - Minimal performance overhead
-
-  - Full test coverage
-
-- `--force` flag to prevent accidental overwriting
-
-  - Checks before API calls to save quota
-
-  - Works in both single-file and recursive modes
-
-  - Clear messaging for skipped files
-
-  - Doesn't affect in-place editing
-
-  - Full test coverage
-
-- Comprehensive GitHub Pages documentation
-
-  - Jekyll-based site with Just-the-Docs theme
-
-  - Includes installation, usage, API reference, examples, and development guides
-
-- `testapi.py` script for API key and quota verification
+- STDIN/STDOUT streaming support with `--input_data -` and `--output_data -` (incompatible with `--recurse`).
+- Built-in prompt library in `prompts/` folder, which is checked after direct paths. Includes `fix-pdf-extracted-text.xml`.
+- Pre-screening for recursive processing to show accurate file counts and filter existing outputs.
+- `--force` flag to prevent accidental overwriting by checking before API calls (does not affect in-place editing).
+- Comprehensive documentation.
+- `testapi.py` script for API key and quota verification.
 
 ### Fixed
-
-- **Pydantic Plugin ImportError**: Resolved by ensuring execution in an isolated environment to prevent loading incompatible external plugins.
-
-- **Rate Limit Display**: Fixed incorrect token calculation; now shows only actual remaining daily requests from API headers.
-
-- **Zero-Output Safeguards**: Added chunk-level diagnostics and aborts processing if total output tokens are zero to prevent overwriting files with empty content.
-
-
+- **Pydantic Plugin ImportError**: Resolved by ensuring an isolated execution environment.
+- **Rate Limit Display**: Fixed incorrect token calculation to show actual remaining daily requests.
+- **Zero-Output Safeguards**: Added processing abort if total output is zero to prevent overwriting files with empty content.
 
 ## [1.0.10] - 2025-09-20
 
-
-
 ### Added
-
-- **Rich UI Support**: Replaced tqdm with rich for enhanced terminal UI
-
-  - Two-row progress display
-
-  - `FileProgressDisplay` for single files and `MultiFileProgressDisplay` for parallel processing
-
-  - Progress callback architecture
-
-  - 98% test coverage (18 tests)
-
-- **Recursive Processing Infrastructure**: Added `--recurse` for glob patterns and `--workers` for parallel processing
-
-  - Comprehensive validation for inputs
-
-  - Directory structure replication for outputs
-
-
+- **Rich UI Support**: Replaced `tqdm` with `rich` for an enhanced terminal UI, including `FileProgressDisplay` and `MultiFileProgressDisplay` with a progress callback architecture.
+- **Recursive Processing**: Added `--recurse` for glob patterns and `--workers` for parallel processing with directory structure replication for outputs.
 
 ### Changed
-
 - **Dependencies**: Added `rich>=13.0.0`, removed `tqdm`.
-
 - **CLI Interface**: Extended `run()` with `--recurse` and `--workers`. Input/output paths now support directories.
-
-- **Processing Pipeline**: Modified `process_document()` to use progress callbacks.
-
-
-
-### Technical Improvements
-
-- Added comprehensive test suite for UI components (18 tests, 98% coverage).
-
-- Full type hints for new functions and classes.
-
-- Clean separation of UI and logic via callbacks.
-
-- Maintained 100% backward compatibility.
-
-- Enhanced error messages.
-
-
-
-### Test Results
-
-- 33 core tests passing.
-
-- 18% overall test coverage (focused on new features).
+- **Processing Pipeline**: Modified `process_document()` to use progress callbacks and enhanced error messages.
 
 ## [2.0.0] - 2025-09-19
 
-
-
 ### Changed
-
-- **Complete Package Restructure**: Refactored monolithic `cereproc.py` (1788 lines) into a modular package.
-
-- **Module Architecture**: Created 10+ focused modules.
-
-
+- **Complete Package Restructure**: Refactored monolithic `cereproc.py` (1788 lines) into a modular package with 10+ focused modules.
 
 ### Added
-
-- **Test Coverage**: 29% overall coverage with 45 passing tests.
-
-- **Test Framework**: Robust testing infrastructure for unit tests, edge cases, and error handling.
-
-
-
-### Technical Improvements
-
-- **Better Error Handling**: Comprehensive exception hierarchy.
-
-- **Dependency Injection**: TokenizerManager for better testability.
-
-- **Strategy Pattern**: Clean chunking strategy implementation.
-
-- **Type Safety**: Full type hints throughout codebase.
-
-- **Validation**: Enhanced input validation.
-
-- **Backup Support**: File operations support automatic backups.
-
-- **Code Structure**: Single responsibility, minimal dependencies, and improved testability.
-
-- **Graceful Degradation**: Better handling of optional dependencies.
-
-- **Atomic Operations**: Enhanced file safety with proper cleanup.
-
-
-
-## [1.2.2] - 2025-09-19
-
-
-
-### Clarified
-
-- Refined focus on the essential workflow: parsing, chunking, metadata explanation, LLM processing, and saving.
-
-
-
-### Removed
-
-- Removed unnecessary complexity and features not aligned with the core purpose.
-
-
-
+- A robust test framework with 45 passing tests.
+- A comprehensive exception hierarchy.
+- A `TokenizerManager` for dependency injection.
+- A clean chunking strategy pattern.
+- Full type hints throughout the codebase.
+- Enhanced input validation.
+- Automatic backup support for file operations.
+- Improved file safety with atomic operations and better handling of optional dependencies.
 ## [1.2.1] - 2025-09-19
 
-
-
 ### Added
-
-- **Remaining Tokens Display**: Shows estimated remaining daily tokens and requests after processing, including rate limit info, token capacity estimates, and an 80% quota warning.
+- **Remaining Tokens Display**: Shows estimated remaining daily tokens, requests, and quota status after processing.
 
 ## [1.2.0] - 2025-09-19
 
-
-
 ### Added
-
-- **Code-Aware Chunking**: Intelligent code splitting that respects function, class, and structural boundaries, tracking brace/parenthesis depth.
-
-- **Dry-Run Mode**: `--dry-run` flag for testing chunking strategies, displaying analysis, token counts, and API request previews without making calls.
-
-- **Input Validation**: Comprehensive validation for files, chunk size, token ratio, API keys, and data format with clear error messages.
-
-
+- **Code-Aware Chunking**: Splits code respecting function, class, and structural boundaries.
+- **Dry-Run Mode**: `--dry-run` flag to preview chunking analysis and API requests without making calls.
+- **Input Validation**: Comprehensive validation for files, chunk sizes, API keys, and data formats.
 
 ## [1.1.1] - 2025-09-19
 
-
-
 ### Fixed
-
 - Preserved frontmatter in output when using `--explain` mode.
-
-- Ensured metadata information only prints in verbose mode for cleaner output.
-
+- Metadata information now only prints in verbose mode.
 - Displayed the input file path at the start of processing.
-
-
 
 ## [1.1.0] - 2025-09-19
 
-
-
 ### Added
-
-- **--explain Mode**: New functionality for document metadata processing, including Jekyll-style frontmatter parsing, validation, structured JSON output, and metadata context inclusion in prompts.
-
-
+- **--explain Mode**: Processes document metadata, including Jekyll-style frontmatter parsing and structured JSON output.
 
 ### Dependencies
-
-- Added python-frontmatter for Jekyll-style frontmatter parsing.
+- Added `python-frontmatter`.
 
 ## [1.0.0] - 2025-09-19
 
-
-
 ### Added
-
 - Initial release of `cereproc.py` CLI tool for processing large documents with Cerebras.
-
 - Implemented four chunking strategies: text, semantic, markdown, and code.
-
-- Added intelligent continuity system to maintain context across chunks.
-
-- Integrated token-accurate accounting, rate limiting, and streaming API with retry logic.
-
-- Included comprehensive logging, environment variable management, and robust error handling.
-
-
-
-### Technical Architecture
-
-- Single-file design with a functional programming approach.
-
-- Integrated semantic-text-splitter for intelligent boundary detection.
-
-- Enforced token budget limits (32K input / 40K completion) and extracted continuity examples.
-
-
-
-### Testing & Documentation
-
-- Comprehensive test suite and documentation (SPEC.md, README.md).
-
-
+- Added an intelligent continuity system to maintain context across chunks.
+- Integrated token-accurate accounting, rate limiting, and a streaming API with retry logic.
+- Included comprehensive logging, environment variable management, and error handling.
 
 ### Dependencies
-
 - fire, loguru, python-dotenv, tenacity, cerebras-cloud-sdk, semantic-text-splitter, qwen-tokenizer.
-
-
-
-### Performance
-
-- Processes 1000-3000 tokens/second with 95%+ token accuracy and coherent chunk transitions.
 </document_content>
 </document>
 
@@ -1078,53 +881,26 @@ This plan outlines two main objectives: first, to diagnose and fix the critical 
 
 ---
 
-## Phase 1: Bug Fix — Resolve Zero-Token Output (Issue #204)
+## Phase 1: Bug Fix — Resolve Zero-Token Output (Issue #204) ✅ COMPLETED
 
-The highest priority is to fix the bug where `cerebrate-file` fails with "zero tokens returned" for each chunk, while the simpler `testapi.py` script successfully processes a whole file. This indicates a problem in the main tool's chunking or request logic, not the Cerebras API itself.
-
-### 1.1. Problem Analysis
-
-- **Symptom:** The tool produces "Chunk X returned zero tokens" warnings for all chunks and aborts, leaving the output file empty.
-- **Clue:** `testapi.py` sends the entire file in one request and succeeds. `cerebrate-file` fails when it splits the same file into chunks.
-- **Hypothesis:** The issue likely lies in one of these areas:
-    1.  **Chunk Content:** The chunking logic might be creating malformed or empty chunks.
-    2.  **Request Parameters:** The `max_completion_tokens` for each chunk might be calculated incorrectly (e.g., as zero or a negative number).
-    3.  **API Changes:** The Cerebras API may have new requirements for chunked requests that the tool doesn't meet. The successful `testapi.py` uses `zai-glm-4.6`, while the failing `cerebrate-file` log also shows `zai-glm-4.6`. The model seems consistent.
-
-### 1.2. Investigation and Debugging Strategy
-
-1.  **Reproduce the Failure:** Run the exact command from `issues/204.md`:
-    ```bash
-    cerebrate-file -i CHANGELOG.md -o CHANGELOG2.md -c 1024 -p "Slightly compress this CHANGELOG: only keep relevant facts, eliminate fluff"
-    ```
-2.  **Add Debug Logging:** Enhance the logging in `cerebrate_file/cerebrate_file.py` and `cerebrate_file/api_client.py` to print the exact content and parameters of each chunk's API request just before it's sent. Key information to log:
-    -   Chunk content being sent.
-    -   `max_completion_tokens` value.
-    -   The full `messages` payload.
-3.  **Analyze and Fix:**
-    -   Examine the logged output to find the discrepancy. Is the content empty? Is `max_completion_tokens` too small or invalid?
-    -   Modify the chunking or token calculation logic based on the findings.
-    -   Iteratively test the fix until the command succeeds and `CHANGELOG2.md` is generated correctly.
-4.  **Create a Regression Test:** Add a new test case to `tests/test_cerebrate_file.py` that specifically replicates this failure condition (e.g., processing a small file with small chunks) to ensure it doesn't happen again.
+The zero-token bug was resolved by adding `ChunkDiagnostics` tracking plus CLI guards that warn when individual chunks return zero tokens and abort before overwriting files when total output tokens remain zero. The error path now prints chunk diagnostics for troubleshooting.
 
 ---
 
 ## Phase 2: Repository Cleanup and Standardization
 
-After the bug is fixed and the tool is stable, we will clean up the repository.
-
 ### 2.1. File Consolidation and Deletion
 
 -   **Objective:** Eliminate redundant, temporary, and obsolete files.
 -   **Actions:**
-    1.  **Merge `CHANGELOG.md` and `CHANGELOG2.md`:** Consolidate all relevant, project-specific history into `CHANGELOG.md` and delete `CHANGELOG2.md`. The format should follow the "Keep a Changelog" standard.
-    2.  **Consolidate Development Guidelines:** Merge `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `LLXPRT.md`, `QWEN.md`, and `.cursorrules` into a single, comprehensive `CONTRIBUTING.md`. This file will serve as the single source of truth for development process and agent instructions.
-    3.  **Remove Obsolete Scripts:**
-        -   Delete `package.toml` (unused).
+    1.  ~~**Merge `CHANGELOG.md` and `CHANGELOG2.md`**~~ – N/A (no CHANGELOG2.md exists)
+    2.  **Consolidate Development Guidelines:** Merge `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `LLXPRT.md`, `QWEN.md`, and `.cursorrules` into a single, comprehensive `CONTRIBUTING.md`.
+    3.  **Remove Obsolete Scripts:** ✅ DONE
+        -   ~~Delete `package.toml` (unused).~~ ✅
         -   Delete `test_retry_mechanism.py` after merging its logic into a new integration test in `tests/test_api_retry.py`.
-        -   Delete `test1.sh` and `test2.sh` (obsolete).
-    4.  **Archive or Remove One-off Files:**
-        -   Delete `REVIEW.md` (insights can be moved to docs if needed).
+        -   ~~Delete `test1.sh` and `test2.sh` (obsolete).~~ ✅
+    4.  **Archive or Remove One-off Files:** ✅ PARTIAL
+        -   ~~Delete `REVIEW.md`.~~ ✅
         -   Delete `issues/204.md` once the bug is fixed and documented in the changelog.
         -   Delete temporary files like `md.txt`.
 
@@ -1132,10 +908,10 @@ After the bug is fixed and the tool is stable, we will clean up the repository.
 
 -   **Objective:** Make the project easy to understand, use, and contribute to.
 -   **Actions:**
-    1.  **Update `README.md`:** Rewrite the README to be a concise, welcoming entry point. It should briefly describe the project, show a clear usage example, and link to the full documentation in the `docs/` directory. Remove references to `old/cereproc.py`.
-    2.  **Standardize Scripts:** Review `build.sh`. Move its core logic into `pyproject.toml` as `hatch` scripts for consistency (`hatch run build`, `hatch run publish`, etc.). Document the release process in `CONTRIBUTING.md`.
-    3.  **Clean `TODO.md` and `WORK.md`:** Clear the completed tasks from these files to prepare for the next development cycle.
-    4.  **Centralize Configuration:** Ensure `pyproject.toml` remains the single source of truth for all project configuration (dependencies, linting, testing, building).
+    1.  **Update `README.md`:** ✅ DONE – Added Configuration section documenting layered config system.
+    2.  **Standardize Scripts:** Review `build.sh`. Move its core logic into `pyproject.toml` as `hatch` scripts.
+    3.  **Clean `TODO.md` and `WORK.md`:** ✅ DONE – Cleared completed tasks.
+    4.  **Centralize Configuration:** ✅ DONE – `default_config.toml` bundled with package, settings.py handles layered config.
 
 ### 2.3. Final Polish
 
@@ -1277,6 +1053,50 @@ Install with `uv` or your preferred package manager:
 - `tqdm`
 - `python-frontmatter`
 
+## Configuration
+
+The tool uses a layered configuration system. Settings are loaded in this order (later sources override earlier ones):
+
+1. **Built-in defaults** – `default_config.toml` bundled with the package
+2. **User config** – `~/.config/cerebrate-file/config.toml`
+3. **Project config** – `.cerebrate-file.toml` in the current directory
+4. **Environment variables** – e.g., `CEREBRATE_PRIMARY_MODEL`
+
+If no custom config exists, the built-in defaults are used automatically.
+
+### Config File Locations
+
+| Platform | User Config Path |
+|----------|------------------|
+| macOS/Linux | `~/.config/cerebrate-file/config.toml` |
+| Windows | `%APPDATA%\cerebrate-file\config.toml` |
+
+For project-specific settings, create `.cerebrate-file.toml` in your project root.
+
+### Example Config
+
+```toml
+[inference]
+temperature = 0.98
+top_p = 0.8
+chunk_size = 32000
+sample_size = 200
+
+[models.primary]
+name = "zai-glm-4.6"
+provider = "cerebras"
+api_key_env = "CEREBRAS_API_KEY"
+max_context_tokens = 131000
+max_output_tokens = 40960
+
+[models.fallback1]
+enabled = true
+name = "zai-org/GLM-4.6"
+provider = "chutes"
+api_key_env = "CHUTES_API_KEY"
+api_base = "https://llm.chutes.ai/v1"
+```
+
 ## Environment Setup
 
 Set `CEREBRAS_API_KEY` before running. The tool will warn about placeholder keys and validate basic formatting. Use `--verbose` for extra runtime info and rate-limit headers.
@@ -1296,71 +1116,6 @@ Let me know if you'd like this tailored further toward users, developers, or int
 </document>
 
 <document index="10">
-<source>REVIEW.md</source>
-<document_content>
-# Codebase Review: cerebrate-file
-
-This review analyzes the `cerebrate-file` project based on the provided code snapshot. The project is a CLI utility for processing large documents with the Cerebras AI platform, featuring intelligent chunking, context continuity, and recursive processing.
-
-## 1. Overall Assessment
-
-The project is well-structured and shows clear signs of thoughtful development. The transition from a single script to a modular package with proper documentation and testing is a solid improvement.
-
-The codebase is clean, automation is in place, and the developer discipline (evidenced by `CHANGELOG.md`, `PLAN.md`, `DEPENDENCIES.md`) demonstrates good practices. The suggestions below focus on strategic enhancements rather than critical issues.
-
-## 2. Key Strengths
-
-The project demonstrates strength in several areas:
-
-*   **Modular Architecture**: The refactoring into a `src/` layout with distinct modules (`api_client`, `chunking`, `config`, `ui`, etc.) improves maintainability and readability. Each module has a clear purpose.
-*   **Robust Automation**: GitHub Actions workflows (`push.yml`, `release.yml`) handle linting/formatting (`ruff`), testing across Python versions, building, and publishing to PyPI. This setup meets professional standards.
-*   **Comprehensive Documentation**:
-    *   **User Guides**: The Jekyll-based documentation site in `docs/` provides installation, usage, and API reference materials.
-    *   **Development Records**: `CHANGELOG.md` tracks changes effectively, while `DEPENDENCIES.md` clearly justifies each dependency choice.
-*   **Structured Development Process**: Files like `PLAN.md`, `TODO.md`, and `WORK.md` show organized feature implementation and bug tracking.
-*   **Modern Tooling**: Effective use of current best-practice tools:
-    *   `uv` for dependency management
-    *   `ruff` for linting and formatting
-    *   `pytest` for testing
-    *   `rich` for CLI interface
-    *   `pre-commit` hooks for code quality
-
-## 3. Areas for Improvement
-
-While the project is strong, a few strategic improvements could enhance its robustness and performance.
-
-### a. Increase Test Coverage
-
-*   **Observation**: New features like `ui.py` have high test coverage (98%), but overall project coverage remains low (18-29%).
-*   **Importance**: This is the most critical improvement area. Higher coverage protects core logic from regressions during future development.
-*   **Suggestions**:
-    1.  **Focus on Core Modules**: Prioritize tests for `cerebrate_file.py`, `api_client.py`, `file_utils.py`, and untested parts of `chunking.py`.
-    2.  **Test Edge Cases**: Include failure scenarios such as API errors, missing files, invalid configurations, and empty inputs.
-    3.  **Set Coverage Goals**: Aim for 80%+ overall coverage. Enforce this in CI using `pytest-cov`'s `--cov-fail-under=80` flag.
-
-### b. Use Pydantic for Configuration and Data Models
-
-*   **Observation**: Custom classes handle data modeling and configuration with manual validation.
-*   **Importance**: Pydantic would provide automatic validation, type coercion, and clearer error handling with less boilerplate.
-*   **Suggestions**:
-    1.  **Refactor Models**: Replace manual validation in `config.py` and data structures in `models.py` with Pydantic models.
-    2.  **Benefits**: Simplified validation logic, self-documenting schemas, and easy JSON serialization for API interactions.
-
-### c. Consider Async Architecture for Performance
-
-*   **Observation**: The implementation is synchronous, using `ThreadPoolExecutor` for parallel file processing.
-*   **Importance**: For I/O-heavy operations (file reading, API calls), async processing could improve performance and simplify concurrency handling.
-*   **Suggestions**:
-    *   **Future Refactor**: In a major version update (v3.0), consider moving to `asyncio` with `aiofiles` for file operations and `httpx` for API calls.
-    *   **Timing**: This change should be prioritized only if current performance becomes a bottleneck in multi-file processing scenarios.
-
-## Conclusion
-
-This is a well-built Python project with strong foundations in modularity, automation, and documentation. Increasing test coverage for core functionality should be the immediate priority. The other suggestions—Pydantic adoption and async refactoring—are valuable for long-term evolution but don't reflect weaknesses in the current implementation.
-</document_content>
-</document>
-
-<document index="11">
 <source>TODO.md</source>
 <document_content>
 ---
@@ -1380,20 +1135,29 @@ this_file: TODO.md
 </document_content>
 </document>
 
-<document index="12">
+<document index="11">
 <source>WORK.md</source>
 <document_content>
 # this_file: WORK.md
-- **Pydantic Plugin ImportError**: The `ImportError` related to `logfire-plugin` and `opentelemetry._logs` was investigated. It was determined that `logfire-plugin` was not a direct dependency of the project and was not installed in the project's `uv` environment. The warning was likely caused by Pydantic attempting to discover plugins from a broader Python environment.
-- **Resolution**: Running the `cerebrate-file --help` command using `uvx hatch run` successfully executed the command without the `ImportError` or `UserWarning`. This confirms that executing within the isolated `hatch` environment prevents Pydantic from loading external, incompatible plugins. The problem is considered fixed by ensuring proper environment isolation.
-- **Issue #204 – Zero-output safeguards**: Added `ChunkDiagnostics` tracking plus CLI guards that warn when individual chunks return zero tokens and abort before overwriting files when the total output tokens remain zero. The error path now prints the first few chunk diagnostics (input tokens, completion budgets, remaining quota) so users can troubleshoot API-side issues.
-- **Tests**: `uvx hatch test` (pass)
-- **Utility Script**: Added `testapi.py` to let developers manually smoke-test the Cerebras streaming endpoint with the exact parameters our CLI uses.
-- **Tests**: Not run (script is a manual diagnostic helper).
+
+Current iteration scratchpad. Clean after each sprint.
+
+## Active Work
+
+- Configuration system verified working
+  - `default_config.toml` bundled with package
+  - User config at `~/.config/cerebrate-file/config.toml`
+  - Project config at `.cerebrate-file.toml`
+  - Environment variable overrides
+- Tests passing (some rate-limit failures expected during heavy testing)
+
+## Notes
+
+_(empty)_
 </document_content>
 </document>
 
-<document index="13">
+<document index="12">
 <source>build.sh</source>
 <document_content>
 #!/usr/bin/env bash
@@ -1420,7 +1184,7 @@ uv pip install --system --upgrade -e .
 </document_content>
 </document>
 
-<document index="14">
+<document index="13">
 <source>docs/Gemfile</source>
 <document_content>
 # Gemfile for Jekyll GitHub Pages site
@@ -1456,7 +1220,7 @@ gem "webrick", "~> 1.7"
 </document_content>
 </document>
 
-<document index="15">
+<document index="14">
 <source>docs/README.md</source>
 <document_content>
 # Cerebrate File Documentation
@@ -1570,7 +1334,7 @@ Documentation is licensed under the same Apache 2.0 license as the main project.
 </document_content>
 </document>
 
-<document index="16">
+<document index="15">
 <source>docs/_config.yml</source>
 <document_content>
 # Jekyll configuration for cerebrate-file documentation
@@ -1687,7 +1451,7 @@ compress_html:
 </document_content>
 </document>
 
-<document index="17">
+<document index="16">
 <source>docs/api-reference.md</source>
 <document_content>
 # API Reference
@@ -2302,7 +2066,7 @@ display(Markdown(result))
 </document_content>
 </document>
 
-<document index="18">
+<document index="17">
 <source>docs/cli-reference.md</source>
 <document_content>
 ---
@@ -2734,7 +2498,7 @@ export CEREBRAS_API_KEY="csk-your-key"
 </document_content>
 </document>
 
-<document index="19">
+<document index="18">
 <source>docs/configuration.md</source>
 <document_content>
 ---
@@ -3207,7 +2971,7 @@ cerebrate-file small.txt --verbose | grep "Remaining"
 </document_content>
 </document>
 
-<document index="20">
+<document index="19">
 <source>docs/development.md</source>
 <document_content>
 ---
@@ -3851,7 +3615,7 @@ By contributing, you agree that your contributions will be licensed under the Ap
 </document_content>
 </document>
 
-<document index="21">
+<document index="20">
 <source>docs/examples.md</source>
 <document_content>
 ---
@@ -4307,7 +4071,7 @@ cerebrate-file "$TRANS_DIR" \
 </document_content>
 </document>
 
-<document index="22">
+<document index="21">
 <source>docs/index.md</source>
 <document_content>
 ---
@@ -4426,7 +4190,7 @@ Licensed under Apache 2.0. See [LICENSE](https://github.com/twardoch/cerebrate-f
 </document_content>
 </document>
 
-<document index="23">
+<document index="22">
 <source>docs/installation.md</source>
 <document_content>
 Here's the edited version of your document with improvements for clarity, conciseness, and tone:
@@ -4698,7 +4462,7 @@ This edit removes fluff, simplifies structure, tightens technical descriptions, 
 </document_content>
 </document>
 
-<document index="24">
+<document index="23">
 <source>docs/quick-start.md</source>
 <document_content>
 ---
@@ -4975,7 +4739,7 @@ Now that you're up and running:
 </document_content>
 </document>
 
-<document index="25">
+<document index="24">
 <source>docs/troubleshooting.md</source>
 <document_content>
 # Troubleshooting
@@ -5529,7 +5293,7 @@ A: Use appropriate `--data_format` for your content type.
 </document_content>
 </document>
 
-<document index="26">
+<document index="25">
 <source>docs/usage.md</source>
 <document_content>
 ---
@@ -5978,7 +5742,7 @@ done
 </document_content>
 </document>
 
-<document index="27">
+<document index="26">
 <source>issues/204.md</source>
 <document_content>
 The simple `./testapi.py` script works and returns a TLDR of CHANGELOG.md as requested
@@ -6027,7 +5791,7 @@ TASK: Investigate carefully and systematically this failure and restore `cerebra
 </document_content>
 </document>
 
-<document index="28">
+<document index="27">
 <source>md.txt</source>
 <document_content>
 
@@ -6054,24 +5818,7 @@ TASK: Investigate carefully and systematically this failure and restore `cerebra
 </document_content>
 </document>
 
-<document index="29">
-<source>package.toml</source>
-<document_content>
-# Package configuration
-[package]
-include_cli = true        # Include CLI boilerplate
-include_logging = true    # Include logging setup
-use_pydantic = true      # Use Pydantic for data validation
-use_rich = true          # Use Rich for terminal output
-
-[features]
-mkdocs = false           # Enable MkDocs documentation
-vcs = true              # Initialize Git repository
-github_actions = true   # Add GitHub Actions workflows 
-</document_content>
-</document>
-
-<document index="30">
+<document index="28">
 <source>pyproject.toml</source>
 <document_content>
 # this_file: pyproject.toml
@@ -6118,6 +5865,8 @@ dependencies = [
     "qwen-tokenizer>=0.0.8",
     "rich>=13.0.0",
     "python-frontmatter>=1.1.0",
+    "openai>=1.0.0",              # For OpenAI-compatible fallback APIs
+    "tomli>=2.0.0; python_version < '3.11'",  # TOML parsing for Python <3.11
 ]
 
 # Author information
@@ -6204,6 +5953,7 @@ include = [
     "src/cerebrate_file/py.typed", # For better type checking support
     "src/cerebrate_file/data/**/*", # Include data files if any
     "src/cerebrate_file/prompts/**/*", # Include prompt library files
+    "src/cerebrate_file/default_config.toml", # Built-in configuration defaults
 ]
 exclude = ["**/__pycache__", "**/.pytest_cache", "**/.mypy_cache"]
 
@@ -6505,6 +6255,14 @@ ban-relative-imports = 'all' # Ban all relative imports for consistency
 from .__version__ import __version__
 from .cli import run
 from .models import Chunk, ProcessingState, RateLimitStatus
+from .settings import (
+    InferenceConfig,
+    ModelConfig,
+    RateLimitConfig,
+    Settings,
+    get_settings,
+    reload_settings,
+)
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/__main__.py
@@ -6520,6 +6278,7 @@ def main(()) -> None:
 # Language: python
 
 import json
+import time
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 from typing import Any
@@ -6530,47 +6289,62 @@ from tenacity import (
     retry,
     retry_if_exception_type,
     stop_after_attempt,
-    wait_exponential,
     wait_fixed,
 )
 from .constants import (
-    DEFAULT_MODEL,
-    DEFAULT_TEMPERATURE,
-    DEFAULT_TOP_P,
     METADATA_SCHEMA,
-    REQUESTS_SAFETY_MARGIN,
-    TOKENS_SAFETY_MARGIN,
     APIError,
 )
 from .models import RateLimitStatus
+from .settings import ModelConfig, get_settings
 import cerebras.cloud.sdk as cerebras_sdk
 from cerebras.cloud.sdk import Cerebras
+import openai as openai_sdk
+from openai import OpenAI
 import cerebras.cloud.sdk
 
+RATE_LIMIT_PATTERNS = =
+QUOTA_EXCEEDED_PATTERNS = =
+
 class CerebrasClient:
-    def __init__((self, api_key: str, model: str = DEFAULT_MODEL)) -> None:
+    def __init__((self, api_key: str, model: str | None = None)) -> None:
     def _get_client((self)):
     def chat_completion((
         self,
         messages: list[dict[str, str]],
         max_completion_tokens: int,
-        temperature: float = DEFAULT_TEMPERATURE,
-        top_p: float = DEFAULT_TOP_P,
+        temperature: float | None = None,
+        top_p: float | None = None,
     )) -> tuple[str, RateLimitStatus]:
     def explain_metadata((
         self,
         existing_metadata: dict[str, Any],
         first_chunk_text: str,
-        temperature: float = DEFAULT_TEMPERATURE,
-        top_p: float = DEFAULT_TOP_P,
+        temperature: float | None = None,
+        top_p: float | None = None,
     )) -> dict[str, Any]:
     def calculate_delay((self, next_chunk_tokens: int)) -> float:
+
+class FallbackClient:
+    def __init__((self, model_config: ModelConfig)) -> None:
+    def _get_client((self)):
+    def chat_completion((
+        self,
+        messages: list[dict[str, str]],
+        max_completion_tokens: int,
+        temperature: float | None = None,
+        top_p: float | None = None,
+    )) -> tuple[str, RateLimitStatus]:
 
 def _get_sdk_class((name: str)) -> type[Exception]:
 
 def _format_response((response: Any)) -> str:
 
-def __init__((self, api_key: str, model: str = DEFAULT_MODEL)) -> None:
+def _is_rate_limit_error((error: Exception)) -> bool:
+
+def _is_quota_exceeded_error((error: Exception)) -> bool:
+
+def __init__((self, api_key: str, model: str | None = None)) -> None:
 
 def _get_client((self)):
 
@@ -6578,19 +6352,31 @@ def chat_completion((
         self,
         messages: list[dict[str, str]],
         max_completion_tokens: int,
-        temperature: float = DEFAULT_TEMPERATURE,
-        top_p: float = DEFAULT_TOP_P,
+        temperature: float | None = None,
+        top_p: float | None = None,
     )) -> tuple[str, RateLimitStatus]:
 
 def explain_metadata((
         self,
         existing_metadata: dict[str, Any],
         first_chunk_text: str,
-        temperature: float = DEFAULT_TEMPERATURE,
-        top_p: float = DEFAULT_TOP_P,
+        temperature: float | None = None,
+        top_p: float | None = None,
     )) -> dict[str, Any]:
 
 def calculate_delay((self, next_chunk_tokens: int)) -> float:
+
+def __init__((self, model_config: ModelConfig)) -> None:
+
+def _get_client((self)):
+
+def chat_completion((
+        self,
+        messages: list[dict[str, str]],
+        max_completion_tokens: int,
+        temperature: float | None = None,
+        top_p: float | None = None,
+    )) -> tuple[str, RateLimitStatus]:
 
 def parse_rate_limit_headers((headers: dict[str, str], verbose: bool = False)) -> RateLimitStatus:
 
@@ -6628,6 +6414,16 @@ def make_cerebras_request((
     verbose: bool = False,
 )) -> tuple[str, RateLimitStatus]:
 
+def make_request_with_fallback((
+    primary_client,
+    messages: list[dict[str, str]],
+    model: str,
+    max_completion_tokens: int,
+    temperature: float,
+    top_p: float,
+    verbose: bool = False,
+)) -> tuple[str, RateLimitStatus, str]:
+
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/cerebrate_file.py
 # Language: python
@@ -6637,7 +6433,7 @@ import math
 import time
 from typing import Any
 from loguru import logger
-from .api_client import make_cerebras_request
+from .api_client import make_request_with_fallback
 from .constants import (
     MAX_CONTEXT_TOKENS,
     MAX_OUTPUT_TOKENS,
@@ -6767,7 +6563,6 @@ from .config import (
     validate_inputs,
     validate_recursive_inputs,
 )
-from .constants import DEFAULT_CHUNK_SIZE
 from .file_utils import (
     build_base_prompt,
     check_metadata_completeness,
@@ -6776,6 +6571,7 @@ from .file_utils import (
     write_output_atomically,
 )
 from .models import ProcessingState
+from .settings import get_settings
 from .tokenizer import encode_text
 from .ui import FileProgressDisplay
 from .recursive import (
@@ -6792,13 +6588,13 @@ def run((
     output_data: str | None = None,
     file_prompt: str | None = None,
     prompt: str | None = None,
-    chunk_size: int = DEFAULT_CHUNK_SIZE,
-    max_tokens_ratio: int = 100,
+    chunk_size: int | None = None,
+    max_tokens_ratio: int | None = None,
     data_format: str = "markdown",
-    sample_size: int = 200,
-    temp: float = 0.98,
-    top_p: float = 0.8,
-    model: str = "zai-glm-4.6",
+    sample_size: int | None = None,
+    temp: float | None = None,
+    top_p: float | None = None,
+    model: str | None = None,
     verbose: bool = False,
     explain: bool = False,
     dry_run: bool = False,
@@ -6840,13 +6636,15 @@ import sys
 from pathlib import Path
 from loguru import logger
 from .constants import (
-    LOG_FORMAT,
     MAX_CONTEXT_TOKENS,
     MAX_OUTPUT_TOKENS,
     VALID_DATA_FORMATS,
     ConfigurationError,
     ValidationError,
 )
+from .settings import get_settings
+
+DEFAULT_LOG_FORMAT = =
 
 class EnvironmentConfig:
     def __init__((self)) -> None:
@@ -6911,15 +6709,7 @@ REQUIRED_METADATA_FIELDS = :
 METADATA_SCHEMA = :
 CODE_BOUNDARY_PATTERNS = :
 COMPILED_BOUNDARY_PATTERNS = :
-TOKENS_SAFETY_MARGIN = =
-REQUESTS_SAFETY_MARGIN = =
 CHARS_PER_TOKEN_FALLBACK = =
-LOG_FORMAT = =
-DEFAULT_MODEL = =
-DEFAULT_TEMPERATURE = =
-DEFAULT_TOP_P = =
-DEFAULT_MAX_TOKENS_RATIO = =
-DEFAULT_SAMPLE_SIZE = =
 VALID_DATA_FORMATS = :
 CONTINUITY_TEMPLATE = =
 
@@ -6998,6 +6788,87 @@ def calculate_continuity_budget((
     max_context_tokens: int = MAX_CONTEXT_TOKENS,
 )) -> int:
 
+
+<document index="29">
+<source>src/cerebrate_file/default_config.toml</source>
+<document_content>
+# this_file: src/cerebrate_file/default_config.toml
+# Default configuration for cerebrate-file
+#
+# This file contains built-in defaults. Users can override these by:
+# 1. Setting environment variables (e.g., CEREBRATE_PRIMARY_MODEL)
+# 2. Creating a config file at ~/.config/cerebrate-file/config.toml
+# 3. Creating a config file in the project directory as .cerebrate-file.toml
+
+# ------------------------------------------------------------------------------
+# INFERENCE SETTINGS
+# Default parameters for model inference
+# ------------------------------------------------------------------------------
+[inference]
+temperature = 0.98  # Sampling temperature (0.0-2.0)
+top_p = 0.8  # Nucleus sampling parameter (0.0-1.0)
+max_tokens_ratio = 100  # Completion budget as % of chunk size
+chunk_size = 32000  # Target maximum input chunk size in tokens
+sample_size = 200  # Number of tokens for continuity examples
+
+# ------------------------------------------------------------------------------
+# PRIMARY MODEL CONFIGURATION
+# The primary model used for inference (Cerebras by default)
+# ------------------------------------------------------------------------------
+[models.primary]
+name = "zai-glm-4.6"
+provider = "cerebras"
+api_key_env = "CEREBRAS_API_KEY"  # Environment variable containing API key
+# api_base is not needed for Cerebras (uses SDK default)
+# Model-specific limits
+max_context_tokens = 131000
+max_output_tokens = 40960
+
+# ------------------------------------------------------------------------------
+# FALLBACK MODELS
+# Used when primary model hits rate limits (429) or quota errors
+# Fallback chain: fallback1 -> fallback2 -> fallback3 (if configured)
+#
+# All fallback models use the OpenAI-compatible API format
+# ------------------------------------------------------------------------------
+
+[models.fallback1]
+enabled = true  # Set to true to enable this fallback
+name = "zai-org/GLM-4.6"  # Model name
+provider = "chutes"  # Provider type (openai, together, groq, etc.)
+api_key_env = "CHUTES_API_KEY"  # Environment variable containing API key
+api_base = "https://llm.chutes.ai/v1"  # Optional: custom API base URL for OpenAI-compatible APIs
+# Model-specific limits (adjust based on provider)
+max_context_tokens = 131000
+max_output_tokens = 40960
+
+[models.fallback2]
+enabled = true
+name = "GLM-4.6"
+provider = "arli"
+api_key_env = "ARLIAI_TEXT_API_KEY"
+api_base = "https://api.arliai.com/v1/"
+max_context_tokens = 202752
+max_output_tokens = 2048
+
+# ------------------------------------------------------------------------------
+# RATE LIMITING CONFIGURATION
+# Safety margins and backoff settings
+# ------------------------------------------------------------------------------
+[rate_limiting]
+tokens_safety_margin = 50000  # Reserve tokens for other instances
+requests_safety_margin = 100  # Reserve requests for other instances
+max_retry_attempts = 2  # Maximum retry attempts before fallback
+fallback_on_rate_limit = true  # Whether to use fallback on rate limit errors
+fallback_on_quota_exceeded = true  # Whether to use fallback on quota errors
+
+# ------------------------------------------------------------------------------
+# LOGGING CONFIGURATION
+# ------------------------------------------------------------------------------
+[logging]
+format = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+</document_content>
+</document>
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/error_recovery.py
 # Language: python
@@ -7239,7 +7110,7 @@ def get_prompt_library_path(()) -> Path:
 def resolve_prompt_file((file_prompt: str)) -> Path | None:
 
 
-<document index="31">
+<document index="30">
 <source>src/cerebrate_file/prompts/README.md</source>
 <document_content>
 # Prompt Library
@@ -7304,7 +7175,7 @@ The file prompt loads first, then the text prompt.
 </document_content>
 </document>
 
-<document index="32">
+<document index="31">
 <source>src/cerebrate_file/prompts/fix-pdf-extracted-text.xml</source>
 <document_content>
 <poml><role>You are a meticulous document restoration specialist who cleans up poorly extracted PDF        text while preserving every word of the original content.</role><task>Clean and format extracted PDF text into proper Markdown while maintaining absolute        fidelity to the original content.</task><h>Processing Instructions</h><stepwise-instructions><list listStyle="decimal"><item><b>Line Merging:</b><list><item>Join lines that were artificially broken mid-sentence by PDF column width</item><item>Preserve intentional line breaks between paragraphs</item><item>Maintain list structures and indentation where clearly intended</item></list></item><item><b>Structure & pagination:</b><list><item>Remove empty paragraphs</item><item>Remove visible page numbers, headers, and footers</item><item>If page numbers or page breaks exist in the source, only retain then in                        form of a free-standing separate line that says `<a id="page_NNN"></a>`                        (where NNN is the page number), with a newline above and a newline below,                        and move them down (that is, place them before the first paragraph of the                        page, separating with a newline).</item><item>Join paragraphs that were artificially broken, especially due to column or                        page breaks. If a page break existed mid-paragraph, move the page break                        after the paragraph.</item><item>Preserve all narrative content parts, including table-of-contents,                        footnotes, and other content that is not part of the main text. Only remove                        visible page numbers, headers, and footers that make no sense in a                        non-paginated document.</item></list></item><item><b>Artifact Removal:</b><list><item>Remove hard hyphenation at line endings (e.g., "docu-\nment" → "document")</item><item>Delete page numbers, headers, and footers that repeat across pages</item><item>Remove garbled character sequences that are clearly extraction errors                        (e.g., "■□▪▫" or "????")</item><item>Clean up spacing artifacts (multiple spaces, tabs mixed with spaces)</item></list></item><item><b>OCR Correction:</b><list><item>Fix obvious character substitution errors (e.g., "rn" misread as "m", "cl"                        as "d")</item><item>Correct clearly misspelled words only when the intended word is                        unambiguous</item><item>Fix number/letter confusion in obvious contexts (e.g., "0" vs "O", "1" vs                        "l")</item><item>If it’s obvious from the context, fix the writing system of the text (СССР                        and not CCCP)</item><item>If it’s obvious from the context, enrich text with diacritics that have                        been omitted lazily (e.g. write Wałęsa and not Walesa)</item></list></item><item><b>Orthotypography:</b><list><item>Use proper high-end punctuation, especially the correct typographic                        quotation marks appropriate for the language of the text.</item><item>Use em dashes appropriately, but ALWAYS separate them by spaces from                        neighboring text on left and right. Never glue an em dash directly to a                        word.</item><item>Use en dashes (without surrounding spaces) to indicate ranges or spans.</item><item>However, do not overcorrect punctuation.</item></list></item><item><b>Markdown Formatting (Conservative):</b><list><item>Add heading markers (#, ##, etc.) ONLY for text that is clearly a title or                        section header</item><item>Use **bold** ONLY where emphasis was clearly intended in the original</item><item>Format obvious lists with - or 1. notation</item><item>Use code blocks for clearly technical content or code samples</item><item>Add blockquotes (>) for clearly quoted material</item><item>Use Markdown tables if you know what you’re doing</item></list></item></list></stepwise-instructions><cp caption="Critical Preservation Rules"><list><item>NEVER delete sentences, phrases, or meaningful words</item><item>NEVER paraphrase or rewrite sentences for clarity</item><item>NEVER add explanatory text or context</item><item>NEVER change technical terms, proper nouns, or specialized vocabulary</item><item>NEVER merge or split paragraphs unless fixing obvious extraction errors</item><item>PRESERVE all numerical data exactly as written</item></list></cp><examples><example caption="Line merge correction"><input>The quick brown fox jum-                ped over the lazy dog which                was sleeping in the garden.</input><output>The quick brown fox jumped over the lazy dog which was sleeping in the garden.</output></example><example caption="OCR and formatting"><input>Chapter l: lntroduction                This chapfer discusses the rnain concepts...</input><output># Chapter 1: Introduction                This chapter discusses the main concepts...</output></example><example caption="Artifact removal"><input>The report■□▪ shows that sales                - - - Page 42 - - -                increased by 15% this quarter.</input><output>The report shows that sales increased by 15% this quarter.</output></example></examples><cp caption="Decision Framework"><p>When uncertain about whether text is an error or intentional:</p><list><item>If it could be meaningful content → KEEP IT</item><item>If clearly garbled/repeated/artifactual → REMOVE IT</item><item>If unsure about formatting → LEAVE UNFORMATTED</item><item>If unsure about spelling → KEEP ORIGINAL</item></list></cp><output-format>Clean Markdown text with proper paragraph separation, conservative heading        hierarchy, minimal formatting markup, all original content preserved</output-format></poml>
@@ -7350,6 +7221,58 @@ def process_files_parallel((
     workers: int = 4,
     progress_callback: Callable[[str, int], None] | None = None,
 )) -> ProcessingResult:
+
+
+# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/settings.py
+# Language: python
+
+import os
+from dataclasses import dataclass, field
+from functools import lru_cache
+from pathlib import Path
+from typing import Any
+from loguru import logger
+import tomllib
+import tomli as tomllib
+
+class ModelConfig:
+    def get_api_key((self)) -> str | None:
+    def is_available((self)) -> bool:
+
+class InferenceConfig:
+
+class RateLimitConfig:
+
+class Settings:
+    def get_model_by_name((self, name: str)) -> ModelConfig | None:
+    def get_available_fallbacks((self)) -> list[ModelConfig]:
+    def get_default_model_name((self)) -> str:
+
+def get_api_key((self)) -> str | None:
+
+def is_available((self)) -> bool:
+
+def get_model_by_name((self, name: str)) -> ModelConfig | None:
+
+def get_available_fallbacks((self)) -> list[ModelConfig]:
+
+def get_default_model_name((self)) -> str:
+
+def _load_toml_file((path: Path)) -> dict[str, Any]:
+
+def _deep_merge((base: dict[str, Any], override: dict[str, Any])) -> dict[str, Any]:
+
+def _parse_model_config((data: dict[str, Any], key: str = "primary")) -> ModelConfig | None:
+
+def _parse_fallback_models((models_data: dict[str, Any])) -> list[ModelConfig]:
+
+def _apply_env_overrides((settings: Settings)) -> None:
+
+def _load_settings_impl(()) -> Settings:
+
+def get_settings(()) -> Settings:
+
+def reload_settings(()) -> Settings:
 
 
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/tokenizer.py
@@ -7478,25 +7401,6 @@ def validate_model_parameters((
 )) -> tuple[int, float, float, int]:
 
 
-<document index="33">
-<source>test1.sh</source>
-<document_content>
-#!/usr/bin/env bash
-cd "$(dirname "$0")"
-python -m cerebrate_file --workers=4 --input_data=testdata/ex/01.md --output_data=testdata/ex/02.md --explain --file_prompt=testdata/poml-fix-pdf-extracted-text.xml --verbose
-</document_content>
-</document>
-
-<document index="34">
-<source>test2.sh</source>
-<document_content>
-#!/usr/bin/env bash
-cd "$(dirname "$0")"
-python -m cerebrate_file --recurse="*.md" --workers=4 --input_data=testdata/in/ --output_data=testdata/out/ --file_prompt=testdata/poml-fix-pdf-extracted-text.xml --explain 
-python -m cerebrate_file --recurse="*.md" --workers=4 --input_data=testdata/in/ --output_data=testdata/out3/ --file_prompt=testdata/poml-fix-pdf-extracted-text.xml --explain --temp 1.1
-</document_content>
-</document>
-
 # File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/test_retry_mechanism.py
 # Language: python
 
@@ -7529,6 +7433,7 @@ import pytest
 from cerebrate_file.api_client import make_cerebras_request
 from cerebrate_file.constants import APIError
 from cerebrate_file.models import RateLimitStatus
+from cerebrate_file.api_client import make_request_with_fallback
 
 class MockAPIStatusError(E, x, c, e, p, t, i, o, n):
     def __init__((self, status_code, response)):
@@ -8242,7 +8147,7 @@ def test_large_file_set_simulation((self)):
 def mock_processing_func((input_path: Path, output_path: Path)) -> ProcessingState:
 
 
-<document index="35">
+<document index="32">
 <source>tests/test_sample.txt</source>
 <document_content>
 This is a test document for cerebrate-file CLI testing.

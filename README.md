@@ -125,6 +125,50 @@ Install with `uv` or your preferred package manager:
 - `tqdm`
 - `python-frontmatter`
 
+## Configuration
+
+The tool uses a layered configuration system. Settings are loaded in this order (later sources override earlier ones):
+
+1. **Built-in defaults** – `default_config.toml` bundled with the package
+2. **User config** – `~/.config/cerebrate-file/config.toml`
+3. **Project config** – `.cerebrate-file.toml` in the current directory
+4. **Environment variables** – e.g., `CEREBRATE_PRIMARY_MODEL`
+
+If no custom config exists, the built-in defaults are used automatically.
+
+### Config File Locations
+
+| Platform | User Config Path |
+|----------|------------------|
+| macOS/Linux | `~/.config/cerebrate-file/config.toml` |
+| Windows | `%APPDATA%\cerebrate-file\config.toml` |
+
+For project-specific settings, create `.cerebrate-file.toml` in your project root.
+
+### Example Config
+
+```toml
+[inference]
+temperature = 0.98
+top_p = 0.8
+chunk_size = 32000
+sample_size = 200
+
+[models.primary]
+name = "zai-glm-4.6"
+provider = "cerebras"
+api_key_env = "CEREBRAS_API_KEY"
+max_context_tokens = 131000
+max_output_tokens = 40960
+
+[models.fallback1]
+enabled = true
+name = "zai-org/GLM-4.6"
+provider = "chutes"
+api_key_env = "CHUTES_API_KEY"
+api_base = "https://llm.chutes.ai/v1"
+```
+
 ## Environment Setup
 
 Set `CEREBRAS_API_KEY` before running. The tool will warn about placeholder keys and validate basic formatting. Use `--verbose` for extra runtime info and rate-limit headers.

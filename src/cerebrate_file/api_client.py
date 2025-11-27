@@ -4,10 +4,15 @@
 """API client utilities for cerebrate_file package.
 
 This module handles all Cerebras API communication including rate limiting,
-retries, and structured output generation.
+retries, fallback chain support, and structured output generation.
+
+Supports:
+- Primary model (Cerebras by default)
+- Fallback chain to OpenAI-compatible APIs on rate limit/quota errors
 """
 
 import json
+import time
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 from typing import Any
@@ -19,20 +24,15 @@ from tenacity import (
     retry,
     retry_if_exception_type,
     stop_after_attempt,
-    wait_exponential,
     wait_fixed,
 )
 
 from .constants import (
-    DEFAULT_MODEL,
-    DEFAULT_TEMPERATURE,
-    DEFAULT_TOP_P,
     METADATA_SCHEMA,
-    REQUESTS_SAFETY_MARGIN,
-    TOKENS_SAFETY_MARGIN,
     APIError,
 )
 from .models import RateLimitStatus
+from .settings import ModelConfig, get_settings
 
 try:
     import cerebras.cloud.sdk as cerebras_sdk  # type: ignore[import-not-found]
@@ -43,6 +43,16 @@ except ImportError:
         RateLimitError=type("RateLimitError", (Exception,), {}),
     )
     Cerebras = None  # type: ignore[assignment]
+
+try:
+    import openai as openai_sdk
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None  # type: ignore[assignment]
+    openai_sdk = SimpleNamespace(
+        APIStatusError=type("APIStatusError", (Exception,), {}),
+        RateLimitError=type("RateLimitError", (Exception,), {}),
+    )
 
 cerebras = SimpleNamespace(cloud=SimpleNamespace(sdk=cerebras_sdk))
 
@@ -65,25 +75,55 @@ def _format_response(response: Any) -> str:
 
 __all__ = [
     "CerebrasClient",
+    "FallbackClient",
     "calculate_backoff_delay",
     "explain_metadata_with_llm",
     "make_cerebras_request",
+    "make_request_with_fallback",
     "parse_rate_limit_headers",
 ]
+
+
+# Error patterns that trigger fallback
+RATE_LIMIT_PATTERNS = [
+    "rate limit",
+    "rate_limit",
+    "too many requests",
+    "429",
+]
+QUOTA_EXCEEDED_PATTERNS = [
+    "quota",
+    "token_quota_exceeded",
+    "tokens per day limit",
+    "daily limit",
+]
+
+
+def _is_rate_limit_error(error: Exception) -> bool:
+    """Check if an error is a rate limit error."""
+    error_str = str(error).lower()
+    return any(pattern in error_str for pattern in RATE_LIMIT_PATTERNS)
+
+
+def _is_quota_exceeded_error(error: Exception) -> bool:
+    """Check if an error is a quota exceeded error."""
+    error_str = str(error).lower()
+    return any(pattern in error_str for pattern in QUOTA_EXCEEDED_PATTERNS)
 
 
 class CerebrasClient:
     """Manages Cerebras API interactions with rate limiting."""
 
-    def __init__(self, api_key: str, model: str = DEFAULT_MODEL) -> None:
+    def __init__(self, api_key: str, model: str | None = None) -> None:
         """Initialize the Cerebras client.
 
         Args:
             api_key: Cerebras API key
-            model: Model name to use
+            model: Model name to use (defaults to settings.primary_model.name)
         """
         self.api_key = api_key
-        self.model = model
+        settings = get_settings()
+        self.model = model or settings.get_default_model_name()
         self._client = None
         self.rate_status = RateLimitStatus()
 
@@ -101,23 +141,27 @@ class CerebrasClient:
         self,
         messages: list[dict[str, str]],
         max_completion_tokens: int,
-        temperature: float = DEFAULT_TEMPERATURE,
-        top_p: float = DEFAULT_TOP_P,
+        temperature: float | None = None,
+        top_p: float | None = None,
     ) -> tuple[str, RateLimitStatus]:
         """Make a chat completion request.
 
         Args:
             messages: Chat messages
             max_completion_tokens: Max tokens for completion
-            temperature: Sampling temperature
-            top_p: Nucleus sampling parameter
+            temperature: Sampling temperature (defaults to settings)
+            top_p: Nucleus sampling parameter (defaults to settings)
 
         Returns:
             Tuple of (response text, rate limit status)
         """
+        settings = get_settings()
+        temp = temperature if temperature is not None else settings.inference.temperature
+        tp = top_p if top_p is not None else settings.inference.top_p
+
         client = self._get_client()
         response_text, self.rate_status = make_cerebras_request(
-            client, messages, self.model, max_completion_tokens, temperature, top_p, False
+            client, messages, self.model, max_completion_tokens, temp, tp, False
         )
         return response_text, self.rate_status
 
@@ -125,28 +169,32 @@ class CerebrasClient:
         self,
         existing_metadata: dict[str, Any],
         first_chunk_text: str,
-        temperature: float = DEFAULT_TEMPERATURE,
-        top_p: float = DEFAULT_TOP_P,
+        temperature: float | None = None,
+        top_p: float | None = None,
     ) -> dict[str, Any]:
         """Generate missing metadata fields using structured output.
 
         Args:
             existing_metadata: Current metadata
             first_chunk_text: First chunk for context
-            temperature: Sampling temperature
-            top_p: Nucleus sampling parameter
+            temperature: Sampling temperature (defaults to settings)
+            top_p: Nucleus sampling parameter (defaults to settings)
 
         Returns:
             Generated metadata dictionary
         """
+        settings = get_settings()
+        temp = temperature if temperature is not None else settings.inference.temperature
+        tp = top_p if top_p is not None else settings.inference.top_p
+
         client = self._get_client()
         return explain_metadata_with_llm(
             client,
             existing_metadata,
             first_chunk_text,
             self.model,
-            temperature,
-            top_p,
+            temp,
+            tp,
         )
 
     def calculate_delay(self, next_chunk_tokens: int) -> float:
@@ -159,6 +207,89 @@ class CerebrasClient:
             Delay in seconds
         """
         return calculate_backoff_delay(self.rate_status, next_chunk_tokens)
+
+
+class FallbackClient:
+    """Client for OpenAI-compatible fallback APIs."""
+
+    def __init__(self, model_config: ModelConfig) -> None:
+        """Initialize the fallback client.
+
+        Args:
+            model_config: Model configuration from settings
+        """
+        self.config = model_config
+        self._client = None
+
+    def _get_client(self):
+        """Get or create the OpenAI client instance."""
+        if self._client is None:
+            if OpenAI is None:
+                raise APIError("openai package not available. Install with: uv add openai")
+            api_key = self.config.get_api_key()
+            if not api_key:
+                raise APIError(
+                    f"API key not found in environment variable: {self.config.api_key_env}"
+                )
+            kwargs = {"api_key": api_key}
+            if self.config.api_base:
+                kwargs["base_url"] = self.config.api_base
+            self._client = OpenAI(**kwargs)
+        return self._client
+
+    def chat_completion(
+        self,
+        messages: list[dict[str, str]],
+        max_completion_tokens: int,
+        temperature: float | None = None,
+        top_p: float | None = None,
+    ) -> tuple[str, RateLimitStatus]:
+        """Make a chat completion request using OpenAI-compatible API.
+
+        Args:
+            messages: Chat messages
+            max_completion_tokens: Max tokens for completion
+            temperature: Sampling temperature (defaults to settings)
+            top_p: Nucleus sampling parameter (defaults to settings)
+
+        Returns:
+            Tuple of (response text, rate limit status)
+        """
+        settings = get_settings()
+        temp = temperature if temperature is not None else settings.inference.temperature
+        tp = top_p if top_p is not None else settings.inference.top_p
+
+        client = self._get_client()
+
+        try:
+            # Use streaming for consistency with Cerebras client
+            stream = client.chat.completions.create(
+                model=self.config.name,
+                messages=messages,
+                max_tokens=max_completion_tokens,
+                temperature=temp,
+                top_p=tp,
+                stream=True,
+            )
+
+            response_text = ""
+            for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    response_text += chunk.choices[0].delta.content
+
+            # Fallback APIs don't provide detailed rate limit headers
+            rate_status = RateLimitStatus()
+            rate_status.headers_parsed = False
+
+            logger.debug(
+                f"Fallback request complete via {self.config.provider}: "
+                f"{len(response_text)} chars received"
+            )
+            return response_text, rate_status
+
+        except Exception as e:
+            logger.error(f"Fallback request failed ({self.config.provider}): {e}")
+            raise APIError(f"Fallback API error ({self.config.provider}): {e}") from e
 
 
 def parse_rate_limit_headers(headers: dict[str, str], verbose: bool = False) -> RateLimitStatus:
@@ -256,6 +387,9 @@ def calculate_backoff_delay(
         Delay in seconds
     """
     now = datetime.now()
+    settings = get_settings()
+    tokens_safety_margin = settings.rate_limiting.tokens_safety_margin
+    requests_safety_margin = settings.rate_limiting.requests_safety_margin
 
     # Only apply rate limiting if we successfully parsed headers
     if not rate_status.headers_parsed:
@@ -277,7 +411,7 @@ def calculate_backoff_delay(
             return min(delay, 60.0)  # Cap at 60 seconds max
 
     # Safety margin check - entering dangerous territory
-    safety_threshold = next_chunk_tokens + TOKENS_SAFETY_MARGIN
+    safety_threshold = next_chunk_tokens + tokens_safety_margin
     if rate_status.tokens_remaining < safety_threshold:
         # Calculate time until we have safe tokens again
         if rate_status.reset_time and rate_status.reset_time > now:
@@ -310,11 +444,11 @@ def calculate_backoff_delay(
     # Request quota safety check
     if (
         rate_status.requests_remaining >= 0
-        and rate_status.requests_remaining < REQUESTS_SAFETY_MARGIN
+        and rate_status.requests_remaining < requests_safety_margin
     ):
         delay = 2.0
         logger.info(
-            f"Low request quota ({rate_status.requests_remaining} < {REQUESTS_SAFETY_MARGIN}), "
+            f"Low request quota ({rate_status.requests_remaining} < {requests_safety_margin}), "
             f"conservative delay: {delay}s"
         )
         return delay
@@ -430,13 +564,6 @@ First chunk: {truncated_chunk}
         return {}
 
 
-@retry(
-    stop=stop_after_attempt(8),
-    wait=wait_fixed(0),
-    retry=retry_if_exception_type((ConnectionError, TimeoutError, APIError)),
-    before_sleep=before_sleep_log(logger, "INFO"),
-    reraise=True,
-)
 def _make_cerebras_request_impl(
     client,
     messages: list[dict[str, str]],
@@ -535,20 +662,153 @@ def make_cerebras_request(
     top_p: float,
     verbose: bool = False,
 ) -> tuple[str, RateLimitStatus]:
-    """Make streaming Cerebras request with retry policy."""
+    """Make streaming Cerebras request (single attempt, no retry)."""
+    return _make_cerebras_request_impl(
+        client,
+        messages,
+        model,
+        max_completion_tokens,
+        temperature,
+        top_p,
+        verbose,
+    )
 
-    try:
-        return _make_cerebras_request_impl(
-            client,
-            messages,
-            model,
-            max_completion_tokens,
-            temperature,
-            top_p,
-            verbose,
-        )
-    except RetryError as exc:
-        last_exc = exc.last_attempt.exception()
-        if isinstance(last_exc, Exception):
-            raise last_exc
-        raise exc
+
+def make_request_with_fallback(
+    primary_client,
+    messages: list[dict[str, str]],
+    model: str,
+    max_completion_tokens: int,
+    temperature: float,
+    top_p: float,
+    verbose: bool = False,
+) -> tuple[str, RateLimitStatus, str]:
+    """Make a request with retry and automatic fallback on rate limit or quota errors.
+
+    Attempts the primary model first with configured retries, then falls back to
+    configured fallback models if rate limits or quota errors are encountered.
+
+    Args:
+        primary_client: Primary Cerebras client instance
+        messages: Chat messages for the request
+        model: Primary model name
+        max_completion_tokens: Maximum tokens for completion
+        temperature: Model temperature
+        top_p: Model top_p
+        verbose: Enable verbose logging
+
+    Returns:
+        Tuple of (response_text, rate_limit_status, model_used)
+        model_used indicates which model actually produced the response
+    """
+    settings = get_settings()
+    max_retries = settings.rate_limiting.max_retry_attempts
+    last_error: Exception | None = None
+
+    # Try primary model with retries
+    should_try_fallback = False
+    for attempt in range(max_retries + 1):
+        try:
+            if attempt > 0:
+                logger.info(f"Retry {attempt}/{max_retries} for primary model: {model}")
+            else:
+                logger.debug(f"Attempting request with primary model: {model}")
+
+            response_text, rate_status = make_cerebras_request(
+                primary_client,
+                messages,
+                model,
+                max_completion_tokens,
+                temperature,
+                top_p,
+                verbose,
+            )
+            return response_text, rate_status, model
+
+        except Exception as e:
+            last_error = e
+            error_str = str(e)
+
+            # Check if this is a retryable/fallback-worthy error
+            is_rate_limit = _is_rate_limit_error(e)
+            is_quota_exceeded = _is_quota_exceeded_error(e)
+
+            if is_rate_limit or is_quota_exceeded:
+                if attempt < max_retries:
+                    # Retry with backoff
+                    backoff = 2**attempt  # 1, 2, 4 seconds
+                    logger.warning(
+                        f"Retryable error (attempt {attempt + 1}/{max_retries + 1}): {error_str}. "
+                        f"Retrying in {backoff}s..."
+                    )
+                    time.sleep(backoff)
+                    continue
+                else:
+                    # All retries exhausted, check if we should fallback
+                    if is_rate_limit and settings.rate_limiting.fallback_on_rate_limit:
+                        logger.warning(
+                            f"Rate limit error after {max_retries + 1} attempts, "
+                            f"attempting fallback: {error_str}"
+                        )
+                        should_try_fallback = True
+                    elif is_quota_exceeded and settings.rate_limiting.fallback_on_quota_exceeded:
+                        logger.warning(
+                            f"Quota exceeded after {max_retries + 1} attempts, "
+                            f"attempting fallback: {error_str}"
+                        )
+                        should_try_fallback = True
+                    else:
+                        raise
+                    break
+            else:
+                # Non-retryable error, raise immediately
+                raise
+
+    if not should_try_fallback:
+        if last_error:
+            raise last_error
+        raise APIError("Primary model failed")
+
+    # Try fallback models
+    available_fallbacks = settings.get_available_fallbacks()
+
+    if not available_fallbacks:
+        logger.error("No fallback models available, re-raising original error")
+        if last_error:
+            raise last_error
+        raise APIError("No fallback models configured")
+
+    for i, fallback_config in enumerate(available_fallbacks):
+        try:
+            logger.info(
+                f"Trying fallback model {i + 1}/{len(available_fallbacks)}: "
+                f"{fallback_config.name} ({fallback_config.provider})"
+            )
+
+            fallback_client = FallbackClient(fallback_config)
+
+            # Adjust max_completion_tokens if fallback model has lower limit
+            adjusted_max_tokens = min(max_completion_tokens, fallback_config.max_output_tokens)
+
+            response_text, rate_status = fallback_client.chat_completion(
+                messages,
+                adjusted_max_tokens,
+                temperature,
+                top_p,
+            )
+
+            logger.info(
+                f"Fallback successful using {fallback_config.name} ({fallback_config.provider})"
+            )
+            return response_text, rate_status, fallback_config.name
+
+        except Exception as fallback_error:
+            logger.warning(f"Fallback {fallback_config.name} failed: {fallback_error}")
+            last_error = fallback_error
+            continue
+
+    # All fallbacks failed
+    logger.error("All fallback models failed")
+    if last_error:
+        raise APIError(f"All models failed. Last error: {last_error}") from last_error
+    raise APIError("All models failed")

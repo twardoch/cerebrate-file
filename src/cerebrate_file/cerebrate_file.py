@@ -14,7 +14,7 @@ from typing import Any
 
 from loguru import logger
 
-from .api_client import make_cerebras_request
+from .api_client import make_request_with_fallback
 
 # from .chunking import create_chunks  # unused
 # from .config import validate_environment, validate_inputs  # unused
@@ -275,9 +275,11 @@ def process_document(
             if verbose:
                 print("  → Calling Cerebras API...")
 
-            response_text, rate_status = make_cerebras_request(
+            response_text, rate_status, model_used = make_request_with_fallback(
                 client, messages, model, max_completion_tokens, temp, top_p, verbose
             )
+            if model_used != model:
+                logger.info(f"Response from fallback model: {model_used}")
 
             # Update state for next iteration
             state.prev_input_text = chunk.text
@@ -300,7 +302,7 @@ def process_document(
                 max_completion_tokens=max_completion_tokens,
                 response_tokens=response_tokens,
                 response_chars=len(response_text),
-                model=model,
+                model=model_used,
                 temperature=temp,
                 top_p=top_p,
                 rate_requests_remaining=rate_status.requests_remaining

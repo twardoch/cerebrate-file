@@ -42,6 +42,8 @@ dependencies = [
     "qwen-tokenizer>=0.0.8",
     "rich>=13.0.0",
     "python-frontmatter>=1.1.0",
+    "openai>=1.0.0",              # For OpenAI-compatible fallback APIs
+    "tomli>=2.0.0; python_version < '3.11'",  # TOML parsing for Python <3.11
 ]
 
 # Author information
@@ -128,6 +130,7 @@ include = [
     "src/cerebrate_file/py.typed", # For better type checking support
     "src/cerebrate_file/data/**/*", # Include data files if any
     "src/cerebrate_file/prompts/**/*", # Include prompt library files
+    "src/cerebrate_file/default_config.toml", # Built-in configuration defaults
 ]
 exclude = ["**/__pycache__", "**/.pytest_cache", "**/.mypy_cache"]
 

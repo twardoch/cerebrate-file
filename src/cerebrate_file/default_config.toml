@@ -1,0 +1,75 @@
+# this_file: src/cerebrate_file/default_config.toml
+# Default configuration for cerebrate-file
+#
+# This file contains built-in defaults. Users can override these by:
+# 1. Setting environment variables (e.g., CEREBRATE_PRIMARY_MODEL)
+# 2. Creating a config file at ~/.config/cerebrate-file/config.toml
+# 3. Creating a config file in the project directory as .cerebrate-file.toml
+
+# ------------------------------------------------------------------------------
+# INFERENCE SETTINGS
+# Default parameters for model inference
+# ------------------------------------------------------------------------------
+[inference]
+temperature = 0.98  # Sampling temperature (0.0-2.0)
+top_p = 0.8  # Nucleus sampling parameter (0.0-1.0)
+max_tokens_ratio = 100  # Completion budget as % of chunk size
+chunk_size = 32000  # Target maximum input chunk size in tokens
+sample_size = 200  # Number of tokens for continuity examples
+
+# ------------------------------------------------------------------------------
+# PRIMARY MODEL CONFIGURATION
+# The primary model used for inference (Cerebras by default)
+# ------------------------------------------------------------------------------
+[models.primary]
+name = "zai-glm-4.6"
+provider = "cerebras"
+api_key_env = "CEREBRAS_API_KEY"  # Environment variable containing API key
+# api_base is not needed for Cerebras (uses SDK default)
+# Model-specific limits
+max_context_tokens = 131000
+max_output_tokens = 40960
+
+# ------------------------------------------------------------------------------
+# FALLBACK MODELS
+# Used when primary model hits rate limits (429) or quota errors
+# Fallback chain: fallback1 -> fallback2 -> fallback3 (if configured)
+#
+# All fallback models use the OpenAI-compatible API format
+# ------------------------------------------------------------------------------
+
+[models.fallback1]
+enabled = true  # Set to true to enable this fallback
+name = "zai-org/GLM-4.6"  # Model name
+provider = "chutes"  # Provider type (openai, together, groq, etc.)
+api_key_env = "CHUTES_API_KEY"  # Environment variable containing API key
+api_base = "https://llm.chutes.ai/v1"  # Optional: custom API base URL for OpenAI-compatible APIs
+# Model-specific limits (adjust based on provider)
+max_context_tokens = 131000
+max_output_tokens = 40960
+
+[models.fallback2]
+enabled = true
+name = "GLM-4.6"
+provider = "arli"
+api_key_env = "ARLIAI_TEXT_API_KEY"
+api_base = "https://api.arliai.com/v1/"
+max_context_tokens = 202752
+max_output_tokens = 2048
+
+# ------------------------------------------------------------------------------
+# RATE LIMITING CONFIGURATION
+# Safety margins and backoff settings
+# ------------------------------------------------------------------------------
+[rate_limiting]
+tokens_safety_margin = 50000  # Reserve tokens for other instances
+requests_safety_margin = 100  # Reserve requests for other instances
+max_retry_attempts = 2  # Maximum retry attempts before fallback
+fallback_on_rate_limit = true  # Whether to use fallback on rate limit errors
+fallback_on_quota_exceeded = true  # Whether to use fallback on quota errors
+
+# ------------------------------------------------------------------------------
+# LOGGING CONFIGURATION
+# ------------------------------------------------------------------------------
+[logging]
+format = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"

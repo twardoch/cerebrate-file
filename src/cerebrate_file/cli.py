@@ -31,7 +31,6 @@ from .config import (
     validate_inputs,
     validate_recursive_inputs,
 )
-from .constants import DEFAULT_CHUNK_SIZE
 from .file_utils import (
     build_base_prompt,
     check_metadata_completeness,
@@ -40,6 +39,7 @@ from .file_utils import (
     write_output_atomically,
 )
 from .models import ProcessingState
+from .settings import get_settings
 from .tokenizer import encode_text
 from .ui import FileProgressDisplay
 
@@ -51,13 +51,13 @@ def run(
     output_data: str | None = None,
     file_prompt: str | None = None,
     prompt: str | None = None,
-    chunk_size: int = DEFAULT_CHUNK_SIZE,
-    max_tokens_ratio: int = 100,
+    chunk_size: int | None = None,
+    max_tokens_ratio: int | None = None,
     data_format: str = "markdown",
-    sample_size: int = 200,
-    temp: float = 0.98,
-    top_p: float = 0.8,
-    model: str = "zai-glm-4.6",
+    sample_size: int | None = None,
+    temp: float | None = None,
+    top_p: float | None = None,
+    model: str | None = None,
     verbose: bool = False,
     explain: bool = False,
     dry_run: bool = False,
@@ -65,20 +65,25 @@ def run(
     workers: int = 4,
     force: bool = False,
 ) -> None:
-    """Process large documents by chunking for Cerebras zai-glm-4.6.
+    """Process large documents by chunking for LLM inference.
+
+    Model and inference parameters are loaded from configuration files:
+    - Built-in: default_config.toml (in package)
+    - User: ~/.config/cerebrate-file/config.toml
+    - Project: .cerebrate-file.toml
 
     Args:
         input_data: Path to input file to process, or directory when using --recurse
         output_data: Output file path (default: overwrite input_data), or directory when using --recurse
         file_prompt: Path to file containing initial instructions
         prompt: Freeform instruction text to append after file_prompt
-        chunk_size: Target maximum input chunk size in tokens (default: 32000)
-        max_tokens_ratio: Completion budget as % of chunk size (default: 100)
+        chunk_size: Target maximum input chunk size in tokens (from config if not set)
+        max_tokens_ratio: Completion budget as % of chunk size (from config if not set)
         data_format: Chunking strategy - text|semantic|markdown|code (default: markdown)
-        sample_size: Number of tokens for continuity examples (default: 200)
-        temp: Model temperature (default: 0.98)
-        top_p: Model top-p (default: 0.8)
-        model: Model name override (default: zai-glm-4.6)
+        sample_size: Number of tokens for continuity examples (from config if not set)
+        temp: Model temperature (from config if not set)
+        top_p: Model top-p (from config if not set)
+        model: Model name override (from config if not set)
         verbose: Enable debug logging (default: False)
         explain: Enable metadata processing with frontmatter parsing (default: False)
         dry_run: Perform chunking and display results without making API calls (default: False)
@@ -86,6 +91,16 @@ def run(
         workers: Number of parallel workers for recursive processing (default: 4)
         force: Overwrite existing output files without confirmation (default: False)
     """
+    # Load settings and apply defaults
+    settings = get_settings()
+    chunk_size = chunk_size if chunk_size is not None else settings.inference.chunk_size
+    max_tokens_ratio = (
+        max_tokens_ratio if max_tokens_ratio is not None else settings.inference.max_tokens_ratio
+    )
+    sample_size = sample_size if sample_size is not None else settings.inference.sample_size
+    temp = temp if temp is not None else settings.inference.temperature
+    top_p = top_p if top_p is not None else settings.inference.top_p
+    model = model if model is not None else settings.get_default_model_name()
     # Load environment variables
     load_dotenv()
 

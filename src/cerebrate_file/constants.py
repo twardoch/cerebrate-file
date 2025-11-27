@@ -13,6 +13,7 @@ from re import Pattern
 from typing import Any
 
 __all__ = [
+    "CHARS_PER_TOKEN_FALLBACK",
     "CODE_BOUNDARY_PATTERNS",
     "COMPILED_BOUNDARY_PATTERNS",
     "DEFAULT_CHUNK_SIZE",
@@ -22,9 +23,12 @@ __all__ = [
     "MIN_COMPLETION_TOKENS",
     "REASONING_COMPLETION_RATIO",
     "REQUIRED_METADATA_FIELDS",
+    "VALID_DATA_FORMATS",
     "APIError",
     "CerebrateError",
     "ChunkingError",
+    "ConfigurationError",
+    "FileError",
     "TokenizationError",
     "ValidationError",
 ]
@@ -75,27 +79,17 @@ COMPILED_BOUNDARY_PATTERNS: list[Pattern[str]] = [
     re.compile(pattern, re.MULTILINE) for pattern in CODE_BOUNDARY_PATTERNS
 ]
 
-# Rate limiting configuration
-TOKENS_SAFETY_MARGIN = 50000  # Reserve 50k tokens for other instances
-REQUESTS_SAFETY_MARGIN = 100  # Reserve 100 requests for other instances
-
 # Character-based fallback approximation
 CHARS_PER_TOKEN_FALLBACK = 4  # Approximate 4 chars per token
 
-# Logging configuration
-LOG_FORMAT = (
-    "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
-    "<level>{level: <8}</level> | "
-    "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
-    "<level>{message}</level>"
-)
-
-# API configuration
-DEFAULT_MODEL = "zai-glm-4.6"
-DEFAULT_TEMPERATURE = 0.7
-DEFAULT_TOP_P = 0.8
-DEFAULT_MAX_TOKENS_RATIO = 100
-DEFAULT_SAMPLE_SIZE = 200
+# Note: Rate limiting, model defaults, and logging configuration are now
+# loaded from settings (default_config.toml). The following are kept for
+# backward compatibility but settings.py should be preferred.
+#
+# To configure models, edit:
+# - Built-in: src/cerebrate_file/default_config.toml
+# - User: ~/.config/cerebrate-file/config.toml
+# - Project: .cerebrate-file.toml
 
 # Valid data formats for chunking
 VALID_DATA_FORMATS: set[str] = {"text", "semantic", "markdown", "code"}

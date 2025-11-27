@@ -14,12 +14,19 @@ from pathlib import Path
 from loguru import logger
 
 from .constants import (
-    LOG_FORMAT,
     MAX_CONTEXT_TOKENS,
     MAX_OUTPUT_TOKENS,
     VALID_DATA_FORMATS,
     ConfigurationError,
     ValidationError,
+)
+
+# Default log format - can be overridden by settings
+DEFAULT_LOG_FORMAT = (
+    "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+    "<level>{level: <8}</level> | "
+    "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+    "<level>{message}</level>"
 )
 
 __all__ = [
@@ -91,11 +98,20 @@ def setup_logging(verbose: bool = False, level: str | None = None) -> None:
         verbose: Enable verbose (DEBUG) logging
         level: Specific log level to use (overrides verbose)
     """
+    # Import settings lazily to avoid circular imports
+    try:
+        from .settings import get_settings
+
+        settings = get_settings()
+        log_format = settings.log_format if settings.log_format else DEFAULT_LOG_FORMAT
+    except ImportError:
+        log_format = DEFAULT_LOG_FORMAT
+
     logger.remove()  # Remove default handler
 
     log_level = level.upper() if level is not None else "DEBUG" if verbose else "WARNING"
 
-    logger.add(sys.stderr, level=log_level, format=LOG_FORMAT, colorize=True)
+    logger.add(sys.stderr, level=log_level, format=log_format, colorize=True)
     logger.debug(f"Logging configured with level: {log_level}")
 
 

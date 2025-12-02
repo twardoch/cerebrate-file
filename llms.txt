@@ -20,7 +20,8 @@ Project Structure:
 │   └── 📄 usage.md
 ├── 📁 external
 ├── 📁 issues
-│   └── 📄 204.md
+│   ├── 📄 204.md
+│   └── 📄 305.md
 ├── 📁 src
 │   └── 📁 cerebrate_file
 │       ├── 📁 prompts
@@ -5792,6 +5793,56 @@ TASK: Investigate carefully and systematically this failure and restore `cerebra
 </document>
 
 <document index="27">
+<source>issues/305.md</source>
+<document_content>
+$ cerebrate-file -i fontsimi.txt -o fontsimi-tldr.txt -p "TLDR this. Elide all function/method bodies with '...' but keep the signatures. Radically TLDR the prose into just the very entity-dense microsummary. Discard everything that isn’t relevant."; cerebrate-file -i typf.txt -o typf-tldr.txt -p "TLDR this. Elide all function/method bodies with '...' but keep the signatures. Radically TLDR the prose into just the very entity-dense microsummary. Discard everything that isn’t relevant.";
+Processing: fontsimi.txt
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/bin/cerebrate-file", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cerebrate_file/__main__.py", line 19, in main
+    fire.Fire(run)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/fire/core.py", line 135, in Fire
+    component_trace = _Fire(component, args, parsed_flag_args, context, name)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/fire/core.py", line 468, in _Fire
+    component, remaining_args = _CallAndUpdateTrace(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+    component = fn(*varargs, **kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cerebrate_file/cli.py", line 335, in run
+    if input_data != output_data and Path(output_data).exists() and not force:
+                                     ^^^^
+UnboundLocalError: cannot access local variable 'Path' where it is not associated with a value
+Processing: typf.txt
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/bin/cerebrate-file", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cerebrate_file/__main__.py", line 19, in main
+    fire.Fire(run)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/fire/core.py", line 135, in Fire
+    component_trace = _Fire(component, args, parsed_flag_args, context, name)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/fire/core.py", line 468, in _Fire
+    component, remaining_args = _CallAndUpdateTrace(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+    component = fn(*varargs, **kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cerebrate_file/cli.py", line 335, in run
+    if input_data != output_data and Path(output_data).exists() and not force:
+                                     ^^^^
+UnboundLocalError: cannot access local variable 'Path' where it is not associated with a value
+
+~/Developer/vcs/github.docrepair-fonts/tldr
+$
+</document_content>
+</document>
+
+<document index="28">
 <source>md.txt</source>
 <document_content>
 
@@ -5818,7 +5869,7 @@ TASK: Investigate carefully and systematically this failure and restore `cerebra
 </document_content>
 </document>
 
-<document index="28">
+<document index="29">
 <source>pyproject.toml</source>
 <document_content>
 # this_file: pyproject.toml
@@ -6249,7 +6300,7 @@ ban-relative-imports = 'all' # Ban all relative imports for consistency
 </document_content>
 </document>
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/__init__.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/__init__.py
 # Language: python
 
 from .__version__ import __version__
@@ -6265,7 +6316,7 @@ from .settings import (
 )
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/__main__.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/__main__.py
 # Language: python
 
 import fire
@@ -6274,7 +6325,7 @@ from .cli import run
 def main(()) -> None:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/api_client.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/api_client.py
 # Language: python
 
 import json
@@ -6425,7 +6476,7 @@ def make_request_with_fallback((
 )) -> tuple[str, RateLimitStatus, str]:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/cerebrate_file.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/cerebrate_file.py
 # Language: python
 
 import json
@@ -6476,7 +6527,7 @@ def process_document((
 )) -> tuple[str, ProcessingState]:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/chunking.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/chunking.py
 # Language: python
 
 from loguru import logger
@@ -6485,6 +6536,7 @@ from .models import Chunk
 from .tokenizer import encode_text
 from semantic_text_splitter import TextSplitter
 from semantic_text_splitter import MarkdownSplitter
+import xml.etree.ElementTree as ET
 
 class ChunkingStrategy:
     def __init__((self, chunk_size: int)) -> None:
@@ -6508,6 +6560,14 @@ class CodeChunker(C, h, u, n, k, i, n, g, S, t, r, a, t, e, g, y):
     )) -> bool:
     def _track_code_structure((self, line: str)) -> tuple[int, int, bool, str | None]:
     def chunk((self, content: str)) -> list[Chunk]:
+
+class XmlChunker(C, h, u, n, k, i, n, g, S, t, r, a, t, e, g, y):
+    def _is_valid_xml((self, content: str)) -> bool:
+    def _normalize_to_xml((self, content: str)) -> str:
+    def _escape_xml_text((self, text: str)) -> str:
+    def _find_element_boundaries((self, content: str)) -> list[tuple[int, int, int]]:
+    def chunk((self, content: str)) -> list[Chunk]:
+    def _wrap_chunk((self, elements: list[str])) -> str:
 
 def __init__((self, chunk_size: int)) -> None:
 
@@ -6533,12 +6593,24 @@ def _track_code_structure((self, line: str)) -> tuple[int, int, bool, str | None
 
 def chunk((self, content: str)) -> list[Chunk]:
 
+def _is_valid_xml((self, content: str)) -> bool:
+
+def _normalize_to_xml((self, content: str)) -> str:
+
+def _escape_xml_text((self, text: str)) -> str:
+
+def _find_element_boundaries((self, content: str)) -> list[tuple[int, int, int]]:
+
+def chunk((self, content: str)) -> list[Chunk]:
+
+def _wrap_chunk((self, elements: list[str])) -> str:
+
 def get_chunking_strategy((data_format: str, chunk_size: int)) -> ChunkingStrategy:
 
 def create_chunks((content: str, data_format: str, chunk_size: int)) -> list[Chunk]:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/cli.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/cli.py
 # Language: python
 
 import builtins
@@ -6628,7 +6700,7 @@ def _show_dry_run_analysis((
 def _report_zero_output_failure((state: ProcessingState, input_path: str, output_path: str)) -> None:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/config.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/config.py
 # Language: python
 
 import os
@@ -6693,7 +6765,7 @@ def validate_recursive_inputs((
 )) -> None:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/constants.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/constants.py
 # Language: python
 
 import re
@@ -6728,7 +6800,7 @@ class ConfigurationError(C, e, r, e, b, r, a, t, e, E, r, r, o, r):
 class FileError(C, e, r, e, b, r, a, t, e, E, r, r, o, r):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/continuity.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/continuity.py
 # Language: python
 
 from loguru import logger
@@ -6789,7 +6861,7 @@ def calculate_continuity_budget((
 )) -> int:
 
 
-<document index="29">
+<document index="30">
 <source>src/cerebrate_file/default_config.toml</source>
 <document_content>
 # this_file: src/cerebrate_file/default_config.toml
@@ -6870,7 +6942,7 @@ format = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level>
 </document_content>
 </document>
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/error_recovery.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/error_recovery.py
 # Language: python
 
 import functools
@@ -6968,7 +7040,7 @@ def update((self, **kwargs)):
 def should_skip((self, item_id: Any)) -> bool:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/file_utils.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/file_utils.py
 # Language: python
 
 import contextlib
@@ -7008,7 +7080,7 @@ def output_file_exists((input_path: Path, output_path: Path)) -> bool:
 def build_base_prompt((file_prompt: str | None, text_prompt: str | None)) -> tuple[str, int]:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/models.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/models.py
 # Language: python
 
 from dataclasses import dataclass, field
@@ -7098,7 +7170,7 @@ def __post_init__((self)) -> None:
 def __post_init__((self)) -> None:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/prompt_library.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/prompt_library.py
 # Language: python
 
 from pathlib import Path
@@ -7110,7 +7182,7 @@ def get_prompt_library_path(()) -> Path:
 def resolve_prompt_file((file_prompt: str)) -> Path | None:
 
 
-<document index="30">
+<document index="31">
 <source>src/cerebrate_file/prompts/README.md</source>
 <document_content>
 # Prompt Library
@@ -7175,14 +7247,14 @@ The file prompt loads first, then the text prompt.
 </document_content>
 </document>
 
-<document index="31">
+<document index="32">
 <source>src/cerebrate_file/prompts/fix-pdf-extracted-text.xml</source>
 <document_content>
 <poml><role>You are a meticulous document restoration specialist who cleans up poorly extracted PDF        text while preserving every word of the original content.</role><task>Clean and format extracted PDF text into proper Markdown while maintaining absolute        fidelity to the original content.</task><h>Processing Instructions</h><stepwise-instructions><list listStyle="decimal"><item><b>Line Merging:</b><list><item>Join lines that were artificially broken mid-sentence by PDF column width</item><item>Preserve intentional line breaks between paragraphs</item><item>Maintain list structures and indentation where clearly intended</item></list></item><item><b>Structure & pagination:</b><list><item>Remove empty paragraphs</item><item>Remove visible page numbers, headers, and footers</item><item>If page numbers or page breaks exist in the source, only retain then in                        form of a free-standing separate line that says `<a id="page_NNN"></a>`                        (where NNN is the page number), with a newline above and a newline below,                        and move them down (that is, place them before the first paragraph of the                        page, separating with a newline).</item><item>Join paragraphs that were artificially broken, especially due to column or                        page breaks. If a page break existed mid-paragraph, move the page break                        after the paragraph.</item><item>Preserve all narrative content parts, including table-of-contents,                        footnotes, and other content that is not part of the main text. Only remove                        visible page numbers, headers, and footers that make no sense in a                        non-paginated document.</item></list></item><item><b>Artifact Removal:</b><list><item>Remove hard hyphenation at line endings (e.g., "docu-\nment" → "document")</item><item>Delete page numbers, headers, and footers that repeat across pages</item><item>Remove garbled character sequences that are clearly extraction errors                        (e.g., "■□▪▫" or "????")</item><item>Clean up spacing artifacts (multiple spaces, tabs mixed with spaces)</item></list></item><item><b>OCR Correction:</b><list><item>Fix obvious character substitution errors (e.g., "rn" misread as "m", "cl"                        as "d")</item><item>Correct clearly misspelled words only when the intended word is                        unambiguous</item><item>Fix number/letter confusion in obvious contexts (e.g., "0" vs "O", "1" vs                        "l")</item><item>If it’s obvious from the context, fix the writing system of the text (СССР                        and not CCCP)</item><item>If it’s obvious from the context, enrich text with diacritics that have                        been omitted lazily (e.g. write Wałęsa and not Walesa)</item></list></item><item><b>Orthotypography:</b><list><item>Use proper high-end punctuation, especially the correct typographic                        quotation marks appropriate for the language of the text.</item><item>Use em dashes appropriately, but ALWAYS separate them by spaces from                        neighboring text on left and right. Never glue an em dash directly to a                        word.</item><item>Use en dashes (without surrounding spaces) to indicate ranges or spans.</item><item>However, do not overcorrect punctuation.</item></list></item><item><b>Markdown Formatting (Conservative):</b><list><item>Add heading markers (#, ##, etc.) ONLY for text that is clearly a title or                        section header</item><item>Use **bold** ONLY where emphasis was clearly intended in the original</item><item>Format obvious lists with - or 1. notation</item><item>Use code blocks for clearly technical content or code samples</item><item>Add blockquotes (>) for clearly quoted material</item><item>Use Markdown tables if you know what you’re doing</item></list></item></list></stepwise-instructions><cp caption="Critical Preservation Rules"><list><item>NEVER delete sentences, phrases, or meaningful words</item><item>NEVER paraphrase or rewrite sentences for clarity</item><item>NEVER add explanatory text or context</item><item>NEVER change technical terms, proper nouns, or specialized vocabulary</item><item>NEVER merge or split paragraphs unless fixing obvious extraction errors</item><item>PRESERVE all numerical data exactly as written</item></list></cp><examples><example caption="Line merge correction"><input>The quick brown fox jum-                ped over the lazy dog which                was sleeping in the garden.</input><output>The quick brown fox jumped over the lazy dog which was sleeping in the garden.</output></example><example caption="OCR and formatting"><input>Chapter l: lntroduction                This chapfer discusses the rnain concepts...</input><output># Chapter 1: Introduction                This chapter discusses the main concepts...</output></example><example caption="Artifact removal"><input>The report■□▪ shows that sales                - - - Page 42 - - -                increased by 15% this quarter.</input><output>The report shows that sales increased by 15% this quarter.</output></example></examples><cp caption="Decision Framework"><p>When uncertain about whether text is an error or intentional:</p><list><item>If it could be meaningful content → KEEP IT</item><item>If clearly garbled/repeated/artifactual → REMOVE IT</item><item>If unsure about formatting → LEAVE UNFORMATTED</item><item>If unsure about spelling → KEEP ORIGINAL</item></list></cp><output-format>Clean Markdown text with proper paragraph separation, conservative heading        hierarchy, minimal formatting markup, all original content preserved</output-format></poml>
 </document_content>
 </document>
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/recursive.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/recursive.py
 # Language: python
 
 import re
@@ -7223,7 +7295,7 @@ def process_files_parallel((
 )) -> ProcessingResult:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/settings.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/settings.py
 # Language: python
 
 import os
@@ -7275,7 +7347,7 @@ def get_settings(()) -> Settings:
 def reload_settings(()) -> Settings:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/tokenizer.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/tokenizer.py
 # Language: python
 
 from loguru import logger
@@ -7313,7 +7385,7 @@ def encode_text((text: str)) -> list[int]:
 def decode_tokens_safely((tokens: list[int])) -> str:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/ui.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/ui.py
 # Language: python
 
 from loguru import logger
@@ -7366,7 +7438,7 @@ def finish_file((self, input_path: str)) -> None:
 def finish_overall_processing((self)) -> None:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/validators.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/validators.py
 # Language: python
 
 import contextlib
@@ -7401,7 +7473,7 @@ def validate_model_parameters((
 )) -> tuple[int, float, float, int]:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/test_retry_mechanism.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/test_retry_mechanism.py
 # Language: python
 
 import sys
@@ -7414,7 +7486,7 @@ def test_503_retry(()):
 def side_effect((*args, **kwargs)):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/testapi.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/testapi.py
 # Language: python
 
 import os
@@ -7425,7 +7497,7 @@ from cerebras.cloud.sdk import Cerebras
 def main(()) -> int:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_api_retry.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_api_retry.py
 # Language: python
 
 from unittest.mock import Mock, patch
@@ -7453,7 +7525,7 @@ def test_successful_request(()):
 def test_full_retry_flow((mocker)):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_brace_patterns.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_brace_patterns.py
 # Language: python
 
 import pytest
@@ -7498,7 +7570,7 @@ def test_empty_braces((self)):
 def test_numeric_extensions((self)):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_cerebrate_file.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_cerebrate_file.py
 # Language: python
 
 import math
@@ -7516,7 +7588,7 @@ def test_calculate_completion_budget_applies_reasoning_multiplier(()) -> None:
 def test_calculate_completion_budget_caps_at_max_output(()) -> None:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_chunking.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_chunking.py
 # Language: python
 
 import pytest
@@ -7571,7 +7643,7 @@ def test_chunk_token_counts((sample_text)):
 def test_chunk_text_content((sample_text)):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_cli_streams.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_cli_streams.py
 # Language: python
 
 import io
@@ -7589,7 +7661,7 @@ def test_cli_run_streams_stdin_to_stdout((
 )) -> None:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_constants.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_constants.py
 # Language: python
 
 import pytest
@@ -7623,7 +7695,7 @@ def test_cerebrate_error(()):
 def test_specific_error_classes(()):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_error_recovery.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_error_recovery.py
 # Language: python
 
 import json
@@ -7693,7 +7765,7 @@ def test_recoverable_operation_with_checkpoint(()):
 def test_recoverable_operation_should_skip(()):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_file_utils.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_file_utils.py
 # Language: python
 
 import io
@@ -7719,7 +7791,7 @@ def test_read_file_safely_reads_regular_files((temporary_text_file: Path)) -> No
 def test_write_output_atomically_writes_regular_files((monkeypatch: pytest.MonkeyPatch)) -> None:
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_force_option.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_force_option.py
 # Language: python
 
 import tempfile
@@ -7751,7 +7823,7 @@ def test_force_option_parameter_validation(()):
 def test_force_option_logged_messages((sample_input_file, existing_output_file, capsys)):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_integration.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_integration.py
 # Language: python
 
 import os
@@ -7798,7 +7870,7 @@ def test_cli_environment_integration(()):
 def test_explain_mode_integration(()):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_issue_104.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_issue_104.py
 # Language: python
 
 import tempfile
@@ -7828,7 +7900,7 @@ def test_call_counting_issue_debug(()):
 def test_explain_mode_metadata_completeness_check(()):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_models.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_models.py
 # Language: python
 
 from datetime import datetime, timedelta
@@ -7862,7 +7934,7 @@ def test_api_config(()):
 def test_chunk_diagnostics_to_log_dict(()):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_package.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_package.py
 # Language: python
 
 import cerebrate_file
@@ -7870,7 +7942,7 @@ import cerebrate_file
 def test_version(()):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_pre_screening.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_pre_screening.py
 # Language: python
 
 from pathlib import Path
@@ -7917,7 +7989,7 @@ def test_pre_screen_files_with_in_place_processing((self, tmp_path)):
 def test_pre_screen_files_logs_appropriately((self, tmp_path)):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_pre_screening_integration.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_pre_screening_integration.py
 # Language: python
 
 from unittest.mock import MagicMock, patch
@@ -7942,7 +8014,7 @@ def test_recursive_pre_screening_dry_run_mode((self, tmp_path, capsys)):
 def test_recursive_pre_screening_in_place_processing((self, tmp_path, capsys)):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_prompt_library.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_prompt_library.py
 # Language: python
 
 from pathlib import Path
@@ -7990,7 +8062,7 @@ def test_cli_can_use_library_prompt((self, tmp_path)):
 def test_prompt_library_listing((self, capsys)):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_recursive.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_recursive.py
 # Language: python
 
 import tempfile
@@ -8077,7 +8149,7 @@ def test_full_recursive_workflow((self, mock_executor)):
 def mock_process((input_path: Path, output_path: Path)):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_recursive_integration.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_recursive_integration.py
 # Language: python
 
 import tempfile
@@ -8147,7 +8219,7 @@ def test_large_file_set_simulation((self)):
 def mock_processing_func((input_path: Path, output_path: Path)) -> ProcessingState:
 
 
-<document index="32">
+<document index="33">
 <source>tests/test_sample.txt</source>
 <document_content>
 This is a test document for cerebrate-file CLI testing.
@@ -8162,7 +8234,7 @@ Final paragraph to ensure proper handling of document endings.
 </document_content>
 </document>
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_tokenizer.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_tokenizer.py
 # Language: python
 
 from unittest.mock import patch
@@ -8204,7 +8276,7 @@ def test_encode_text_with_long_text(()):
 def test_encode_text_with_special_characters(()):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_ui.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_ui.py
 # Language: python
 
 from io import StringIO
@@ -8273,7 +8345,7 @@ def test_progress_display_renders_without_error((self)):
 def test_ui_with_edge_case_paths((self)):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_validators.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_validators.py
 # Language: python
 
 import tempfile
@@ -8328,7 +8400,7 @@ def test_validate_model_parameters_invalid_ratio(()):
 def test_validate_model_parameters_multiple_invalid(()):
 
 
-# File: /Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_zero_output_guard.py
+# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_zero_output_guard.py
 # Language: python
 
 from pathlib import Path

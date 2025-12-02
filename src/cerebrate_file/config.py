@@ -283,7 +283,8 @@ def validate_inputs(
             f"• text: Line-based chunking (default) "
             f"• semantic: Smart paragraph/sentence boundaries "
             f"• markdown: Respect Markdown structure "
-            f"• code: Programming language-aware chunking"
+            f"• code: Programming language-aware chunking "
+            f"• xml: XML structure-aware chunking"
         )
 
     # Handle errors

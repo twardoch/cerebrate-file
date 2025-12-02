@@ -20,6 +20,7 @@ __all__ = [
     "MarkdownChunker",
     "SemanticChunker",
     "TextChunker",
+    "XmlChunker",
     "create_chunks",
     "get_chunking_strategy",
 ]
@@ -385,6 +386,312 @@ class CodeChunker(ChunkingStrategy):
         return chunks
 
 
+class XmlChunker(ChunkingStrategy):
+    """XML-aware chunking that respects XML structure.
+
+    This chunker:
+    1. Checks if content is valid XML
+    2. If not, wraps non-XML text in <p> tags and wraps all in <x> root
+    3. Chunks the XML respecting element boundaries
+    """
+
+    def _is_valid_xml(self, content: str) -> bool:
+        """Check if content is valid XML.
+
+        Args:
+            content: Content to check
+
+        Returns:
+            True if content is valid XML
+        """
+        import xml.etree.ElementTree as ET
+
+        try:
+            ET.fromstring(content)
+            return True
+        except ET.ParseError:
+            return False
+
+    def _normalize_to_xml(self, content: str) -> str:
+        """Normalize content to valid XML by wrapping non-XML text in <p> tags.
+
+        Wraps text outside tags in <p> elements and wraps everything in <x> root.
+        Only wraps text at the root level (depth 0), not text inside elements.
+        Example: "Hello <b>welcome</b>" → "<x><p>Hello </p><b>welcome</b></x>"
+
+        Args:
+            content: Content to normalize
+
+        Returns:
+            Normalized XML string
+        """
+        if self._is_valid_xml(content):
+            return content
+
+        result = []
+        current_text = []
+        i = 0
+        depth = 0  # Track element nesting depth
+
+        while i < len(content):
+            if content[i] == "<":
+                # Flush accumulated text as <p> element (only at root level)
+                if current_text:
+                    text = "".join(current_text)
+                    if depth == 0:
+                        if text.strip():  # Only wrap non-empty text
+                            # Escape XML special chars in text
+                            escaped = self._escape_xml_text(text)
+                            result.append(f"<p>{escaped}</p>")
+                        elif text:  # Preserve whitespace-only text
+                            result.append(f"<p>{text}</p>")
+                    else:
+                        # Inside an element, keep text as-is
+                        result.append(text)
+                    current_text = []
+
+                # Find end of tag
+                tag_end = content.find(">", i)
+                if tag_end == -1:
+                    # Malformed - treat rest as text
+                    current_text.append(content[i:])
+                    break
+
+                tag = content[i : tag_end + 1]
+
+                # Check for CDATA sections
+                if content[i:].startswith("<![CDATA["):
+                    cdata_end = content.find("]]>", i)
+                    if cdata_end != -1:
+                        result.append(content[i : cdata_end + 3])
+                        i = cdata_end + 3
+                        continue
+
+                # Check for comments
+                if content[i:].startswith("<!--"):
+                    comment_end = content.find("-->", i)
+                    if comment_end != -1:
+                        result.append(content[i : comment_end + 3])
+                        i = comment_end + 3
+                        continue
+
+                # Check for processing instructions
+                if content[i:].startswith("<?"):
+                    pi_end = content.find("?>", i)
+                    if pi_end != -1:
+                        result.append(content[i : pi_end + 2])
+                        i = pi_end + 2
+                        continue
+
+                # Track depth for opening/closing tags
+                if tag.startswith("</"):
+                    depth = max(0, depth - 1)
+                elif not tag.endswith("/>"):
+                    # Opening tag (not self-closing)
+                    depth += 1
+
+                result.append(tag)
+                i = tag_end + 1
+            else:
+                current_text.append(content[i])
+                i += 1
+
+        # Flush remaining text
+        if current_text:
+            text = "".join(current_text)
+            if depth == 0:
+                if text.strip():
+                    escaped = self._escape_xml_text(text)
+                    result.append(f"<p>{escaped}</p>")
+                elif text:
+                    result.append(f"<p>{text}</p>")
+            else:
+                result.append(text)
+
+        normalized = "".join(result)
+
+        # Wrap in <x> root if not already valid XML
+        if not self._is_valid_xml(normalized):
+            normalized = f"<x>{normalized}</x>"
+
+        return normalized
+
+    def _escape_xml_text(self, text: str) -> str:
+        """Escape XML special characters in text content.
+
+        Args:
+            text: Text to escape
+
+        Returns:
+            Escaped text
+        """
+        return (
+            text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+            .replace("'", "&apos;")
+        )
+
+    def _find_element_boundaries(self, content: str) -> list[tuple[int, int, int]]:
+        """Find all top-level element boundaries in XML content.
+
+        Args:
+            content: XML content to analyze
+
+        Returns:
+            List of (start, end, depth) tuples for each element
+        """
+        boundaries = []
+        i = 0
+        depth = 0
+        element_start = None
+
+        while i < len(content):
+            if content[i] == "<":
+                # Skip comments, CDATA, processing instructions
+                if content[i:].startswith("<!--"):
+                    end = content.find("-->", i)
+                    if end != -1:
+                        i = end + 3
+                        continue
+                elif content[i:].startswith("<![CDATA["):
+                    end = content.find("]]>", i)
+                    if end != -1:
+                        i = end + 3
+                        continue
+                elif content[i:].startswith("<?"):
+                    end = content.find("?>", i)
+                    if end != -1:
+                        i = end + 2
+                        continue
+
+                tag_end = content.find(">", i)
+                if tag_end == -1:
+                    break
+
+                tag = content[i : tag_end + 1]
+
+                if tag.startswith("</"):
+                    # Closing tag
+                    depth -= 1
+                    if depth == 0 and element_start is not None:
+                        boundaries.append((element_start, tag_end + 1, 0))
+                        element_start = None
+                elif tag.endswith("/>"):
+                    # Self-closing tag
+                    if depth == 0:
+                        boundaries.append((i, tag_end + 1, 0))
+                else:
+                    # Opening tag
+                    if depth == 0:
+                        element_start = i
+                    depth += 1
+
+                i = tag_end + 1
+            else:
+                # Text content at root level
+                if depth == 0:
+                    text_start = i
+                    while i < len(content) and content[i] != "<":
+                        i += 1
+                    if i > text_start:
+                        boundaries.append((text_start, i, 0))
+                else:
+                    i += 1
+
+        return boundaries
+
+    def chunk(self, content: str) -> list[Chunk]:
+        """Split content using XML-aware chunking.
+
+        Args:
+            content: Input text content
+
+        Returns:
+            List of Chunk objects
+        """
+        logger.debug("Using XML-aware chunking strategy")
+
+        # Normalize content to valid XML
+        normalized = self._normalize_to_xml(content)
+        logger.debug(f"Normalized content length: {len(normalized)}")
+
+        # If content fits in one chunk, return it directly
+        total_tokens = len(encode_text(normalized))
+        if total_tokens <= self.chunk_size:
+            logger.info("XML mode chunking: 1 chunk created (content fits)")
+            return [self._create_chunk(normalized)]
+
+        # Find element boundaries for chunking
+        boundaries = self._find_element_boundaries(normalized)
+
+        if not boundaries:
+            # No elements found, fall back to text chunking
+            logger.warning("No XML elements found, falling back to text mode")
+            return TextChunker(self.chunk_size).chunk(normalized)
+
+        chunks = []
+        current_elements = []
+        current_tokens = 0
+
+        for start, end, _depth in boundaries:
+            element = normalized[start:end]
+            element_tokens = len(encode_text(element))
+
+            # If single element exceeds chunk size, handle it separately
+            if element_tokens > self.chunk_size:
+                # First, flush current accumulated elements
+                if current_elements:
+                    chunk_content = self._wrap_chunk(current_elements)
+                    chunks.append(self._create_chunk(chunk_content))
+                    current_elements = []
+                    current_tokens = 0
+
+                # Handle overlong element
+                logger.warning(
+                    f"Single XML element exceeds chunk_size ({element_tokens} > {self.chunk_size}), "
+                    f"processing as individual chunk"
+                )
+                chunk_content = self._wrap_chunk([element])
+                chunks.append(self._create_chunk(chunk_content))
+                continue
+
+            # Check if adding this element would exceed chunk size
+            if current_tokens + element_tokens > self.chunk_size and current_elements:
+                # Finalize current chunk
+                chunk_content = self._wrap_chunk(current_elements)
+                chunks.append(self._create_chunk(chunk_content))
+                current_elements = [element]
+                current_tokens = element_tokens
+            else:
+                current_elements.append(element)
+                current_tokens += element_tokens
+
+        # Add remaining elements
+        if current_elements:
+            chunk_content = self._wrap_chunk(current_elements)
+            chunks.append(self._create_chunk(chunk_content))
+
+        logger.info(f"XML mode chunking: {len(chunks)} chunks created")
+        return chunks
+
+    def _wrap_chunk(self, elements: list[str]) -> str:
+        """Wrap chunk elements in XML container.
+
+        Args:
+            elements: List of XML element strings
+
+        Returns:
+            Wrapped XML string
+        """
+        content = "".join(elements)
+        # Check if already has root element
+        if self._is_valid_xml(content):
+            return content
+        return f"<x>{content}</x>"
+
+
 def get_chunking_strategy(data_format: str, chunk_size: int) -> ChunkingStrategy:
     """Get a chunking strategy instance.
 
@@ -403,6 +710,7 @@ def get_chunking_strategy(data_format: str, chunk_size: int) -> ChunkingStrategy
         "semantic": SemanticChunker,
         "markdown": MarkdownChunker,
         "code": CodeChunker,
+        "xml": XmlChunker,
     }
 
     if data_format not in strategies:
@@ -418,7 +726,7 @@ def create_chunks(content: str, data_format: str, chunk_size: int) -> list[Chunk
 
     Args:
         content: Input text content
-        data_format: Chunking strategy (text|semantic|markdown|code)
+        data_format: Chunking strategy (text|semantic|markdown|code|xml)
         chunk_size: Maximum tokens per chunk
 
     Returns:

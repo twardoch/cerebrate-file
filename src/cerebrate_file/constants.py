@@ -92,7 +92,7 @@ CHARS_PER_TOKEN_FALLBACK = 4  # Approximate 4 chars per token
 # - Project: .cerebrate-file.toml
 
 # Valid data formats for chunking
-VALID_DATA_FORMATS: set[str] = {"text", "semantic", "markdown", "code"}
+VALID_DATA_FORMATS: set[str] = {"text", "semantic", "markdown", "code", "xml"}
 
 # Continuity template for chunk processing
 CONTINUITY_TEMPLATE = """

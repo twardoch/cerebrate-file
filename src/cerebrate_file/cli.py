@@ -79,7 +79,7 @@ def run(
         prompt: Freeform instruction text to append after file_prompt
         chunk_size: Target maximum input chunk size in tokens (from config if not set)
         max_tokens_ratio: Completion budget as % of chunk size (from config if not set)
-        data_format: Chunking strategy - text|semantic|markdown|code (default: markdown)
+        data_format: Chunking strategy - text|semantic|markdown|code|xml (default: markdown)
         sample_size: Number of tokens for continuity examples (from config if not set)
         temp: Model temperature (from config if not set)
         top_p: Model top-p (from config if not set)

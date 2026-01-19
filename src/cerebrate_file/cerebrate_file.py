@@ -10,6 +10,7 @@ large documents and processes them through Cerebras AI models.
 import json
 import math
 import time
+from collections.abc import Callable
 from typing import Any
 
 from loguru import logger
@@ -63,7 +64,7 @@ def calculate_completion_budget(chunk_tokens: int, max_tokens_ratio: int) -> int
     # Baseline requested from the user-provided ratio
     requested_tokens = (chunk_tokens * max_tokens_ratio) // 100
 
-    # Allocate extra headroom for reasoning-heavy models (e.g., zai-glm-4.6)
+    # Allocate extra headroom for reasoning-heavy models (e.g., zai-glm-4.7)
     reasoning_target = math.ceil(chunk_tokens * REASONING_COMPLETION_RATIO / 100)
 
     # Even tiny chunks (frontmatter) need a few thousand tokens to finish reasoning
@@ -172,6 +173,7 @@ def process_document(
     metadata: dict[str, Any] | None = None,
     verbose: bool = False,
     progress_callback: object | None = None,
+    chunk_writer: Callable[[str], None] | None = None,
 ) -> tuple[str, ProcessingState]:
     """Process all chunks through the Cerebras API.
 
@@ -189,6 +191,8 @@ def process_document(
         verbose: Enable verbose output
         progress_callback: Optional callback function for progress updates.
                           Called with (chunks_completed, remaining_calls)
+        chunk_writer: Optional callback to write each processed chunk progressively.
+                     Called with (chunk_text) after each chunk is processed.
 
     Returns:
         Tuple of (final_output, processing_state)
@@ -294,6 +298,10 @@ def process_document(
 
             results.append(response_text)
             last_rate_status = rate_status
+
+            # Write chunk progressively if writer callback provided
+            if chunk_writer is not None:
+                chunk_writer(response_text)
 
             diagnostic = ChunkDiagnostics(
                 chunk_index=i + 1,

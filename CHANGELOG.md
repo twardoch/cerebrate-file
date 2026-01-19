@@ -1,13 +1,17 @@
 
 # Changelog
 
-## [Unreleased] - 2025-09-20
+## [Unreleased] - 2026-01-20
 
 ### Changed
+- Updated default model from `zai-glm-4.6` to `zai-glm-4.7`.
 - Migrated `tool.uv.dev-dependencies` to `[dependency-groups].dev`.
 - Relaxed `max_tokens_ratio` validation; runtime cap remains unchanged.
 
 ### Added
+- **Progressive File Writing**: Chunks are now written to output as they are processed, rather than accumulating in memory. For in-place updates (when input equals output), uses a `.tmptmp` temp file that is atomically renamed on completion.
+- `ProgressiveFileWriter` class in `file_utils.py` for chunk-by-chunk output with proper cleanup on errors.
+- `chunk_writer` callback parameter in `process_document()` for progressive writing support.
 - STDIN/STDOUT streaming support with `--input_data -` and `--output_data -` (incompatible with `--recurse`).
 - Built-in prompt library in `prompts/` folder, which is checked after direct paths. Includes `fix-pdf-extracted-text.xml`.
 - Pre-screening for recursive processing to show accurate file counts and filter existing outputs.

@@ -22,7 +22,7 @@ sample_size = 200  # Number of tokens for continuity examples
 # The primary model used for inference (Cerebras by default)
 # ------------------------------------------------------------------------------
 [models.primary]
-name = "zai-glm-4.6"
+name = "zai-glm-4.7"
 provider = "cerebras"
 api_key_env = "CEREBRAS_API_KEY"  # Environment variable containing API key
 # api_base is not needed for Cerebras (uses SDK default)
@@ -40,7 +40,7 @@ max_output_tokens = 40960
 
 [models.fallback1]
 enabled = true  # Set to true to enable this fallback
-name = "zai-org/GLM-4.6"  # Model name
+name = "zai-org/GLM-4.7"  # Model name
 provider = "chutes"  # Provider type (openai, together, groq, etc.)
 api_key_env = "CHUTES_API_KEY"  # Environment variable containing API key
 api_base = "https://llm.chutes.ai/v1"  # Optional: custom API base URL for OpenAI-compatible APIs
@@ -50,7 +50,7 @@ max_output_tokens = 40960
 
 [models.fallback2]
 enabled = true
-name = "GLM-4.6"
+name = "GLM-4.7"
 provider = "arli"
 api_key_env = "ARLIAI_TEXT_API_KEY"
 api_base = "https://api.arliai.com/v1/"

@@ -32,6 +32,7 @@ from .config import (
     validate_recursive_inputs,
 )
 from .file_utils import (
+    ProgressiveFileWriter,
     build_base_prompt,
     check_metadata_completeness,
     parse_frontmatter_content,
@@ -304,26 +305,51 @@ def run(
                                 str(input_file), chunks_done, remaining_calls
                             )
 
-                    # Process document
-                    output_text, state = process_document(
-                        client=client,
-                        chunks=chunks,
-                        base_prompt=base_prompt,
-                        base_prompt_tokens=base_prompt_tokens,
-                        model=model,
-                        temp=temp,
-                        top_p=top_p,
-                        max_tokens_ratio=max_tokens_ratio,
-                        sample_size=sample_size,
-                        metadata=metadata if explain else None,
-                        verbose=verbose,
-                        progress_callback=file_progress_callback if progress_display else None,
+                    # Set up progressive file writer for chunk-by-chunk output
+                    progressive_writer = ProgressiveFileWriter(
+                        output_path=str(output_file),
+                        input_path=str(input_file),
+                        create_backup=False,
                     )
 
-                    # Write output
-                    write_output_atomically(
-                        output_text, str(output_file), metadata if explain else None
-                    )
+                    try:
+                        progressive_writer.open()
+
+                        # Write frontmatter header first if in explain mode with metadata
+                        if explain and metadata:
+                            import frontmatter as fm
+
+                            post = fm.Post("", **metadata)
+                            frontmatter_header = fm.dumps(post).rstrip("\n") + "\n"
+                            progressive_writer.write_chunk(frontmatter_header)
+
+                        # Create chunk writer callback for progressive writing
+                        def write_chunk_progressively(chunk_text: str) -> None:
+                            progressive_writer.write_chunk(chunk_text)
+
+                        # Process document with progressive writing
+                        output_text, state = process_document(
+                            client=client,
+                            chunks=chunks,
+                            base_prompt=base_prompt,
+                            base_prompt_tokens=base_prompt_tokens,
+                            model=model,
+                            temp=temp,
+                            top_p=top_p,
+                            max_tokens_ratio=max_tokens_ratio,
+                            sample_size=sample_size,
+                            metadata=metadata if explain else None,
+                            verbose=verbose,
+                            progress_callback=file_progress_callback if progress_display else None,
+                            chunk_writer=write_chunk_progressively,
+                        )
+
+                        # Finalize the progressive writer
+                        progressive_writer.finalize()
+
+                    except Exception:
+                        progressive_writer.abort()
+                        raise
 
                     # Finish progress for this file
                     if progress_display:
@@ -548,32 +574,63 @@ def run(
 
             progress_callback = update_progress
 
-        # Process all chunks
-        final_output, state = process_document(
-            client=client,
-            chunks=chunks,
-            base_prompt=base_prompt,
-            base_prompt_tokens=base_prompt_tokens,
-            model=model,
-            temp=temp,
-            top_p=top_p,
-            max_tokens_ratio=max_tokens_ratio,
-            sample_size=sample_size,
-            metadata=metadata if explain else None,
-            verbose=verbose,
-            progress_callback=progress_callback,
+        # Set up progressive file writer for chunk-by-chunk output
+        progressive_writer = ProgressiveFileWriter(
+            output_path=output_data,
+            input_path=input_data,
+            create_backup=False,
         )
 
-        # Finish progress display
-        if progress_display:
-            progress_display.finish_file_processing()
+        try:
+            progressive_writer.open()
 
-        # Abort before overwriting anything if the API never returned tokens
-        if state.total_output_tokens == 0:
-            _report_zero_output_failure(state, input_data, output_data)
+            # Write frontmatter header first if in explain mode with metadata
+            if explain and metadata:
+                import frontmatter as fm
 
-        # Write output atomically
-        write_output_atomically(final_output, output_data, metadata if explain else None)
+                # Create frontmatter header (YAML with empty content)
+                post = fm.Post("", **metadata)
+                frontmatter_header = fm.dumps(post).rstrip("\n") + "\n"
+                # Remove the trailing empty content, keep just the header
+                # frontmatter.dumps gives "---\nkey: val\n---\n\n" for empty content
+                progressive_writer.write_chunk(frontmatter_header)
+
+            # Create chunk writer callback for progressive writing
+            def write_chunk_progressively(chunk_text: str) -> None:
+                progressive_writer.write_chunk(chunk_text)
+
+            # Process all chunks with progressive writing
+            final_output, state = process_document(
+                client=client,
+                chunks=chunks,
+                base_prompt=base_prompt,
+                base_prompt_tokens=base_prompt_tokens,
+                model=model,
+                temp=temp,
+                top_p=top_p,
+                max_tokens_ratio=max_tokens_ratio,
+                sample_size=sample_size,
+                metadata=metadata if explain else None,
+                verbose=verbose,
+                progress_callback=progress_callback,
+                chunk_writer=write_chunk_progressively,
+            )
+
+            # Finish progress display
+            if progress_display:
+                progress_display.finish_file_processing()
+
+            # Abort before finalizing if the API never returned tokens
+            if state.total_output_tokens == 0:
+                progressive_writer.abort()
+                _report_zero_output_failure(state, input_data, output_data)
+
+            # Finalize the progressive writer (handles temp file rename for in-place updates)
+            progressive_writer.finalize()
+
+        except Exception as e:
+            progressive_writer.abort()
+            raise
 
         # Show remaining daily requests from the last chunk's rate limit headers
         last_rate_status = state.last_rate_status

@@ -106,7 +106,7 @@ class Settings:
             return self.primary_model.name
         if self.fallback_models:
             return self.fallback_models[0].name
-        return "zai-glm-4.6"  # Ultimate fallback
+        return "zai-glm-4.7"  # Ultimate fallback
 
 
 def _load_toml_file(path: Path) -> dict[str, Any]:

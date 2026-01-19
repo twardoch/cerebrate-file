@@ -20,6 +20,7 @@ from .constants import REQUIRED_METADATA_FIELDS, FileError
 from .tokenizer import encode_text
 
 __all__ = [
+    "ProgressiveFileWriter",
     "backup_file",
     "build_base_prompt",
     "check_metadata_completeness",
@@ -29,6 +30,162 @@ __all__ = [
     "read_file_safely",
     "write_output_atomically",
 ]
+
+
+class ProgressiveFileWriter:
+    """Handles progressive chunk writing with temp file support for in-place updates.
+
+    When output path equals input path, uses a temp file with .tmptmp extension.
+    On finalize, removes the original and renames temp to the target path.
+    """
+
+    def __init__(
+        self,
+        output_path: str | Path,
+        input_path: str | Path | None = None,
+        create_backup: bool = False,
+    ) -> None:
+        """Initialize the progressive writer.
+
+        Args:
+            output_path: Path to write output to
+            input_path: Path to input file (for detecting in-place updates)
+            create_backup: Whether to backup existing file before writing
+        """
+        self._output_path_str = str(output_path)
+        self._input_path_str = str(input_path) if input_path else None
+        self._create_backup = create_backup
+        self._is_stdout = self._output_path_str == "-"
+        self._file_handle: Any = None
+        self._temp_path: Path | None = None
+        self._actual_write_path: Path | None = None
+        self._is_in_place = (
+            input_path is not None
+            and self._output_path_str == self._input_path_str
+            and not self._is_stdout
+        )
+
+    def open(self) -> None:
+        """Open the output file for writing.
+
+        If writing in-place, creates a temp file with .tmptmp extension.
+        """
+        if self._is_stdout:
+            self._file_handle = sys.stdout
+            return
+
+        output_path_obj = Path(self._output_path_str)
+
+        # Ensure parent directory exists
+        ensure_parent_directory(output_path_obj)
+
+        # Create backup if requested and file exists
+        if self._create_backup and output_path_obj.exists():
+            backup_file(output_path_obj)
+
+        if self._is_in_place:
+            # Use temp file with .tmptmp extension for in-place updates
+            self._temp_path = Path(f"{self._output_path_str}.tmptmp")
+            self._actual_write_path = self._temp_path
+            logger.debug(f"Using temp file for in-place update: {self._temp_path}")
+        else:
+            self._actual_write_path = output_path_obj
+
+        try:
+            self._file_handle = open(self._actual_write_path, "w", encoding="utf-8")
+            logger.debug(f"Opened file for progressive writing: {self._actual_write_path}")
+        except Exception as e:
+            raise FileError(f"Failed to open file for writing {self._actual_write_path}: {e}") from e
+
+    def write_chunk(self, chunk_text: str) -> None:
+        """Write a processed chunk to the output file.
+
+        Args:
+            chunk_text: The processed chunk text to write
+        """
+        if self._file_handle is None:
+            raise FileError("File not opened. Call open() first.")
+
+        try:
+            self._file_handle.write(chunk_text)
+            if self._is_stdout:
+                self._file_handle.flush()
+        except Exception as e:
+            raise FileError(f"Failed to write chunk: {e}") from e
+
+    def write_frontmatter(self, content: str, metadata: dict[str, Any]) -> str:
+        """Wrap content with frontmatter and return it.
+
+        Args:
+            content: The content to wrap
+            metadata: Frontmatter metadata to include
+
+        Returns:
+            Content with frontmatter prepended
+        """
+        post = frontmatter.Post(content, **metadata)
+        return frontmatter.dumps(post)
+
+    def finalize(self) -> None:
+        """Finalize the file writing.
+
+        If using a temp file for in-place updates:
+        - Closes the temp file
+        - Removes the original input file
+        - Renames temp file to the output path
+        """
+        if self._file_handle is None:
+            return
+
+        try:
+            if not self._is_stdout:
+                self._file_handle.close()
+                self._file_handle = None
+
+                if self._is_in_place and self._temp_path is not None:
+                    output_path_obj = Path(self._output_path_str)
+
+                    # Remove the original input file
+                    if output_path_obj.exists():
+                        output_path_obj.unlink()
+                        logger.debug(f"Removed original file: {output_path_obj}")
+
+                    # Rename temp file to output path
+                    self._temp_path.rename(output_path_obj)
+                    logger.info(f"Renamed temp file to: {output_path_obj}")
+                else:
+                    logger.info(f"Output written to: {self._output_path_str}")
+            else:
+                sys.stdout.flush()
+                logger.info("Output streamed to stdout")
+
+        except Exception as e:
+            raise FileError(f"Failed to finalize output: {e}") from e
+
+    def abort(self) -> None:
+        """Abort writing and clean up temp file if created."""
+        try:
+            if self._file_handle is not None and not self._is_stdout:
+                self._file_handle.close()
+                self._file_handle = None
+
+            if self._temp_path is not None and self._temp_path.exists():
+                self._temp_path.unlink()
+                logger.debug(f"Cleaned up temp file: {self._temp_path}")
+        except Exception as e:
+            logger.warning(f"Failed to clean up during abort: {e}")
+
+    def __enter__(self) -> "ProgressiveFileWriter":
+        """Context manager entry."""
+        self.open()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit."""
+        if exc_type is not None:
+            self.abort()
+        else:
+            self.finalize()
 
 
 def read_file_safely(file_path: str | Path) -> str:

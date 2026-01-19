@@ -135,16 +135,18 @@ class TestRecursiveIntegration:
         """Test in-place processing (no output directory)."""
         temp_dir = temp_dir_structure
 
-        # Find files for in-place processing (root level only)
+        # Find files for in-place processing (recursive search)
         file_pairs = find_files_recursive(temp_dir, "*.md")
 
-        # Should find 1 file at root level (test1.md)
-        assert len(file_pairs) == 1
+        # Should find all 3 .md files (function is recursive by design)
+        assert len(file_pairs) == 3
 
-        # Input and output should be the same path
-        input_path, output_path = file_pairs[0]
-        assert input_path == output_path
-        assert input_path.name == "test1.md"
+        # Input and output should be the same path for in-place processing
+        input_names = set()
+        for input_path, output_path in file_pairs:
+            assert input_path == output_path
+            input_names.add(input_path.name)
+        assert input_names == {"test1.md", "test2.md", "test3.md"}
 
     def test_parallel_processing_mock(self, temp_dir_structure):
         """Test parallel processing with mocked processing function."""

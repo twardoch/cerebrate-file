@@ -153,7 +153,7 @@ def test_validate_model_parameters_valid():
         chunk_size=1000, temperature=0.98, top_p=0.9, max_tokens_ratio=100
     )
     assert chunk_size == 1000
-    assert temp == 0.7
+    assert temp == 0.98  # Fixed: should match input value
     assert top_p == 0.9
     assert ratio == 100
 

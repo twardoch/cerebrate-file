@@ -21,7 +21,7 @@ The zero-token bug was resolved by adding `ChunkDiagnostics` tracking plus CLI g
 -   **Objective:** Eliminate redundant, temporary, and obsolete files.
 -   **Actions:**
     1.  ~~**Merge `CHANGELOG.md` and `CHANGELOG2.md`**~~ – N/A (no CHANGELOG2.md exists)
-    2.  **Consolidate Development Guidelines:** Merge `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `LLXPRT.md`, `QWEN.md`, and `.cursorrules` into a single, comprehensive `CONTRIBUTING.md`.
+    2.  ~~**Consolidate Development Guidelines:**~~ N/A – Files don't exist; `CONTRIBUTING.md` already present.
     3.  **Remove Obsolete Scripts:** ✅ DONE
         -   ~~Delete `package.toml` (unused).~~ ✅
         -   ~~Delete `test_retry_mechanism.py` after merging its logic into a new integration test in `tests/test_api_retry.py`.~~ ✅
@@ -37,7 +37,7 @@ The zero-token bug was resolved by adding `ChunkDiagnostics` tracking plus CLI g
 -   **Objective:** Make the project easy to understand, use, and contribute to.
 -   **Actions:**
     1.  **Update `README.md`:** ✅ DONE – Added Configuration section documenting layered config system.
-    2.  **Standardize Scripts:** Review `build.sh`. Move its core logic into `pyproject.toml` as `hatch` scripts.
+    2.  ~~**Standardize Scripts:**~~ ✅ DONE – `build.sh` is a release script using external tools (fd, autoflake, gitnextver, codetoprompt). Dev commands already in pyproject.toml hatch scripts.
     3.  **Clean `TODO.md` and `WORK.md`:** ✅ DONE – Cleared completed tasks.
     4.  **Centralize Configuration:** ✅ DONE – `default_config.toml` bundled with package, settings.py handles layered config.
 
@@ -46,5 +46,5 @@ The zero-token bug was resolved by adding `ChunkDiagnostics` tracking plus CLI g
 -   **Objective:** Ensure the repository follows Python community best practices.
 -   **Actions:**
     1.  **Add Standard Files:** Consider adding a `CODE_OF_CONDUCT.md`.
-    2.  **Review `.gitignore`:** Ensure all generated files and artifacts are ignored.
+    2.  ~~**Review `.gitignore`:**~~ ✅ DONE – Added `*.bak` and `*.tmptmp` for backup/temp files.
     3.  **Run Full Test Suite:** After all changes, run the entire test suite (`uvx hatch test`) to confirm that nothing has been broken during the cleanup.

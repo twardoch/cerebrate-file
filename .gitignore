@@ -40,6 +40,8 @@ _version.py
 *.egg
 *.egg-info/
 *.log
+*.bak
+*.tmptmp
 *.manifest
 *.mo
 *.pot

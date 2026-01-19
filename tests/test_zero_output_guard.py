@@ -30,9 +30,10 @@ def test_process_document_logs_diagnostics_for_zero_token_chunk(
     )
 
     def fake_request(*_args, **_kwargs):
-        return "", rate_status
+        # make_request_with_fallback returns (text, rate_status, model_used)
+        return "", rate_status, "zai-glm-4.7"
 
-    monkeypatch.setattr("cerebrate_file.cerebrate_file.make_cerebras_request", fake_request)
+    monkeypatch.setattr("cerebrate_file.cerebrate_file.make_request_with_fallback", fake_request)
 
     captured_messages: list[str] = []
 

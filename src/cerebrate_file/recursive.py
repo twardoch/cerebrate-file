@@ -142,6 +142,7 @@ def find_files_recursive(
     all_matching_files = set()
     for p in patterns:
         try:
+            # Always use rglob for recursive search - the function name is find_files_RECURSIVE
             pattern_matches = input_dir.rglob(p)
 
             file_count = 0

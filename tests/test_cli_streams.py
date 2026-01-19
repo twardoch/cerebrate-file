@@ -39,15 +39,19 @@ def test_cli_run_streams_stdin_to_stdout(
     # Provide stdin data
     monkeypatch.setattr("sys.stdin", io.StringIO("# title\n\nbody text"))
 
+    def mock_process_document(*args, **kwargs):
+        """Mock that calls chunk_writer callback like real implementation."""
+        chunk_writer = kwargs.get("chunk_writer")
+        if chunk_writer:
+            chunk_writer("Transformed body")
+        return ("Transformed body", _stub_state())
+
     with (
         patch("cerebrate_file.config.validate_environment"),
         patch("cerebrate_file.chunking.create_chunks", return_value=stubbed_chunks),
         patch(
             "cerebrate_file.cli.process_document",
-            return_value=(
-                "Transformed body",
-                _stub_state(),
-            ),
+            side_effect=mock_process_document,
         ),
         patch("cerebras.cloud.sdk.Cerebras"),
     ):

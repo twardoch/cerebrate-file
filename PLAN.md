@@ -24,12 +24,13 @@ The zero-token bug was resolved by adding `ChunkDiagnostics` tracking plus CLI g
     2.  **Consolidate Development Guidelines:** Merge `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `LLXPRT.md`, `QWEN.md`, and `.cursorrules` into a single, comprehensive `CONTRIBUTING.md`.
     3.  **Remove Obsolete Scripts:** ✅ DONE
         -   ~~Delete `package.toml` (unused).~~ ✅
-        -   Delete `test_retry_mechanism.py` after merging its logic into a new integration test in `tests/test_api_retry.py`.
+        -   ~~Delete `test_retry_mechanism.py` after merging its logic into a new integration test in `tests/test_api_retry.py`.~~ ✅
         -   ~~Delete `test1.sh` and `test2.sh` (obsolete).~~ ✅
-    4.  **Archive or Remove One-off Files:** ✅ PARTIAL
+    4.  **Archive or Remove One-off Files:** ✅ DONE
         -   ~~Delete `REVIEW.md`.~~ ✅
-        -   Delete `issues/204.md` once the bug is fixed and documented in the changelog.
-        -   Delete temporary files like `md.txt`.
+        -   ~~Delete `issues/204.md` once the bug is fixed and documented in the changelog.~~ ✅
+        -   ~~Delete temporary files like `md.txt`.~~ ✅
+        -   ~~Delete `issues/` directory.~~ ✅
 
 ### 2.2. Documentation and Configuration Overhaul
 

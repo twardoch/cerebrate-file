@@ -95,7 +95,9 @@ class ProgressiveFileWriter:
             self._file_handle = open(self._actual_write_path, "w", encoding="utf-8")
             logger.debug(f"Opened file for progressive writing: {self._actual_write_path}")
         except Exception as e:
-            raise FileError(f"Failed to open file for writing {self._actual_write_path}: {e}") from e
+            raise FileError(
+                f"Failed to open file for writing {self._actual_write_path}: {e}"
+            ) from e
 
     def write_chunk(self, chunk_text: str) -> None:
         """Write a processed chunk to the output file.

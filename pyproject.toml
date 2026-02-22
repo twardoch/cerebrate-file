@@ -44,6 +44,7 @@ dependencies = [
     "python-frontmatter>=1.1.0",
     "openai>=1.0.0",              # For OpenAI-compatible fallback APIs
     "tomli>=2.0.0; python_version < '3.11'",  # TOML parsing for Python <3.11
+    "pathspec>=0.12.1",
 ]
 
 # Author information

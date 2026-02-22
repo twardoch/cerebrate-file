@@ -65,6 +65,7 @@ def run(
     recurse: str | None = None,
     workers: int = 4,
     force: bool = False,
+    unrestricted: bool = False,
 ) -> None:
     """Process large documents by chunking for LLM inference.
 
@@ -91,6 +92,7 @@ def run(
         recurse: Glob pattern for recursive file processing (e.g., "*.md", "**/*.txt")
         workers: Number of parallel workers for recursive processing (default: 4)
         force: Overwrite existing output files without confirmation (default: False)
+        unrestricted: Skip .gitignore filtering in recursive mode (default: False)
     """
     # Load settings and apply defaults
     settings = get_settings()
@@ -177,7 +179,9 @@ def run(
                 print("📁 Output: In-place (overwrite input files)")
 
             # Find all matching files
-            file_pairs = find_files_recursive(input_path, recurse, output_path)
+            file_pairs = find_files_recursive(
+                input_path, recurse, output_path, unrestricted=unrestricted
+            )
 
             if not file_pairs:
                 print("⚠️  No files found matching the pattern")
@@ -628,7 +632,7 @@ def run(
             # Finalize the progressive writer (handles temp file rename for in-place updates)
             progressive_writer.finalize()
 
-        except Exception as e:
+        except Exception:
             progressive_writer.abort()
             raise
 

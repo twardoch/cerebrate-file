@@ -20,8 +20,7 @@ Project Structure:
 │   └── 📄 usage.md
 ├── 📁 external
 ├── 📁 issues
-│   ├── 📄 204.md
-│   └── 📄 305.md
+│   └── 📄 101.md
 ├── 📁 src
 │   └── 📁 cerebrate_file
 │       ├── 📁 prompts
@@ -82,11 +81,9 @@ Project Structure:
 ├── 📄 CHANGELOG.md
 ├── 📄 CONTRIBUTING.md
 ├── 📄 LICENSE
-├── 📄 md.txt
 ├── 📄 PLAN.md
 ├── 📄 pyproject.toml
 ├── 📄 README.md
-├── 📄 test_retry_mechanism.py
 ├── 📄 testapi.py
 ├── 📄 TODO.md
 └── 📄 WORK.md
@@ -321,6 +318,8 @@ _version.py
 *.egg
 *.egg-info/
 *.log
+*.bak
+*.tmptmp
 *.manifest
 *.mo
 *.pot
@@ -405,13 +404,17 @@ repos:
 
 # Changelog
 
-## [Unreleased] - 2025-09-20
+## [Unreleased] - 2026-01-20
 
 ### Changed
+- Updated default model from `zai-glm-4.6` to `zai-glm-4.7`.
 - Migrated `tool.uv.dev-dependencies` to `[dependency-groups].dev`.
 - Relaxed `max_tokens_ratio` validation; runtime cap remains unchanged.
 
 ### Added
+- **Progressive File Writing**: Chunks are now written to output as they are processed, rather than accumulating in memory. For in-place updates (when input equals output), uses a `.tmptmp` temp file that is atomically renamed on completion.
+- `ProgressiveFileWriter` class in `file_utils.py` for chunk-by-chunk output with proper cleanup on errors.
+- `chunk_writer` callback parameter in `process_document()` for progressive writing support.
 - STDIN/STDOUT streaming support with `--input_data -` and `--output_data -` (incompatible with `--recurse`).
 - Built-in prompt library in `prompts/` folder, which is checked after direct paths. Includes `fix-pdf-extracted-text.xml`.
 - Pre-screening for recursive processing to show accurate file counts and filter existing outputs.
@@ -895,22 +898,23 @@ The zero-token bug was resolved by adding `ChunkDiagnostics` tracking plus CLI g
 -   **Objective:** Eliminate redundant, temporary, and obsolete files.
 -   **Actions:**
     1.  ~~**Merge `CHANGELOG.md` and `CHANGELOG2.md`**~~ – N/A (no CHANGELOG2.md exists)
-    2.  **Consolidate Development Guidelines:** Merge `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `LLXPRT.md`, `QWEN.md`, and `.cursorrules` into a single, comprehensive `CONTRIBUTING.md`.
+    2.  ~~**Consolidate Development Guidelines:**~~ N/A – Files don't exist; `CONTRIBUTING.md` already present.
     3.  **Remove Obsolete Scripts:** ✅ DONE
         -   ~~Delete `package.toml` (unused).~~ ✅
-        -   Delete `test_retry_mechanism.py` after merging its logic into a new integration test in `tests/test_api_retry.py`.
+        -   ~~Delete `test_retry_mechanism.py` after merging its logic into a new integration test in `tests/test_api_retry.py`.~~ ✅
         -   ~~Delete `test1.sh` and `test2.sh` (obsolete).~~ ✅
-    4.  **Archive or Remove One-off Files:** ✅ PARTIAL
+    4.  **Archive or Remove One-off Files:** ✅ DONE
         -   ~~Delete `REVIEW.md`.~~ ✅
-        -   Delete `issues/204.md` once the bug is fixed and documented in the changelog.
-        -   Delete temporary files like `md.txt`.
+        -   ~~Delete `issues/204.md` once the bug is fixed and documented in the changelog.~~ ✅
+        -   ~~Delete temporary files like `md.txt`.~~ ✅
+        -   ~~Delete `issues/` directory.~~ ✅
 
 ### 2.2. Documentation and Configuration Overhaul
 
 -   **Objective:** Make the project easy to understand, use, and contribute to.
 -   **Actions:**
     1.  **Update `README.md`:** ✅ DONE – Added Configuration section documenting layered config system.
-    2.  **Standardize Scripts:** Review `build.sh`. Move its core logic into `pyproject.toml` as `hatch` scripts.
+    2.  ~~**Standardize Scripts:**~~ ✅ DONE – `build.sh` is a release script using external tools (fd, autoflake, gitnextver, codetoprompt). Dev commands already in pyproject.toml hatch scripts.
     3.  **Clean `TODO.md` and `WORK.md`:** ✅ DONE – Cleared completed tasks.
     4.  **Centralize Configuration:** ✅ DONE – `default_config.toml` bundled with package, settings.py handles layered config.
 
@@ -919,7 +923,7 @@ The zero-token bug was resolved by adding `ChunkDiagnostics` tracking plus CLI g
 -   **Objective:** Ensure the repository follows Python community best practices.
 -   **Actions:**
     1.  **Add Standard Files:** Consider adding a `CODE_OF_CONDUCT.md`.
-    2.  **Review `.gitignore`:** Ensure all generated files and artifacts are ignored.
+    2.  ~~**Review `.gitignore`:**~~ ✅ DONE – Added `*.bak` and `*.tmptmp` for backup/temp files.
     3.  **Run Full Test Suite:** After all changes, run the entire test suite (`uvx hatch test`) to confirm that nothing has been broken during the cleanup.
 </document_content>
 </document>
@@ -1145,16 +1149,15 @@ Current iteration scratchpad. Clean after each sprint.
 
 ## Active Work
 
-- Configuration system verified working
-  - `default_config.toml` bundled with package
-  - User config at `~/.config/cerebrate-file/config.toml`
-  - Project config at `.cerebrate-file.toml`
-  - Environment variable overrides
-- Tests passing (some rate-limit failures expected during heavy testing)
+_(empty - ready for next sprint)_
 
 ## Notes
 
-_(empty)_
+Last sprint completed:
+- Progressive file writing with .tmptmp temp file support
+- Model update from zai-glm-4.6 to zai-glm-4.7
+- Cleanup of obsolete files (test_retry_mechanism.py, issues/, md.txt)
+- Test fix for chunk_writer callback mocking
 </document_content>
 </document>
 
@@ -5744,132 +5747,240 @@ done
 </document>
 
 <document index="26">
-<source>issues/204.md</source>
+<source>issues/101.md</source>
 <document_content>
-The simple `./testapi.py` script works and returns a TLDR of CHANGELOG.md as requested
+The industry standard Python package for this exact task is **`pathspec`**. It is the same library used by popular tools like Black (the Python code formatter) to handle `.gitignore` pattern matching.
+
+A simpler, lightweight alternative is **`gitignore-parser`**.
+
+Here is a breakdown of how to use both so you can choose the one that best fits your needs.
+
+---
+
+### 1. The Top Recommendation: `pathspec`
+
+`pathspec` is robust, highly accurate, and implements the complete gitwildmatch specification.
+
+**Installation:**
+
+```bash
+pip install pathspec
 
 ```
-[14:04:48] $ ./testapi.py
 
-# Changelog
+**How to use it:**
 
-## [Unreleased] - 2025-09-20
+```python
+import pathspec
 
-### Changed
-- Build: Migrated `tool.uv.dev-dependencies` to `[dependency-groups].dev`
-...
+# 1. Read the .gitignore file
+with open('.gitignore', 'r') as fh:
+    spec = pathspec.PathSpec.from_lines(pathspec.patterns.GitWildMatchPattern, fh)
+
+# 2. List of paths you want to filter
+paths_to_check = [
+    'src/main.py',
+    'venv/scripts/activate',
+    '.env',
+    'README.md',
+    '__pycache__/app.pyc'
+]
+
+# 3. Filter the paths
+# match_files returns a generator of the paths that MATCH the gitignore (i.e., the ones to drop)
+ignored_paths = set(spec.match_files(paths_to_check))
+
+# Keep only the paths that are NOT in the ignored list
+valid_paths = [path for path in paths_to_check if path not in ignored_paths]
+
+print("Allowed paths:", valid_paths)
+print("Ignored paths:", ignored_paths)
+
 ```
 
-But using the full `cerebrate-file` tool (the main thing in this repo), we get: 
+---
+
+### 2. The Simple Alternative: `gitignore-parser`
+
+If you just need a quick, one-off check and want slightly simpler syntax, `gitignore-parser` is a great choice. It returns a callable function that you can use to test individual file paths.
+
+**Installation:**
+
+```bash
+pip install gitignore-parser
 
 ```
-[14:05:01] $ cerebrate-file -i CHANGELOG.md -o CHANGELOG2.md -c 1024 -p "Slightly compress this CHANGELOG: only keep relevant facts, eliminate fluff"
-Processing: CHANGELOG.md
-📄 CHANGELOG.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   0%2025-11-14 14:05:11 | WARNING  | cerebrate_file.cerebrate_file:process_document:292 - Chunk 1 returned zero tokens. Request diagnostics: {'chunk_index': 1, 'chunk_tokens': 9, 'total_input_tokens': 25, 'max_completion_tokens': 9, 'response_tokens': 0, 'response_chars': 0, 'model': 'zai-glm-4.6', 'temperature': 0.98, 'top_p': 0.8, 'rate_requests_remaining': 172761, 'rate_tokens_remaining': 1500000, 'rate_headers_parsed': True}
-📄 CHANGELOG.md ━━━━━╸━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  14%2025-11-14 14:05:12 | WARNING  | cerebrate_file.cerebrate_file:process_document:292 - Chunk 2 returned zero tokens. Request diagnostics: {'chunk_index': 2, 'chunk_tokens': 18, 'total_input_tokens': 34, 'max_completion_tokens': 18, 'response_tokens': 0, 'response_chars': 0, 'model': 'zai-glm-4.6', 'temperature': 0.98, 'top_p': 0.8, 'rate_requests_remaining': 172760, 'rate_tokens_remaining': 1499960, 'rate_headers_parsed': True}
-📄 CHANGELOG.md ━━━━━━━━━━━╺━━━━━━━━━━━━━━━━━━━━━━━━━━━━  29%2025-11-14 14:05:14 | WARNING  | cerebrate_file.cerebrate_file:process_document:292 - Chunk 3 returned zero tokens. Request diagnostics: {'chunk_index': 3, 'chunk_tokens': 735, 'total_input_tokens': 751, 'max_completion_tokens': 735, 'response_tokens': 0, 'response_chars': 0, 'model': 'zai-glm-4.6', 'temperature': 0.98, 'top_p': 0.8, 'rate_requests_remaining': 172759, 'rate_tokens_remaining': 1499902, 'rate_headers_parsed': True}
-📄 CHANGELOG.md ━━━━━━━━━━━━━━━━━╺━━━━━━━━━━━━━━━━━━━━━━  43%2025-11-14 14:05:16 | WARNING  | cerebrate_file.cerebrate_file:process_document:292 - Chunk 4 returned zero tokens. Request diagnostics: {'chunk_index': 4, 'chunk_tokens': 795, 'total_input_tokens': 811, 'max_completion_tokens': 795, 'response_tokens': 0, 'response_chars': 0, 'model': 'zai-glm-4.6', 'temperature': 0.98, 'top_p': 0.8, 'rate_requests_remaining': 172758, 'rate_tokens_remaining': 1498420, 'rate_headers_parsed': True}
-📄 CHANGELOG.md ━━━━━━━━━━━━━━━━━━━━━━╸━━━━━━━━━━━━━━━━━  57%2025-11-14 14:05:18 | WARNING  | cerebrate_file.cerebrate_file:process_document:292 - Chunk 5 returned zero tokens. Request diagnostics: {'chunk_index': 5, 'chunk_tokens': 769, 'total_input_tokens': 785, 'max_completion_tokens': 769, 'response_tokens': 0, 'response_chars': 0, 'model': 'zai-glm-4.6', 'temperature': 0.98, 'top_p': 0.8, 'rate_requests_remaining': 172757, 'rate_tokens_remaining': 1496834, 'rate_headers_parsed': True}
-📄 CHANGELOG.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━╸━━━━━━━━━━━  71%2025-11-14 14:05:20 | WARNING  | cerebrate_file.cerebrate_file:process_document:292 - Chunk 6 returned zero tokens. Request diagnostics: {'chunk_index': 6, 'chunk_tokens': 565, 'total_input_tokens': 581, 'max_completion_tokens': 565, 'response_tokens': 0, 'response_chars': 0, 'model': 'zai-glm-4.6', 'temperature': 0.98, 'top_p': 0.8, 'rate_requests_remaining': 172756, 'rate_tokens_remaining': 1495317, 'rate_headers_parsed': True}
-📄 CHANGELOG.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╺━━━━━  86%2025-11-14 14:05:21 | WARNING  | cerebrate_file.cerebrate_file:process_document:292 - Chunk 7 returned zero tokens. Request diagnostics: {'chunk_index': 7, 'chunk_tokens': 454, 'total_input_tokens': 470, 'max_completion_tokens': 454, 'response_tokens': 0, 'response_chars': 0, 'model': 'zai-glm-4.6', 'temperature': 0.98, 'top_p': 0.8, 'rate_requests_remaining': 172755, 'rate_tokens_remaining': 1494184, 'rate_headers_parsed': True}
-📄 CHANGELOG.md ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
-✅ Saved: CHANGELOG2.md (172,755 calls remaining)
 
-❌ Cerebras returned zero tokens for the document – no data was written to CHANGELOG2.md.
-   Input file remains unchanged: CHANGELOG.md
-   API diagnostics (first 3 zero-output chunks):
-    - Chunk 1: input=25 tokens, budget=9, model=zai-glm-4.6, temp=0.98, top_p=0.8, requests_remaining=172761, tokens_remaining=1500000
-    - Chunk 2: input=34 tokens, budget=18, model=zai-glm-4.6, temp=0.98, top_p=0.8, requests_remaining=172760, tokens_remaining=1499960
-    - Chunk 3: input=751 tokens, budget=735, model=zai-glm-4.6, temp=0.98, top_p=0.8, requests_remaining=172759, tokens_remaining=1499902
-    ... and 4 more zero-output chunks
-2025-11-14 14:05:21 | ERROR    | cerebrate_file.cli:_report_zero_output_failure:734 - Aborting write because Cerebras returned zero tokens for %s -> %s | diagnostics=%s
-~/Developer/vcs/github.twardoch/pub/cerebrate-file
+**How to use it:**
+
+```python
+from gitignore_parser import parse_gitignore
+
+# Parse the file and create a matching function
+is_ignored = parse_gitignore('.gitignore')
+
+paths_to_check = ['src/main.py', 'venv/scripts/activate', '.env']
+
+# Filter the list
+valid_paths = [path for path in paths_to_check if not is_ignored(path)]
+
+print("Allowed paths:", valid_paths)
+
 ```
 
-The `cerebrate-file` tool used to work. However, Cerebras did some changes. 
+> **Note:** For `gitignore-parser` to work correctly, the paths you test must be absolute paths or relative to the directory where the `.gitignore` file resides.
 
-TASK: Investigate carefully and systematically this failure and restore `cerebrate-file` to a fully working condition. Use a careful iterative approach. Do real-life tests on the Cerebras API, no need to mock anything. 
+---
+
+Use `pathspec` if you already have the `.gitignore` lines and just need to exclude matching paths. [dev](https://dev.to/waylonwalker/python-respect-the-gitignore-h9)
+If you want something more “Git-like” out of the box, look at `gitignorefile` (spec-compliant ignore matcher) or `py-walk` (directory walker that filters by gitignore-like patterns). [github](https://github.com/pacha/py-walk)
+
+## Good package choices
+- `pathspec`: Implements Git’s “wildmatch” style matching, so you can load `.gitignore` patterns and filter a list of paths. [dev](https://dev.to/waylonwalker/python-respect-the-gitignore-h9)
+- `gitignorefile`: Provides a callable matcher from a `.gitignore` path, and supports a cache with configurable ignore-file names (defaults include `.gitignore` and `.git/info/exclude`). [pypi](https://pypi.org/project/gitignorefile/)
+- `py-walk`: Lets you walk a directory and yield only paths not ignored (or manually test paths) using gitignore syntax. [github](https://github.com/pacha/py-walk)
+- `igittigitt`: Spec-compliant parser with a `match()` API and even a `shutil_ignore` helper for `shutil.copytree`. [github](https://github.com/bitranox/igittigitt)
+- `GitPython`: If you’re already in a Git repo and want “what git would ignore”, its `ignored` method can tell you which paths Git considers ignored. [stackoverflow](https://stackoverflow.com/questions/60760161/is-there-a-way-to-handle-ignorefiles-like-gitignore-in-python)
+
+## Quick examples
+### `pathspec` (filter a list)
+```python
+from pathlib import Path
+import pathspec
+
+root = Path(".")
+spec = pathspec.PathSpec.from_lines("gitwildmatch", (root / ".gitignore").read_text().splitlines())
+paths = [p for p in root.rglob("*") if not spec.match_file(str(p))]
+```
+This pattern-loading and `match_file()` approach is the intended usage style for respecting `.gitignore` patterns. [dev](https://dev.to/waylonwalker/python-respect-the-gitignore-h9)
+
+### `gitignorefile` (callable matcher)
+```python
+import gitignorefile
+
+matches = gitignorefile.parse("/path/to/repo/.gitignore")
+keep = [p for p in paths if not matches(str(p))]
+```
+`parse()` returns a function-like matcher that returns `True` for ignored paths. [pypi](https://pypi.org/project/gitignorefile/)
+
+### `py-walk` (walk while ignoring)
+```python
+from py_walk import walk
+
+for p in walk("/path/to/repo", ignore="/path/to/repo/.gitignore"):
+    print(p)
+```
+`walk()` yields filtered paths based on gitignore-style patterns. [github](https://github.com/pacha/py-walk)
+
+## Which to pick?
+If you’re implementing your own traversal and just need pattern matching, `pathspec` is usually the lightest choice. [dev](https://dev.to/waylonwalker/python-respect-the-gitignore-h9)
+If you want repo-oriented behavior (including common ignore sources and caching), `gitignorefile` is a strong default; if you want “filtering traversal” as the API, `py-walk` is convenient. [pypi](https://pypi.org/project/gitignorefile/)
+
+---
+
+Yes! There are several Python packages and approaches you can use to **filter out file paths based on `.gitignore` patterns** — perfect if you want to walk a directory and skip everything Git would ignore.
+
+Here are the best options:
+
+### 📌 1. **`pathspec`** – most common and simple
+
+This is the most widely used Python library for matching paths against `.gitignore`-style patterns.
+
+```bash
+pip install pathspec
+```
+
+Example usage:
+
+```python
+from pathlib import Path
+import pathspec
+
+# Read your .gitignore
+lines = Path(".gitignore").read_text().splitlines()
+spec = pathspec.PathSpec.from_lines("gitwildmatch", lines)
+
+files = []
+for p in Path(".").rglob("*"):
+    if not spec.match_file(str(p)):
+        files.append(p)
+
+print(files)
+```
+
+`pathspec` implements Git’s wildcard matching rules (`gitwildmatch`) so that ignored files are filtered out exactly like Git would. ([DEV Community][1])
+
+---
+
+### 📌 2. **`py_gitignore_2`** – dedicated matcher
+
+A lightweight `.gitignore` parser + matcher library.
+
+```bash
+pip install py_gitignore_2
+```
+
+Example:
+
+```python
+from py_gitignore_2 import GitignoreBuilder
+
+builder = GitignoreBuilder("/path/to/root")
+builder.add("/path/to/.gitignore")
+matcher = builder.build()
+
+if not matcher.match("/full/path/to/file"):
+    # file isn't ignored
+```
+
+This follows `.gitignore` semantics and is useful if you want a ready-made matcher you can reuse. ([GitHub][2])
+
+---
+
+### 📌 3. **`ignorelib`** – gitignore semantics based on Dulwich
+
+```bash
+pip install ignorelib
+```
+
+It offers a mechanism similar to Git’s own internals for filters. Good if you want customizable ignore file names or combine multiple ignore sources. ([PyPI][3])
+
+---
+
+### 📌 4. **`igittigitt`** – spec-compliant parser
+
+```bash
+pip install igittigitt
+```
+
+A gitignore pattern parser that tries to faithfully follow the spec. Useful if you need more accurate nested ignore handling (though some limitations remain). ([PyPI][4])
+
+---
+
+### 🧠 Alternatives / Workarounds
+
+* **Use `GitPython`**: if you have a git repo, `GitPython` lets you call `repo.ignored(paths)` to check which are ignored by Git itself. More direct but depends on a git repo being present. ([Stack Overflow][5])
+
+---
+
+### ⭐ Recommended
+
+* For most use cases: **`pathspec`** — simple, reliable, and closest to Git’s behavior.
+* If you want a packaged matcher: **`py_gitignore_2`** or **`ignorelib`**.
+
+---
+
+Would you like a small utility function that takes a root and returns only non-ignored files? (I can draft that next.)
+
+[1]: https://dev.to/waylonwalker/python-respect-the-gitignore-h9?utm_source=chatgpt.com "Python Respect the .gitignore"
+[2]: https://github.com/thehanimo/py-gitignore?utm_source=chatgpt.com "Python implementation of a gitignore parser and checker"
+[3]: https://pypi.org/project/ignorelib/?utm_source=chatgpt.com "ignorelib"
+[4]: https://pypi.org/project/igittigitt/?utm_source=chatgpt.com "igittigitt"
+[5]: https://stackoverflow.com/questions/60760161/is-there-a-way-to-handle-ignorefiles-like-gitignore-in-python?utm_source=chatgpt.com "Is there a way to handle ignorefiles (like .gitignore) in python?"
 </document_content>
 </document>
 
 <document index="27">
-<source>issues/305.md</source>
-<document_content>
-$ cerebrate-file -i fontsimi.txt -o fontsimi-tldr.txt -p "TLDR this. Elide all function/method bodies with '...' but keep the signatures. Radically TLDR the prose into just the very entity-dense microsummary. Discard everything that isn’t relevant."; cerebrate-file -i typf.txt -o typf-tldr.txt -p "TLDR this. Elide all function/method bodies with '...' but keep the signatures. Radically TLDR the prose into just the very entity-dense microsummary. Discard everything that isn’t relevant.";
-Processing: fontsimi.txt
-Traceback (most recent call last):
-  File "/Library/Frameworks/Python.framework/Versions/3.12/bin/cerebrate-file", line 10, in <module>
-    sys.exit(main())
-             ^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cerebrate_file/__main__.py", line 19, in main
-    fire.Fire(run)
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/fire/core.py", line 135, in Fire
-    component_trace = _Fire(component, args, parsed_flag_args, context, name)
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/fire/core.py", line 468, in _Fire
-    component, remaining_args = _CallAndUpdateTrace(
-                                ^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-    component = fn(*varargs, **kwargs)
-                ^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cerebrate_file/cli.py", line 335, in run
-    if input_data != output_data and Path(output_data).exists() and not force:
-                                     ^^^^
-UnboundLocalError: cannot access local variable 'Path' where it is not associated with a value
-Processing: typf.txt
-Traceback (most recent call last):
-  File "/Library/Frameworks/Python.framework/Versions/3.12/bin/cerebrate-file", line 10, in <module>
-    sys.exit(main())
-             ^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cerebrate_file/__main__.py", line 19, in main
-    fire.Fire(run)
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/fire/core.py", line 135, in Fire
-    component_trace = _Fire(component, args, parsed_flag_args, context, name)
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/fire/core.py", line 468, in _Fire
-    component, remaining_args = _CallAndUpdateTrace(
-                                ^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-    component = fn(*varargs, **kwargs)
-                ^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/cerebrate_file/cli.py", line 335, in run
-    if input_data != output_data and Path(output_data).exists() and not force:
-                                     ^^^^
-UnboundLocalError: cannot access local variable 'Path' where it is not associated with a value
-
-~/Developer/vcs/github.docrepair-fonts/tldr
-$
-</document_content>
-</document>
-
-<document index="28">
-<source>md.txt</source>
-<document_content>
-
-
-
-/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/api-reference.md
-/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/cli-reference.md
-/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/configuration.md
-/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/development.md
-/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/examples.md
-/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/index.md
-/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/installation.md
-/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/quick-start.md
-/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/README.md
-/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/troubleshooting.md
-/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/docs/usage.md
-
-
-
-
-/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/README.md
-/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/REVIEW.md
-/Users/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/prompts/README.md
-</document_content>
-</document>
-
-<document index="29">
 <source>pyproject.toml</source>
 <document_content>
 # this_file: pyproject.toml
@@ -5918,6 +6029,7 @@ dependencies = [
     "python-frontmatter>=1.1.0",
     "openai>=1.0.0",              # For OpenAI-compatible fallback APIs
     "tomli>=2.0.0; python_version < '3.11'",  # TOML parsing for Python <3.11
+    "pathspec>=0.12.1",
 ]
 
 # Author information
@@ -6300,7 +6412,7 @@ ban-relative-imports = 'all' # Ban all relative imports for consistency
 </document_content>
 </document>
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/__init__.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/__init__.py
 # Language: python
 
 from .__version__ import __version__
@@ -6316,7 +6428,7 @@ from .settings import (
 )
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/__main__.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/__main__.py
 # Language: python
 
 import fire
@@ -6325,7 +6437,7 @@ from .cli import run
 def main(()) -> None:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/api_client.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/api_client.py
 # Language: python
 
 import json
@@ -6476,12 +6588,13 @@ def make_request_with_fallback((
 )) -> tuple[str, RateLimitStatus, str]:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/cerebrate_file.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/cerebrate_file.py
 # Language: python
 
 import json
 import math
 import time
+from collections.abc import Callable
 from typing import Any
 from loguru import logger
 from .api_client import make_request_with_fallback
@@ -6524,10 +6637,11 @@ def process_document((
     metadata: dict[str, Any] | None = None,
     verbose: bool = False,
     progress_callback: object | None = None,
+    chunk_writer: Callable[[str], None] | None = None,
 )) -> tuple[str, ProcessingState]:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/chunking.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/chunking.py
 # Language: python
 
 from loguru import logger
@@ -6610,7 +6724,7 @@ def get_chunking_strategy((data_format: str, chunk_size: int)) -> ChunkingStrate
 def create_chunks((content: str, data_format: str, chunk_size: int)) -> list[Chunk]:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/cli.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/cli.py
 # Language: python
 
 import builtins
@@ -6636,6 +6750,7 @@ from .config import (
     validate_recursive_inputs,
 )
 from .file_utils import (
+    ProgressiveFileWriter,
     build_base_prompt,
     check_metadata_completeness,
     parse_frontmatter_content,
@@ -6654,6 +6769,8 @@ from .recursive import (
             )
 from .ui import MultiFileProgressDisplay
 from .models import ProcessingState
+import frontmatter as fm
+import frontmatter as fm
 
 def run((
     input_data: str,
@@ -6673,6 +6790,7 @@ def run((
     recurse: str | None = None,
     workers: int = 4,
     force: bool = False,
+    unrestricted: bool = False,
 )) -> None:
 
 def _redirect_print_to_stderr(()):
@@ -6685,7 +6803,11 @@ def process_file_wrapper((input_file: Path, output_file: Path)):
 
 def file_progress_callback((chunks_done: int, remaining_calls: int)):
 
+def write_chunk_progressively((chunk_text: str)) -> None:
+
 def update_progress((chunks_completed: int, remaining_calls: int)):
+
+def write_chunk_progressively((chunk_text: str)) -> None:
 
 def _show_dry_run_analysis((
     chunks,
@@ -6700,7 +6822,7 @@ def _show_dry_run_analysis((
 def _report_zero_output_failure((state: ProcessingState, input_path: str, output_path: str)) -> None:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/config.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/config.py
 # Language: python
 
 import os
@@ -6765,7 +6887,7 @@ def validate_recursive_inputs((
 )) -> None:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/constants.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/constants.py
 # Language: python
 
 import re
@@ -6800,7 +6922,7 @@ class ConfigurationError(C, e, r, e, b, r, a, t, e, E, r, r, o, r):
 class FileError(C, e, r, e, b, r, a, t, e, E, r, r, o, r):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/continuity.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/continuity.py
 # Language: python
 
 from loguru import logger
@@ -6861,7 +6983,7 @@ def calculate_continuity_budget((
 )) -> int:
 
 
-<document index="30">
+<document index="28">
 <source>src/cerebrate_file/default_config.toml</source>
 <document_content>
 # this_file: src/cerebrate_file/default_config.toml
@@ -6888,7 +7010,7 @@ sample_size = 200  # Number of tokens for continuity examples
 # The primary model used for inference (Cerebras by default)
 # ------------------------------------------------------------------------------
 [models.primary]
-name = "zai-glm-4.6"
+name = "zai-glm-4.7"
 provider = "cerebras"
 api_key_env = "CEREBRAS_API_KEY"  # Environment variable containing API key
 # api_base is not needed for Cerebras (uses SDK default)
@@ -6906,7 +7028,7 @@ max_output_tokens = 40960
 
 [models.fallback1]
 enabled = true  # Set to true to enable this fallback
-name = "zai-org/GLM-4.6"  # Model name
+name = "zai-org/GLM-4.7"  # Model name
 provider = "chutes"  # Provider type (openai, together, groq, etc.)
 api_key_env = "CHUTES_API_KEY"  # Environment variable containing API key
 api_base = "https://llm.chutes.ai/v1"  # Optional: custom API base URL for OpenAI-compatible APIs
@@ -6916,7 +7038,7 @@ max_output_tokens = 40960
 
 [models.fallback2]
 enabled = true
-name = "GLM-4.6"
+name = "GLM-4.7"
 provider = "arli"
 api_key_env = "ARLIAI_TEXT_API_KEY"
 api_base = "https://api.arliai.com/v1/"
@@ -6942,7 +7064,7 @@ format = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level>
 </document_content>
 </document>
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/error_recovery.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/error_recovery.py
 # Language: python
 
 import functools
@@ -7040,7 +7162,7 @@ def update((self, **kwargs)):
 def should_skip((self, item_id: Any)) -> bool:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/file_utils.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/file_utils.py
 # Language: python
 
 import contextlib
@@ -7053,6 +7175,42 @@ from loguru import logger
 from .constants import REQUIRED_METADATA_FIELDS, FileError
 from .tokenizer import encode_text
 from .prompt_library import resolve_prompt_file
+
+class ProgressiveFileWriter:
+    def __init__((
+        self,
+        output_path: str | Path,
+        input_path: str | Path | None = None,
+        create_backup: bool = False,
+    )) -> None:
+    def open((self)) -> None:
+    def write_chunk((self, chunk_text: str)) -> None:
+    def write_frontmatter((self, content: str, metadata: dict[str, Any])) -> str:
+    def finalize((self)) -> None:
+    def abort((self)) -> None:
+    def __enter__((self)) -> "ProgressiveFileWriter":
+    def __exit__((self, exc_type, exc_val, exc_tb)) -> None:
+
+def __init__((
+        self,
+        output_path: str | Path,
+        input_path: str | Path | None = None,
+        create_backup: bool = False,
+    )) -> None:
+
+def open((self)) -> None:
+
+def write_chunk((self, chunk_text: str)) -> None:
+
+def write_frontmatter((self, content: str, metadata: dict[str, Any])) -> str:
+
+def finalize((self)) -> None:
+
+def abort((self)) -> None:
+
+def __enter__((self)) -> "ProgressiveFileWriter":
+
+def __exit__((self, exc_type, exc_val, exc_tb)) -> None:
 
 def read_file_safely((file_path: str | Path)) -> str:
 
@@ -7080,7 +7238,7 @@ def output_file_exists((input_path: Path, output_path: Path)) -> bool:
 def build_base_prompt((file_prompt: str | None, text_prompt: str | None)) -> tuple[str, int]:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/models.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/models.py
 # Language: python
 
 from dataclasses import dataclass, field
@@ -7170,7 +7328,7 @@ def __post_init__((self)) -> None:
 def __post_init__((self)) -> None:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/prompt_library.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/prompt_library.py
 # Language: python
 
 from pathlib import Path
@@ -7182,7 +7340,7 @@ def get_prompt_library_path(()) -> Path:
 def resolve_prompt_file((file_prompt: str)) -> Path | None:
 
 
-<document index="31">
+<document index="29">
 <source>src/cerebrate_file/prompts/README.md</source>
 <document_content>
 # Prompt Library
@@ -7247,20 +7405,21 @@ The file prompt loads first, then the text prompt.
 </document_content>
 </document>
 
-<document index="32">
+<document index="30">
 <source>src/cerebrate_file/prompts/fix-pdf-extracted-text.xml</source>
 <document_content>
 <poml><role>You are a meticulous document restoration specialist who cleans up poorly extracted PDF        text while preserving every word of the original content.</role><task>Clean and format extracted PDF text into proper Markdown while maintaining absolute        fidelity to the original content.</task><h>Processing Instructions</h><stepwise-instructions><list listStyle="decimal"><item><b>Line Merging:</b><list><item>Join lines that were artificially broken mid-sentence by PDF column width</item><item>Preserve intentional line breaks between paragraphs</item><item>Maintain list structures and indentation where clearly intended</item></list></item><item><b>Structure & pagination:</b><list><item>Remove empty paragraphs</item><item>Remove visible page numbers, headers, and footers</item><item>If page numbers or page breaks exist in the source, only retain then in                        form of a free-standing separate line that says `<a id="page_NNN"></a>`                        (where NNN is the page number), with a newline above and a newline below,                        and move them down (that is, place them before the first paragraph of the                        page, separating with a newline).</item><item>Join paragraphs that were artificially broken, especially due to column or                        page breaks. If a page break existed mid-paragraph, move the page break                        after the paragraph.</item><item>Preserve all narrative content parts, including table-of-contents,                        footnotes, and other content that is not part of the main text. Only remove                        visible page numbers, headers, and footers that make no sense in a                        non-paginated document.</item></list></item><item><b>Artifact Removal:</b><list><item>Remove hard hyphenation at line endings (e.g., "docu-\nment" → "document")</item><item>Delete page numbers, headers, and footers that repeat across pages</item><item>Remove garbled character sequences that are clearly extraction errors                        (e.g., "■□▪▫" or "????")</item><item>Clean up spacing artifacts (multiple spaces, tabs mixed with spaces)</item></list></item><item><b>OCR Correction:</b><list><item>Fix obvious character substitution errors (e.g., "rn" misread as "m", "cl"                        as "d")</item><item>Correct clearly misspelled words only when the intended word is                        unambiguous</item><item>Fix number/letter confusion in obvious contexts (e.g., "0" vs "O", "1" vs                        "l")</item><item>If it’s obvious from the context, fix the writing system of the text (СССР                        and not CCCP)</item><item>If it’s obvious from the context, enrich text with diacritics that have                        been omitted lazily (e.g. write Wałęsa and not Walesa)</item></list></item><item><b>Orthotypography:</b><list><item>Use proper high-end punctuation, especially the correct typographic                        quotation marks appropriate for the language of the text.</item><item>Use em dashes appropriately, but ALWAYS separate them by spaces from                        neighboring text on left and right. Never glue an em dash directly to a                        word.</item><item>Use en dashes (without surrounding spaces) to indicate ranges or spans.</item><item>However, do not overcorrect punctuation.</item></list></item><item><b>Markdown Formatting (Conservative):</b><list><item>Add heading markers (#, ##, etc.) ONLY for text that is clearly a title or                        section header</item><item>Use **bold** ONLY where emphasis was clearly intended in the original</item><item>Format obvious lists with - or 1. notation</item><item>Use code blocks for clearly technical content or code samples</item><item>Add blockquotes (>) for clearly quoted material</item><item>Use Markdown tables if you know what you’re doing</item></list></item></list></stepwise-instructions><cp caption="Critical Preservation Rules"><list><item>NEVER delete sentences, phrases, or meaningful words</item><item>NEVER paraphrase or rewrite sentences for clarity</item><item>NEVER add explanatory text or context</item><item>NEVER change technical terms, proper nouns, or specialized vocabulary</item><item>NEVER merge or split paragraphs unless fixing obvious extraction errors</item><item>PRESERVE all numerical data exactly as written</item></list></cp><examples><example caption="Line merge correction"><input>The quick brown fox jum-                ped over the lazy dog which                was sleeping in the garden.</input><output>The quick brown fox jumped over the lazy dog which was sleeping in the garden.</output></example><example caption="OCR and formatting"><input>Chapter l: lntroduction                This chapfer discusses the rnain concepts...</input><output># Chapter 1: Introduction                This chapter discusses the main concepts...</output></example><example caption="Artifact removal"><input>The report■□▪ shows that sales                - - - Page 42 - - -                increased by 15% this quarter.</input><output>The report shows that sales increased by 15% this quarter.</output></example></examples><cp caption="Decision Framework"><p>When uncertain about whether text is an error or intentional:</p><list><item>If it could be meaningful content → KEEP IT</item><item>If clearly garbled/repeated/artifactual → REMOVE IT</item><item>If unsure about formatting → LEAVE UNFORMATTED</item><item>If unsure about spelling → KEEP ORIGINAL</item></list></cp><output-format>Clean Markdown text with proper paragraph separation, conservative heading        hierarchy, minimal formatting markup, all original content preserved</output-format></poml>
 </document_content>
 </document>
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/recursive.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/recursive.py
 # Language: python
 
 import re
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+import pathspec
 from loguru import logger
 from .models import ProcessingState
 from .file_utils import output_file_exists
@@ -7274,8 +7433,14 @@ def pre_screen_files((file_pairs: list[tuple[Path, Path]], force: bool)) -> list
 
 def expand_brace_patterns((pattern: str)) -> list[str]:
 
+def _load_gitignore_spec((directory: Path)) -> pathspec.PathSpec | None:
+
 def find_files_recursive((
-    input_dir: Path, pattern: str, output_dir: Path | None = None
+    input_dir: Path,
+    pattern: str,
+    output_dir: Path | None = None,
+    *,
+    unrestricted: bool = False,
 )) -> list[tuple[Path, Path]]:
 
 def replicate_directory_structure((file_pairs: list[tuple[Path, Path]])) -> None:
@@ -7295,7 +7460,7 @@ def process_files_parallel((
 )) -> ProcessingResult:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/settings.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/settings.py
 # Language: python
 
 import os
@@ -7347,7 +7512,7 @@ def get_settings(()) -> Settings:
 def reload_settings(()) -> Settings:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/tokenizer.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/tokenizer.py
 # Language: python
 
 from loguru import logger
@@ -7385,7 +7550,7 @@ def encode_text((text: str)) -> list[int]:
 def decode_tokens_safely((tokens: list[int])) -> str:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/ui.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/ui.py
 # Language: python
 
 from loguru import logger
@@ -7438,7 +7603,7 @@ def finish_file((self, input_path: str)) -> None:
 def finish_overall_processing((self)) -> None:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/src/cerebrate_file/validators.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/validators.py
 # Language: python
 
 import contextlib
@@ -7473,20 +7638,7 @@ def validate_model_parameters((
 )) -> tuple[int, float, float, int]:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/test_retry_mechanism.py
-# Language: python
-
-import sys
-from unittest.mock import Mock
-from cerebrate_file.constants import APIError
-from cerebrate_file.api_client import make_cerebras_request
-
-def test_503_retry(()):
-
-def side_effect((*args, **kwargs)):
-
-
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/testapi.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/testapi.py
 # Language: python
 
 import os
@@ -7497,7 +7649,7 @@ from cerebras.cloud.sdk import Cerebras
 def main(()) -> int:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_api_retry.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_api_retry.py
 # Language: python
 
 from unittest.mock import Mock, patch
@@ -7525,7 +7677,7 @@ def test_successful_request(()):
 def test_full_retry_flow((mocker)):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_brace_patterns.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_brace_patterns.py
 # Language: python
 
 import pytest
@@ -7570,7 +7722,7 @@ def test_empty_braces((self)):
 def test_numeric_extensions((self)):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_cerebrate_file.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_cerebrate_file.py
 # Language: python
 
 import math
@@ -7588,7 +7740,7 @@ def test_calculate_completion_budget_applies_reasoning_multiplier(()) -> None:
 def test_calculate_completion_budget_caps_at_max_output(()) -> None:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_chunking.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_chunking.py
 # Language: python
 
 import pytest
@@ -7643,7 +7795,7 @@ def test_chunk_token_counts((sample_text)):
 def test_chunk_text_content((sample_text)):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_cli_streams.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_cli_streams.py
 # Language: python
 
 import io
@@ -7660,8 +7812,10 @@ def test_cli_run_streams_stdin_to_stdout((
     monkeypatch: pytest.MonkeyPatch, stubbed_chunks: list, capsys: pytest.CaptureFixture[str]
 )) -> None:
 
+def mock_process_document((*args, **kwargs)):
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_constants.py
+
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_constants.py
 # Language: python
 
 import pytest
@@ -7695,7 +7849,7 @@ def test_cerebrate_error(()):
 def test_specific_error_classes(()):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_error_recovery.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_error_recovery.py
 # Language: python
 
 import json
@@ -7765,7 +7919,7 @@ def test_recoverable_operation_with_checkpoint(()):
 def test_recoverable_operation_should_skip(()):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_file_utils.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_file_utils.py
 # Language: python
 
 import io
@@ -7791,7 +7945,7 @@ def test_read_file_safely_reads_regular_files((temporary_text_file: Path)) -> No
 def test_write_output_atomically_writes_regular_files((monkeypatch: pytest.MonkeyPatch)) -> None:
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_force_option.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_force_option.py
 # Language: python
 
 import tempfile
@@ -7823,7 +7977,7 @@ def test_force_option_parameter_validation(()):
 def test_force_option_logged_messages((sample_input_file, existing_output_file, capsys)):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_integration.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_integration.py
 # Language: python
 
 import os
@@ -7870,7 +8024,7 @@ def test_cli_environment_integration(()):
 def test_explain_mode_integration(()):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_issue_104.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_issue_104.py
 # Language: python
 
 import tempfile
@@ -7900,7 +8054,7 @@ def test_call_counting_issue_debug(()):
 def test_explain_mode_metadata_completeness_check(()):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_models.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_models.py
 # Language: python
 
 from datetime import datetime, timedelta
@@ -7934,7 +8088,7 @@ def test_api_config(()):
 def test_chunk_diagnostics_to_log_dict(()):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_package.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_package.py
 # Language: python
 
 import cerebrate_file
@@ -7942,7 +8096,7 @@ import cerebrate_file
 def test_version(()):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_pre_screening.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_pre_screening.py
 # Language: python
 
 from pathlib import Path
@@ -7989,7 +8143,7 @@ def test_pre_screen_files_with_in_place_processing((self, tmp_path)):
 def test_pre_screen_files_logs_appropriately((self, tmp_path)):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_pre_screening_integration.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_pre_screening_integration.py
 # Language: python
 
 from unittest.mock import MagicMock, patch
@@ -8014,7 +8168,7 @@ def test_recursive_pre_screening_dry_run_mode((self, tmp_path, capsys)):
 def test_recursive_pre_screening_in_place_processing((self, tmp_path, capsys)):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_prompt_library.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_prompt_library.py
 # Language: python
 
 from pathlib import Path
@@ -8062,7 +8216,7 @@ def test_cli_can_use_library_prompt((self, tmp_path)):
 def test_prompt_library_listing((self, capsys)):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_recursive.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_recursive.py
 # Language: python
 
 import tempfile
@@ -8072,6 +8226,7 @@ import pytest
 from cerebrate_file.models import ProcessingState
 from cerebrate_file.recursive import (
     ProcessingResult,
+    _load_gitignore_spec,
     find_files_recursive,
     process_files_parallel,
     process_single_file,
@@ -8105,6 +8260,25 @@ class TestProcessingResult:
     def test_initialization((self)):
 
 class TestRecursiveIntegration:
+
+class TestLoadGitignoreSpec:
+    def test_no_gitignore((self)):
+    def test_single_gitignore((self)):
+    def test_stops_at_git_boundary((self)):
+    def test_nested_gitignore_precedence((self)):
+
+class TestGitignoreFiltering:
+    def test_gitignore_excludes_matching_files((self)):
+    def test_unrestricted_includes_all_files((self)):
+    def test_no_gitignore_passes_all_files((self)):
+    def test_all_files_filtered_returns_empty((self)):
+    def test_gitignore_with_output_dir((self)):
+    def test_existing_tests_unaffected_by_default_param((self)):
+
+class TestGitDirExclusion:
+    def test_git_dir_excluded_by_default((self)):
+    def test_git_dir_excluded_with_unrestricted((self)):
+    def test_git_dir_nested_excluded((self)):
 
 def test_find_files_with_simple_pattern((self)):
 
@@ -8148,8 +8322,34 @@ def test_full_recursive_workflow((self, mock_executor)):
 
 def mock_process((input_path: Path, output_path: Path)):
 
+def test_no_gitignore((self)):
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_recursive_integration.py
+def test_single_gitignore((self)):
+
+def test_stops_at_git_boundary((self)):
+
+def test_nested_gitignore_precedence((self)):
+
+def test_gitignore_excludes_matching_files((self)):
+
+def test_unrestricted_includes_all_files((self)):
+
+def test_no_gitignore_passes_all_files((self)):
+
+def test_all_files_filtered_returns_empty((self)):
+
+def test_gitignore_with_output_dir((self)):
+
+def test_existing_tests_unaffected_by_default_param((self)):
+
+def test_git_dir_excluded_by_default((self)):
+
+def test_git_dir_excluded_with_unrestricted((self)):
+
+def test_git_dir_nested_excluded((self)):
+
+
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_recursive_integration.py
 # Language: python
 
 import tempfile
@@ -8219,7 +8419,7 @@ def test_large_file_set_simulation((self)):
 def mock_processing_func((input_path: Path, output_path: Path)) -> ProcessingState:
 
 
-<document index="33">
+<document index="31">
 <source>tests/test_sample.txt</source>
 <document_content>
 This is a test document for cerebrate-file CLI testing.
@@ -8234,7 +8434,7 @@ Final paragraph to ensure proper handling of document endings.
 </document_content>
 </document>
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_tokenizer.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_tokenizer.py
 # Language: python
 
 from unittest.mock import patch
@@ -8276,7 +8476,7 @@ def test_encode_text_with_long_text(()):
 def test_encode_text_with_special_characters(()):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_ui.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_ui.py
 # Language: python
 
 from io import StringIO
@@ -8345,7 +8545,7 @@ def test_progress_display_renders_without_error((self)):
 def test_ui_with_edge_case_paths((self)):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_validators.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_validators.py
 # Language: python
 
 import tempfile
@@ -8400,7 +8600,7 @@ def test_validate_model_parameters_invalid_ratio(()):
 def test_validate_model_parameters_multiple_invalid(()):
 
 
-# File: /Volumes/adam/Developer/vcs/github.twardoch/pub/cerebrate-file/tests/test_zero_output_guard.py
+# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_zero_output_guard.py
 # Language: python
 
 from pathlib import Path

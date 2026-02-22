@@ -12,6 +12,7 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+import pathspec
 from loguru import logger
 
 from .models import ProcessingState
@@ -112,8 +113,62 @@ def expand_brace_patterns(pattern: str) -> list[str]:
     return expanded
 
 
+def _load_gitignore_spec(directory: Path) -> pathspec.PathSpec | None:
+    """Load .gitignore patterns from directory and all parent directories.
+
+    Walks from ``directory`` upward to the filesystem root or a ``.git`` boundary,
+    collecting all ``.gitignore`` files.  Patterns are read root-most-first so that
+    deeper ``.gitignore`` files take precedence (matching Git's behavior).
+
+    Args:
+        directory: Starting directory to search from.
+
+    Returns:
+        Compiled PathSpec, or None if no .gitignore files are found.
+    """
+    gitignore_files: list[Path] = []
+    current = directory.resolve()
+
+    while True:
+        gitignore_path = current / ".gitignore"
+        if gitignore_path.is_file():
+            gitignore_files.append(gitignore_path)
+
+        # Stop at .git boundary (repo root)
+        if (current / ".git").exists():
+            break
+
+        parent = current.parent
+        if parent == current:
+            # Reached filesystem root
+            break
+        current = parent
+
+    if not gitignore_files:
+        return None
+
+    # Read root-most first so deeper patterns override
+    all_lines: list[str] = []
+    for gi_path in reversed(gitignore_files):
+        try:
+            all_lines.extend(gi_path.read_text(encoding="utf-8").splitlines())
+        except OSError as e:
+            logger.warning(f"Could not read {gi_path}: {e}")
+            continue
+
+    spec = pathspec.PathSpec.from_lines("gitwildmatch", all_lines)
+    logger.debug(
+        f"Loaded .gitignore spec from {len(gitignore_files)} file(s) with {len(all_lines)} patterns"
+    )
+    return spec
+
+
 def find_files_recursive(
-    input_dir: Path, pattern: str, output_dir: Path | None = None
+    input_dir: Path,
+    pattern: str,
+    output_dir: Path | None = None,
+    *,
+    unrestricted: bool = False,
 ) -> list[tuple[Path, Path]]:
     """Find files matching glob pattern and generate output paths.
 
@@ -121,6 +176,7 @@ def find_files_recursive(
         input_dir: Root directory to search in
         pattern: Glob pattern for file matching (e.g., "*.md", "**/*.{txt,md}")
         output_dir: Optional output directory. If None, files are processed in-place
+        unrestricted: If True, skip .gitignore filtering (default: False)
 
     Returns:
         List of (input_path, output_path) tuples
@@ -133,6 +189,10 @@ def find_files_recursive(
 
     if not input_dir.is_dir():
         raise ValueError(f"Input path is not a directory: {input_dir}")
+
+    input_dir = input_dir.resolve()
+    if output_dir is not None:
+        output_dir = output_dir.resolve()
 
     # Expand brace patterns like **/*.{md,py,js}
     patterns = expand_brace_patterns(pattern)
@@ -147,7 +207,7 @@ def find_files_recursive(
 
             file_count = 0
             for match in pattern_matches:
-                if match.is_file():  # Only include files, not directories
+                if match.is_file() and ".git" not in match.relative_to(input_dir).parts:
                     all_matching_files.add(match)
                     file_count += 1
 
@@ -163,6 +223,27 @@ def find_files_recursive(
         return []
 
     logger.info(f"Found {len(matching_files)} files matching '{pattern}'")
+
+    # Apply .gitignore filtering unless unrestricted
+    if not unrestricted:
+        spec = _load_gitignore_spec(input_dir)
+        if spec:
+            before_count = len(matching_files)
+            matching_files = [
+                f for f in matching_files if not spec.match_file(str(f.relative_to(input_dir)))
+            ]
+            ignored_count = before_count - len(matching_files)
+            if ignored_count > 0:
+                logger.info(
+                    f"Filtered {ignored_count} file(s) via .gitignore "
+                    f"(use --unrestricted to include all)"
+                )
+
+    if not matching_files:
+        logger.warning(
+            f"No files remaining after .gitignore filtering for pattern '{pattern}' in {input_dir}"
+        )
+        return []
 
     # Generate input/output path pairs
     file_pairs: list[tuple[Path, Path]] = []

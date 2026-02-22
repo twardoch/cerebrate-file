@@ -12,6 +12,7 @@ import pytest
 from cerebrate_file.models import ProcessingState
 from cerebrate_file.recursive import (
     ProcessingResult,
+    _load_gitignore_spec,
     find_files_recursive,
     process_files_parallel,
     process_single_file,
@@ -87,8 +88,8 @@ class TestFindFilesRecursive:
             assert len(result) == 2
             # Check output paths maintain directory structure
             for input_path, output_path in result:
-                relative = input_path.relative_to(input_dir)
-                expected_output = output_dir / relative
+                relative = input_path.relative_to(input_dir.resolve())
+                expected_output = output_dir.resolve() / relative
                 assert output_path == expected_output
 
     def test_find_files_no_matches(self):
@@ -357,3 +358,226 @@ class TestRecursiveIntegration:
 
             # Verify executor was used
             mock_executor.assert_called_once_with(max_workers=2)
+
+
+class TestLoadGitignoreSpec:
+    """Tests for _load_gitignore_spec helper."""
+
+    def test_no_gitignore(self):
+        """Returns None when no .gitignore exists."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = _load_gitignore_spec(Path(tmpdir))
+            assert result is None
+
+    def test_single_gitignore(self):
+        """Loads patterns from a single .gitignore."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            (tmp_path / ".gitignore").write_text("*.log\nbuild/\n")
+            # Create .git dir so traversal stops here
+            (tmp_path / ".git").mkdir()
+
+            spec = _load_gitignore_spec(tmp_path)
+            assert spec is not None
+            assert spec.match_file("app.log")
+            assert spec.match_file("build/output.js")
+            assert not spec.match_file("src/main.py")
+
+    def test_stops_at_git_boundary(self):
+        """Stops walking at .git directory, not beyond."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            repo_root = tmp_path / "repo"
+            repo_root.mkdir()
+            (repo_root / ".git").mkdir()
+            (repo_root / ".gitignore").write_text("*.pyc\n")
+
+            # Place another .gitignore ABOVE the repo root
+            (tmp_path / ".gitignore").write_text("*.secret\n")
+
+            subdir = repo_root / "src"
+            subdir.mkdir()
+
+            spec = _load_gitignore_spec(subdir)
+            assert spec is not None
+            # Should include repo-root .gitignore
+            assert spec.match_file("foo.pyc")
+            # Should NOT include the one above .git
+            assert not spec.match_file("foo.secret")
+
+    def test_nested_gitignore_precedence(self):
+        """Deeper .gitignore patterns override shallower ones."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            (tmp_path / ".git").mkdir()
+            (tmp_path / ".gitignore").write_text("*.log\n")
+
+            subdir = tmp_path / "sub"
+            subdir.mkdir()
+            # Negate *.log in deeper gitignore
+            (subdir / ".gitignore").write_text("!*.log\n")
+
+            spec = _load_gitignore_spec(subdir)
+            assert spec is not None
+            # After reading root then sub, the negation should apply
+            assert not spec.match_file("debug.log")
+
+
+class TestGitignoreFiltering:
+    """Tests for .gitignore filtering in find_files_recursive."""
+
+    def test_gitignore_excludes_matching_files(self):
+        """Files matching .gitignore patterns are excluded by default."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            (tmp_path / ".git").mkdir()
+            (tmp_path / ".gitignore").write_text("*.log\nbuild/\n")
+
+            # Create files — some should be ignored
+            (tmp_path / "main.py").write_text("code")
+            (tmp_path / "debug.log").write_text("log")
+            (tmp_path / "build").mkdir()
+            (tmp_path / "build" / "output.js").write_text("built")
+
+            result = find_files_recursive(tmp_path, "*", None)
+            result_names = {p[0].name for p in result}
+
+            assert "main.py" in result_names
+            assert "debug.log" not in result_names
+            assert "output.js" not in result_names
+
+    def test_unrestricted_includes_all_files(self):
+        """With unrestricted=True, .gitignore patterns are not applied."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            (tmp_path / ".git").mkdir()
+            (tmp_path / ".gitignore").write_text("*.log\n")
+
+            (tmp_path / "main.py").write_text("code")
+            (tmp_path / "debug.log").write_text("log")
+
+            result = find_files_recursive(tmp_path, "*", None, unrestricted=True)
+            result_names = {p[0].name for p in result}
+
+            assert "main.py" in result_names
+            assert "debug.log" in result_names
+
+    def test_no_gitignore_passes_all_files(self):
+        """Without a .gitignore, all files pass through even with filtering on."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+
+            (tmp_path / "file1.md").write_text("a")
+            (tmp_path / "file2.txt").write_text("b")
+
+            result = find_files_recursive(tmp_path, "*", None)
+            assert len(result) == 2
+
+    def test_all_files_filtered_returns_empty(self):
+        """Returns empty list with warning when all files are filtered."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            (tmp_path / ".git").mkdir()
+            (tmp_path / ".gitignore").write_text("*.md\n")
+
+            (tmp_path / "readme.md").write_text("hi")
+
+            result = find_files_recursive(tmp_path, "*.md", None)
+            assert result == []
+
+    def test_gitignore_with_output_dir(self):
+        """Gitignore filtering works correctly with output directory mapping."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            input_dir = tmp_path / "in"
+            output_dir = tmp_path / "out"
+            input_dir.mkdir()
+            output_dir.mkdir()
+            (input_dir / ".git").mkdir()
+            (input_dir / ".gitignore").write_text("*.log\n")
+
+            (input_dir / "code.py").write_text("x")
+            (input_dir / "app.log").write_text("y")
+
+            result = find_files_recursive(input_dir, "*", output_dir)
+            result_names = {p[0].name for p in result}
+            # .gitignore itself is not excluded by its own patterns,
+            # so we get .gitignore + code.py (app.log is filtered)
+            assert "code.py" in result_names
+            assert "app.log" not in result_names
+            # Verify output mapping for code.py
+            code_pairs = [p for p in result if p[0].name == "code.py"]
+            assert len(code_pairs) == 1
+            assert code_pairs[0][1] == output_dir.resolve() / "code.py"
+
+    def test_existing_tests_unaffected_by_default_param(self):
+        """Existing call-sites without unrestricted still work (keyword default)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            (tmp_path / "file.md").write_text("ok")
+
+            # Call without unrestricted — should default to False
+            result = find_files_recursive(tmp_path, "*.md", None)
+            assert len(result) == 1
+
+
+class TestGitDirExclusion:
+    """Tests that .git directories are ALWAYS excluded, even with --unrestricted."""
+
+    def test_git_dir_excluded_by_default(self):
+        """Files inside .git/ are excluded in normal (restricted) mode."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            (tmp_path / ".git").mkdir()
+            (tmp_path / ".git" / "config").write_text("[core]")
+            (tmp_path / ".git" / "HEAD").write_text("ref: refs/heads/main")
+            (tmp_path / "real_file.py").write_text("print('hello')")
+
+            result = find_files_recursive(tmp_path, "*", None)
+            result_names = {p[0].name for p in result}
+
+            assert "real_file.py" in result_names
+            assert "config" not in result_names
+            assert "HEAD" not in result_names
+
+    def test_git_dir_excluded_with_unrestricted(self):
+        """Files inside .git/ are excluded even when unrestricted=True."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            (tmp_path / ".git").mkdir()
+            (tmp_path / ".git" / "config").write_text("[core]")
+            (tmp_path / ".git" / "HEAD").write_text("ref: refs/heads/main")
+            (tmp_path / ".git" / "objects").mkdir()
+            (tmp_path / ".git" / "objects" / "pack").mkdir()
+            (tmp_path / ".git" / "objects" / "pack" / "data.pack").write_text("binary")
+            (tmp_path / "real_file.py").write_text("print('hello')")
+            (tmp_path / "debug.log").write_text("log entry")
+
+            result = find_files_recursive(tmp_path, "*", None, unrestricted=True)
+            result_names = {p[0].name for p in result}
+
+            # All non-.git files should be present (unrestricted skips gitignore)
+            assert "real_file.py" in result_names
+            assert "debug.log" in result_names
+            # .git contents must NEVER appear
+            assert "config" not in result_names
+            assert "HEAD" not in result_names
+            assert "data.pack" not in result_names
+
+    def test_git_dir_nested_excluded(self):
+        """.git inside a subdirectory (e.g. submodule) is also excluded."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            submodule = tmp_path / "vendor" / "lib"
+            submodule.mkdir(parents=True)
+            (submodule / ".git").mkdir()
+            (submodule / ".git" / "HEAD").write_text("ref: refs/heads/main")
+            (submodule / "lib.py").write_text("code")
+            (tmp_path / "main.py").write_text("import vendor")
+
+            result = find_files_recursive(tmp_path, "*", None, unrestricted=True)
+            result_names = {p[0].name for p in result}
+
+            assert "main.py" in result_names
+            assert "lib.py" in result_names
+            assert "HEAD" not in result_names

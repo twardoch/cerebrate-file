@@ -6468,6 +6468,7 @@ import cerebras.cloud.sdk
 
 RATE_LIMIT_PATTERNS = =
 QUOTA_EXCEEDED_PATTERNS = =
+SERVER_ERROR_PATTERNS = =
 
 class CerebrasClient:
     def __init__((self, api_key: str, model: str | None = None)) -> None:
@@ -6506,6 +6507,8 @@ def _format_response((response: Any)) -> str:
 def _is_rate_limit_error((error: Exception)) -> bool:
 
 def _is_quota_exceeded_error((error: Exception)) -> bool:
+
+def _is_server_error((error: Exception)) -> bool:
 
 def __init__((self, api_key: str, model: str | None = None)) -> None:
 
@@ -6688,6 +6691,8 @@ def __init__((self, chunk_size: int)) -> None:
 def chunk((self, content: str)) -> list[Chunk]:
 
 def _create_chunk((self, text: str)) -> Chunk:
+
+def _normalize_newlines((content: str)) -> str:
 
 def _handle_overlong_line((self, line: str, chunks: list[Chunk])) -> None:
 

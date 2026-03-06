@@ -1,0 +1,142 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1772830832356,
+  "projectRoot": "/Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Python",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "pyproject.toml"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "pytest",
+        "version": null,
+        "category": "testing"
+      }
+    ],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": "pytest",
+    "lintCommand": "ruff check",
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "src",
+      "tests"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 3,
+      "lastAccessed": 1772830832352,
+      "keyFiles": [
+        "cerebrate_file-1.0.34-py3-none-any.whl",
+        "cerebrate_file-1.0.34.tar.gz"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 13,
+      "lastAccessed": 1772830832352,
+      "keyFiles": [
+        "Gemfile",
+        "README.md",
+        "_config.yml",
+        "api-reference.md",
+        "cli-reference.md"
+      ]
+    },
+    "external": {
+      "path": "external",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1772830832352,
+      "keyFiles": [
+        "cerebras-cloud-sdk-python.txt",
+        "cerebras-cookbook.txt",
+        "cerebras-docs-extra.txt",
+        "cerebras-examples.txt",
+        "semantic-text-splitter.txt"
+      ]
+    },
+    "issues": {
+      "path": "issues",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1772830832353,
+      "keyFiles": [
+        "101.md"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1772830832353,
+      "keyFiles": []
+    },
+    "testdata": {
+      "path": "testdata",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1772830832354,
+      "keyFiles": [
+        "poml-fix-pdf-extracted-text.xml"
+      ]
+    },
+    "tests": {
+      "path": "tests",
+      "purpose": "Test files",
+      "fileCount": 23,
+      "lastAccessed": 1772830832354,
+      "keyFiles": [
+        "test_api_retry.py",
+        "test_brace_patterns.py",
+        "test_cerebrate_file.py",
+        "test_chunking.py",
+        "test_cli_streams.py"
+      ]
+    },
+    "testdata/out": {
+      "path": "testdata/out",
+      "purpose": "Build output",
+      "fileCount": 17,
+      "lastAccessed": 1772830832355,
+      "keyFiles": [
+        "02-tattoo-design.md",
+        "Basic Fundamentals of Modern Tattoo_ Apprentice Tattoo -- C_R_ Jordan; Yolanda Jordan; Tattoo Books Online -- Phoenix, Ariz, ©2008-2011 -- Tattoo -- 9780615281476 -- f951b971677c7bf9a2b73c678fc0dbc0 -- Anna’s Archive_2.md",
+        "Bodies of Inscription A Cultural History of the Modern Tattoo Community (Margo DeMello) (Z-Library)_2.md"
+      ]
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}

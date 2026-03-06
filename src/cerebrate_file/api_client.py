@@ -97,6 +97,12 @@ QUOTA_EXCEEDED_PATTERNS = [
     "tokens per day limit",
     "daily limit",
 ]
+SERVER_ERROR_PATTERNS = [
+    "server error",
+    "please try again",
+    "internal error",
+    "error code: 500",
+]
 
 
 def _is_rate_limit_error(error: Exception) -> bool:
@@ -109,6 +115,12 @@ def _is_quota_exceeded_error(error: Exception) -> bool:
     """Check if an error is a quota exceeded error."""
     error_str = str(error).lower()
     return any(pattern in error_str for pattern in QUOTA_EXCEEDED_PATTERNS)
+
+
+def _is_server_error(error: Exception) -> bool:
+    """Check if an error is a transient server-side error (5xx)."""
+    error_str = str(error).lower()
+    return any(pattern in error_str for pattern in SERVER_ERROR_PATTERNS)
 
 
 class CerebrasClient:
@@ -644,7 +656,7 @@ def _make_cerebras_request_impl(
         if isinstance(e, api_status_error):
             formatted_response = _format_response(getattr(e, "response", None))
             logger.error(f"API error {getattr(e, 'status_code', 'unknown')}: {formatted_response}")
-            if getattr(e, "status_code", None) in (503, 502, 504, 429):
+            if getattr(e, "status_code", None) in (500, 502, 503, 504, 429):
                 logger.warning(f"Retryable error {e.status_code}, will retry with backoff")
                 raise APIError(f"Error code: {e.status_code} - {formatted_response}") from e
             raise e
@@ -723,6 +735,8 @@ def make_request_with_fallback(
                 top_p,
                 verbose,
             )
+            if not response_text:
+                raise APIError("server error: empty response (zero tokens) from primary model")
             return response_text, rate_status, model
 
         except Exception as e:
@@ -732,8 +746,9 @@ def make_request_with_fallback(
             # Check if this is a retryable/fallback-worthy error
             is_rate_limit = _is_rate_limit_error(e)
             is_quota_exceeded = _is_quota_exceeded_error(e)
+            is_server_error = _is_server_error(e)
 
-            if is_rate_limit or is_quota_exceeded:
+            if is_rate_limit or is_quota_exceeded or is_server_error:
                 if attempt < max_retries:
                     # Retry with backoff
                     backoff = 2**attempt  # 1, 2, 4 seconds
@@ -754,6 +769,12 @@ def make_request_with_fallback(
                     elif is_quota_exceeded and settings.rate_limiting.fallback_on_quota_exceeded:
                         logger.warning(
                             f"Quota exceeded after {max_retries + 1} attempts, "
+                            f"attempting fallback: {error_str}"
+                        )
+                        should_try_fallback = True
+                    elif is_server_error:
+                        logger.warning(
+                            f"Server error after {max_retries + 1} attempts, "
                             f"attempting fallback: {error_str}"
                         )
                         should_try_fallback = True
@@ -796,6 +817,15 @@ def make_request_with_fallback(
                 temperature,
                 top_p,
             )
+
+            if not response_text:
+                logger.warning(
+                    f"Fallback {fallback_config.name} returned empty response, trying next..."
+                )
+                last_error = APIError(
+                    f"server error: empty response from fallback {fallback_config.name}"
+                )
+                continue
 
             logger.info(
                 f"Fallback successful using {fallback_config.name} ({fallback_config.provider})"

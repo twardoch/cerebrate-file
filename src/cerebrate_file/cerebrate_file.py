@@ -282,6 +282,7 @@ def process_document(
             response_text, rate_status, model_used = make_request_with_fallback(
                 client, messages, model, max_completion_tokens, temp, top_p, verbose
             )
+
             if model_used != model:
                 logger.info(f"Response from fallback model: {model_used}")
 

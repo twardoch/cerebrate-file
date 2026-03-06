@@ -65,20 +65,39 @@ class ChunkingStrategy:
         tokens = encode_text(text)
         return Chunk(text=text, token_count=len(tokens))
 
+    @staticmethod
+    def _normalize_newlines(content: str) -> str:
+        """Normalize line endings to \\n."""
+        return content.replace("\r\n", "\n").replace("\r", "\n")
+
     def _handle_overlong_line(self, line: str, chunks: list[Chunk]) -> None:
-        """Handle lines that exceed chunk size.
+        """Split a line that exceeds chunk_size into sub-chunks using binary search.
 
         Args:
             line: The overlong line
             chunks: List to append chunks to
         """
         line_tokens = len(encode_text(line))
-        if line_tokens > self.chunk_size:
-            logger.warning(
-                f"Single line exceeds chunk_size ({line_tokens} > {self.chunk_size}), "
-                f"processing as individual chunk"
-            )
-            chunks.append(self._create_chunk(line))
+        logger.debug(
+            f"Single line exceeds chunk_size ({line_tokens} > {self.chunk_size}), "
+            f"splitting into sub-chunks"
+        )
+        remaining = line
+        while remaining:
+            r_tokens = encode_text(remaining)
+            if len(r_tokens) <= self.chunk_size:
+                chunks.append(Chunk(remaining, len(r_tokens)))
+                break
+            # Binary search for the largest prefix that fits within chunk_size
+            lo, hi = 1, len(remaining)
+            while lo < hi:
+                mid = (lo + hi + 1) // 2
+                if len(encode_text(remaining[:mid])) <= self.chunk_size:
+                    lo = mid
+                else:
+                    hi = mid - 1
+            chunks.append(Chunk(remaining[:lo], len(encode_text(remaining[:lo]))))
+            remaining = remaining[lo:]
 
 
 class TextChunker(ChunkingStrategy):
@@ -93,6 +112,7 @@ class TextChunker(ChunkingStrategy):
         Returns:
             List of Chunk objects
         """
+        content = self._normalize_newlines(content)
         chunks = []
         lines = content.splitlines(keepends=True)
 
@@ -285,6 +305,7 @@ class CodeChunker(ChunkingStrategy):
             List of Chunk objects
         """
         logger.debug("Using code-aware chunking strategy")
+        content = self._normalize_newlines(content)
 
         chunks = []
         lines = content.splitlines(keepends=True)
@@ -364,19 +385,15 @@ class CodeChunker(ChunkingStrategy):
                 current_chunk.append(line)
                 current_tokens += line_tokens
 
-            # Handle overlong single lines (shouldn't happen in well-formatted code)
+            # Handle overlong single lines
             if line_tokens > self.chunk_size:
-                logger.warning(
-                    f"Single line exceeds chunk_size ({line_tokens} > {self.chunk_size}), "
-                    f"processing as individual chunk"
-                )
                 if current_chunk and current_chunk[-1] == line:
-                    current_chunk.pop()  # Remove the line we just added
+                    current_chunk.pop()
                 if current_chunk:
                     chunks.append(Chunk("".join(current_chunk), current_tokens - line_tokens))
                     current_chunk = []
                     current_tokens = 0
-                chunks.append(Chunk(line, line_tokens))
+                self._handle_overlong_line(line, chunks)
 
         # Add any remaining content
         if current_chunk:
@@ -612,6 +629,7 @@ class XmlChunker(ChunkingStrategy):
             List of Chunk objects
         """
         logger.debug("Using XML-aware chunking strategy")
+        content = self._normalize_newlines(content)
 
         # Normalize content to valid XML
         normalized = self._normalize_to_xml(content)
@@ -648,13 +666,8 @@ class XmlChunker(ChunkingStrategy):
                     current_elements = []
                     current_tokens = 0
 
-                # Handle overlong element
-                logger.warning(
-                    f"Single XML element exceeds chunk_size ({element_tokens} > {self.chunk_size}), "
-                    f"processing as individual chunk"
-                )
-                chunk_content = self._wrap_chunk([element])
-                chunks.append(self._create_chunk(chunk_content))
+                # Handle overlong element by splitting its text content
+                self._handle_overlong_line(element, chunks)
                 continue
 
             # Check if adding this element would exceed chunk size

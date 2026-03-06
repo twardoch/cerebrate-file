@@ -291,7 +291,7 @@ def run(
                         chunks = create_chunks(content_to_chunk, data_format, chunk_size)
 
                     if not chunks:
-                        logger.warning(f"No chunks created for {input_file}")
+                        logger.debug(f"No chunks created for {input_file}")
                         return ProcessingState()
 
                     # Initialize client (reuse if already created for metadata)
@@ -529,7 +529,7 @@ def run(
 
         if not chunks:
             print("⚠️  No chunks created - input may be empty")
-            logger.warning("No chunks created - input may be empty")
+            logger.debug("No chunks created - input may be empty")
             write_output_atomically("", output_data, metadata if explain else None)
             return
 

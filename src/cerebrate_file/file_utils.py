@@ -378,7 +378,7 @@ def parse_frontmatter_content(content: str) -> tuple[dict[str, Any], str]:
         return metadata, content_only
 
     except Exception as e:
-        logger.warning(f"Frontmatter parsing failed: {e}, treating as plain content")
+        logger.debug(f"Frontmatter parsing failed: {e}, treating as plain content")
         return {}, content
 
 
@@ -486,7 +486,7 @@ def output_file_exists(input_path: Path, output_path: Path) -> bool:
 
     except Exception as e:
         # On any error, log warning and return False (include in processing)
-        logger.warning(f"Error checking output file existence {output_path}: {e}")
+        logger.debug(f"Error checking output file existence {output_path}: {e}")
         return False
 
 

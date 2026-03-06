@@ -56,7 +56,7 @@ class TokenizerManager:
                 logger.error(error_msg)
                 raise TokenizationError(error_msg) from None
             else:
-                logger.warning(f"{error_msg}. Using character-based fallback.")
+                logger.debug(f"{error_msg}. Using character-based fallback.")
                 self._tokenizer = None
                 self._initialized = True
 
@@ -66,7 +66,7 @@ class TokenizerManager:
                 logger.error(error_msg)
                 raise TokenizationError(error_msg) from e
             else:
-                logger.warning(f"{error_msg}. Falling back to character-based approximation")
+                logger.debug(f"{error_msg}. Falling back to character-based approximation")
                 self._tokenizer = None
                 self._initialized = True
 
@@ -107,7 +107,7 @@ class TokenizerManager:
                 logger.error(error_msg)
                 raise TokenizationError(error_msg) from e
             else:
-                logger.warning(f"{error_msg}, using character fallback")
+                logger.debug(f"{error_msg}, using character fallback")
                 return list(range(len(text) // CHARS_PER_TOKEN_FALLBACK + 1))
 
     def decode(self, tokens: list[int]) -> str:
@@ -142,7 +142,7 @@ class TokenizerManager:
                 logger.error(error_msg)
                 raise TokenizationError(error_msg) from e
             else:
-                logger.warning(f"{error_msg}, using fallback")
+                logger.debug(f"{error_msg}, using fallback")
                 return "[DECODE_ERROR_FALLBACK]"
 
     def estimate_tokens(self, text: str) -> int:

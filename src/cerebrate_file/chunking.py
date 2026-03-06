@@ -172,10 +172,10 @@ class SemanticChunker(ChunkingStrategy):
             return chunks
 
         except ImportError:
-            logger.warning("semantic-text-splitter not available, falling back to text mode")
+            logger.debug("semantic-text-splitter not available, falling back to text mode")
             return TextChunker(self.chunk_size).chunk(content)
         except Exception as e:
-            logger.warning(f"Semantic chunking failed: {e}, falling back to text mode")
+            logger.debug(f"Semantic chunking failed: {e}, falling back to text mode")
             return TextChunker(self.chunk_size).chunk(content)
 
 
@@ -205,10 +205,10 @@ class MarkdownChunker(ChunkingStrategy):
             return chunks
 
         except ImportError:
-            logger.warning("semantic-text-splitter not available, falling back to text mode")
+            logger.debug("semantic-text-splitter not available, falling back to text mode")
             return TextChunker(self.chunk_size).chunk(content)
         except Exception as e:
-            logger.warning(f"Markdown chunking failed: {e}, falling back to text mode")
+            logger.debug(f"Markdown chunking failed: {e}, falling back to text mode")
             return TextChunker(self.chunk_size).chunk(content)
 
 
@@ -646,7 +646,7 @@ class XmlChunker(ChunkingStrategy):
 
         if not boundaries:
             # No elements found, fall back to text chunking
-            logger.warning("No XML elements found, falling back to text mode")
+            logger.debug("No XML elements found, falling back to text mode")
             return TextChunker(self.chunk_size).chunk(normalized)
 
         chunks = []
@@ -763,7 +763,7 @@ def create_chunks(content: str, data_format: str, chunk_size: int) -> list[Chunk
                 f"{avg_tokens:.1f} avg tokens per chunk"
             )
         else:
-            logger.warning("No chunks created - input may be empty")
+            logger.debug("No chunks created - input may be empty")
 
         return chunks
 

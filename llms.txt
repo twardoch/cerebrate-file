@@ -6590,6 +6590,10 @@ def make_request_with_fallback((
     verbose: bool = False,
 )) -> tuple[str, RateLimitStatus, str]:
 
+def _try_primary(()) -> tuple[str, RateLimitStatus]:
+
+def _is_retryable((e: Exception)) -> bool:
+
 
 # File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/cerebrate_file.py
 # Language: python

@@ -182,27 +182,28 @@ def fit_continuity_to_budget(
     available_tokens = max_input_tokens - base_input_tokens
 
     if available_tokens <= 0:
-        logger.warning("No token budget available for continuity, dropping entirely")
+        logger.debug("No token budget available for continuity, dropping entirely")
         return ""
 
     logger.debug(f"Continuity budget: {available_tokens} tokens (need {continuity_tokens})")
 
-    # Simple truncation: reduce both examples proportionally
-    # This is a simplified approach - we could be more sophisticated
-    reduction_factor = available_tokens / continuity_tokens * 0.9  # 90% to leave some buffer
+    # Iteratively halve the text until it fits within budget or becomes too small
+    truncated_text = continuity_block
+    min_useful_tokens = 20
+    while len(truncated_text) > 0:
+        truncated_text = truncated_text[: len(truncated_text) // 2]
+        truncated_tokens = len(encode_text(truncated_text))
+        if truncated_tokens < min_useful_tokens:
+            logger.debug("Continuity too small to be useful after truncation, dropping")
+            return ""
+        if base_input_tokens + truncated_tokens <= max_input_tokens:
+            logger.info(
+                f"Continuity truncated from {continuity_tokens} to {truncated_tokens} tokens"
+            )
+            return truncated_text
 
-    # Extract examples from continuity block and reduce them
-    # For now, simple truncation of the whole block
-    truncated_text = continuity_block[: int(len(continuity_block) * reduction_factor)]
-
-    # Ensure we're still within budget
-    truncated_tokens = len(encode_text(truncated_text))
-    if base_input_tokens + truncated_tokens > max_input_tokens:
-        logger.warning("Continuity still too large after truncation, dropping entirely")
-        return ""
-
-    logger.info(f"Continuity truncated from {continuity_tokens} to {truncated_tokens} tokens")
-    return truncated_text
+    logger.debug("Continuity could not fit in budget, dropping")
+    return ""
 
 
 def calculate_continuity_budget(

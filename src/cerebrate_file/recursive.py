@@ -356,7 +356,7 @@ def process_files_parallel(
     result = ProcessingResult()
 
     if not file_pairs:
-        logger.warning("No files to process")
+        logger.debug("No files to process")
         return result
 
     logger.info(f"Starting parallel processing with {workers} workers for {len(file_pairs)} files")

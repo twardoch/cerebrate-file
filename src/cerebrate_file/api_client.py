@@ -381,7 +381,7 @@ def parse_rate_limit_headers(headers: dict[str, str], verbose: bool = False) -> 
         return status
 
     except Exception as e:
-        logger.warning(f"Failed to parse rate limit headers: {e}")
+        logger.debug(f"Failed to parse rate limit headers: {e}")
         return RateLimitStatus()
 
 
@@ -564,7 +564,7 @@ First chunk: {truncated_chunk}
         if isinstance(e, api_status_error):
             logger.error(f"API error during metadata explanation {e.status_code}: {e.response}")
             if getattr(e, "status_code", None) in (503, 502, 504, 429):
-                logger.warning(
+                logger.debug(
                     f"Retryable metadata explanation error {e.status_code}, will retry with backoff"
                 )
                 raise APIError(
@@ -657,7 +657,7 @@ def _make_cerebras_request_impl(
             formatted_response = _format_response(getattr(e, "response", None))
             logger.error(f"API error {getattr(e, 'status_code', 'unknown')}: {formatted_response}")
             if getattr(e, "status_code", None) in (500, 502, 503, 504, 429):
-                logger.warning(f"Retryable error {e.status_code}, will retry with backoff")
+                logger.debug(f"Retryable error {e.status_code}, will retry with backoff")
                 raise APIError(f"Error code: {e.status_code} - {formatted_response}") from e
             raise e
 
@@ -695,10 +695,10 @@ def make_request_with_fallback(
     top_p: float,
     verbose: bool = False,
 ) -> tuple[str, RateLimitStatus, str]:
-    """Make a request with retry and automatic fallback on rate limit or quota errors.
+    """Make a request: try primary once, then fallbacks immediately, then retry primary.
 
-    Attempts the primary model first with configured retries, then falls back to
-    configured fallback models if rate limits or quota errors are encountered.
+    On any retryable error from primary, immediately tries all fallback models.
+    Only retries primary (with backoff) after all fallbacks are exhausted.
 
     Args:
         primary_client: Primary Cerebras client instance
@@ -717,128 +717,82 @@ def make_request_with_fallback(
     max_retries = settings.rate_limiting.max_retry_attempts
     last_error: Exception | None = None
 
-    # Try primary model with retries
-    should_try_fallback = False
-    for attempt in range(max_retries + 1):
-        try:
-            if attempt > 0:
-                logger.info(f"Retry {attempt}/{max_retries} for primary model: {model}")
-            else:
-                logger.debug(f"Attempting request with primary model: {model}")
+    def _try_primary() -> tuple[str, RateLimitStatus]:
+        response_text, rate_status = make_cerebras_request(
+            primary_client,
+            messages,
+            model,
+            max_completion_tokens,
+            temperature,
+            top_p,
+            verbose,
+        )
+        if not response_text:
+            raise APIError("server error: empty response (zero tokens) from primary model")
+        return response_text, rate_status
 
-            response_text, rate_status = make_cerebras_request(
-                primary_client,
-                messages,
-                model,
-                max_completion_tokens,
-                temperature,
-                top_p,
-                verbose,
-            )
-            if not response_text:
-                raise APIError("server error: empty response (zero tokens) from primary model")
-            return response_text, rate_status, model
+    def _is_retryable(e: Exception) -> bool:
+        return _is_rate_limit_error(e) or _is_quota_exceeded_error(e) or _is_server_error(e)
 
-        except Exception as e:
-            last_error = e
-            error_str = str(e)
+    # Step 1: Try primary once
+    logger.debug(f"Attempting request with primary model: {model}")
+    try:
+        response_text, rate_status = _try_primary()
+        return response_text, rate_status, model
+    except Exception as e:
+        if not _is_retryable(e):
+            raise
+        last_error = e
+        logger.debug(f"Primary model failed, trying fallbacks immediately: {e}")
 
-            # Check if this is a retryable/fallback-worthy error
-            is_rate_limit = _is_rate_limit_error(e)
-            is_quota_exceeded = _is_quota_exceeded_error(e)
-            is_server_error = _is_server_error(e)
-
-            if is_rate_limit or is_quota_exceeded or is_server_error:
-                if attempt < max_retries:
-                    # Retry with backoff
-                    backoff = 2**attempt  # 1, 2, 4 seconds
-                    logger.warning(
-                        f"Retryable error (attempt {attempt + 1}/{max_retries + 1}): {error_str}. "
-                        f"Retrying in {backoff}s..."
-                    )
-                    time.sleep(backoff)
-                    continue
-                else:
-                    # All retries exhausted, check if we should fallback
-                    if is_rate_limit and settings.rate_limiting.fallback_on_rate_limit:
-                        logger.warning(
-                            f"Rate limit error after {max_retries + 1} attempts, "
-                            f"attempting fallback: {error_str}"
-                        )
-                        should_try_fallback = True
-                    elif is_quota_exceeded and settings.rate_limiting.fallback_on_quota_exceeded:
-                        logger.warning(
-                            f"Quota exceeded after {max_retries + 1} attempts, "
-                            f"attempting fallback: {error_str}"
-                        )
-                        should_try_fallback = True
-                    elif is_server_error:
-                        logger.warning(
-                            f"Server error after {max_retries + 1} attempts, "
-                            f"attempting fallback: {error_str}"
-                        )
-                        should_try_fallback = True
-                    else:
-                        raise
-                    break
-            else:
-                # Non-retryable error, raise immediately
-                raise
-
-    if not should_try_fallback:
-        if last_error:
-            raise last_error
-        raise APIError("Primary model failed")
-
-    # Try fallback models
+    # Step 2: Try each fallback immediately
     available_fallbacks = settings.get_available_fallbacks()
-
-    if not available_fallbacks:
-        logger.error("No fallback models available, re-raising original error")
-        if last_error:
-            raise last_error
-        raise APIError("No fallback models configured")
-
     for i, fallback_config in enumerate(available_fallbacks):
         try:
             logger.info(
                 f"Trying fallback model {i + 1}/{len(available_fallbacks)}: "
                 f"{fallback_config.name} ({fallback_config.provider})"
             )
-
             fallback_client = FallbackClient(fallback_config)
-
-            # Adjust max_completion_tokens if fallback model has lower limit
             adjusted_max_tokens = min(max_completion_tokens, fallback_config.max_output_tokens)
-
             response_text, rate_status = fallback_client.chat_completion(
                 messages,
                 adjusted_max_tokens,
                 temperature,
                 top_p,
             )
-
             if not response_text:
-                logger.warning(
+                logger.debug(
                     f"Fallback {fallback_config.name} returned empty response, trying next..."
                 )
                 last_error = APIError(
                     f"server error: empty response from fallback {fallback_config.name}"
                 )
                 continue
-
             logger.info(
                 f"Fallback successful using {fallback_config.name} ({fallback_config.provider})"
             )
             return response_text, rate_status, fallback_config.name
-
         except Exception as fallback_error:
-            logger.warning(f"Fallback {fallback_config.name} failed: {fallback_error}")
+            logger.debug(f"Fallback {fallback_config.name} failed: {fallback_error}")
             last_error = fallback_error
             continue
 
-    # All fallbacks failed
-    logger.error("All fallback models failed")
+    # Step 3: All fallbacks exhausted, retry primary with backoff
+    logger.debug(f"All fallbacks exhausted, retrying primary model {model} with backoff")
+    for attempt in range(1, max_retries + 1):
+        backoff = 2 ** (attempt - 1)  # 1, 2, 4 seconds
+        logger.info(f"Retry {attempt}/{max_retries} for primary model {model} in {backoff}s...")
+        time.sleep(backoff)
+        try:
+            response_text, rate_status = _try_primary()
+            return response_text, rate_status, model
+        except Exception as e:
+            if not _is_retryable(e):
+                raise
+            last_error = e
+
+    logger.error("All models and retries failed")
     if last_error:
         raise APIError(f"All models failed. Last error: {last_error}") from last_error
     raise APIError("All models failed")

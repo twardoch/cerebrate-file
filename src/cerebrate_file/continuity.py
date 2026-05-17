@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # this_file: src/cerebrate_file/continuity.py
 
-"""Continuity management utilities for cerebrate_file package.
+"""Keeps context flowing between chunks.
 
-This module handles context preservation between chunks, ensuring smooth
-transitions and maintaining coherence across document boundaries.
+Stitches chunks together by passing the tail end of the last input/output
+into the next request. Prevents the model from losing the plot.
 """
 
 from loguru import logger
@@ -21,7 +21,7 @@ __all__ = [
 
 
 class ContinuityManager:
-    """Manages continuity context across chunk processing."""
+    """Holds onto the previous chunk so the next one makes sense."""
 
     def __init__(self, sample_size: int = 200) -> None:
         """Initialize the continuity manager.
@@ -42,7 +42,7 @@ class ContinuityManager:
         input_tokens: list[int] | None = None,
         output_tokens: list[int] | None = None,
     ) -> None:
-        """Update continuity state after processing a chunk.
+        """Save the input and output from the chunk we just processed.
 
         Args:
             input_text: The input text that was processed
@@ -64,11 +64,11 @@ class ContinuityManager:
             self.prev_output_tokens = encode_text(output_text)
 
     def has_context(self) -> bool:
-        """Check if continuity context is available."""
+        """Do we have a previous chunk to draw context from?"""
         return bool(self.prev_input_tokens and self.prev_output_tokens)
 
     def get_continuity_block(self) -> str | None:
-        """Get the current continuity block.
+        """Build the continuity prompt block using the saved context.
 
         Returns:
             Formatted continuity block or None if no context
@@ -92,7 +92,7 @@ class ContinuityManager:
     def get_fitted_continuity(
         self, base_input_tokens: int, max_input_tokens: int = MAX_CONTEXT_TOKENS
     ) -> str:
-        """Get continuity block fitted to token budget.
+        """Shrink the continuity block if we are running out of tokens.
 
         Args:
             base_input_tokens: Tokens already used by base prompt + current chunk
@@ -108,7 +108,7 @@ class ContinuityManager:
         return fit_continuity_to_budget(continuity_block, base_input_tokens, max_input_tokens)
 
     def reset(self) -> None:
-        """Reset continuity state."""
+        """Wipe the slate clean."""
         self.prev_input_text = ""
         self.prev_output_text = ""
         self.prev_input_tokens = []
@@ -116,7 +116,7 @@ class ContinuityManager:
 
 
 def extract_continuity_examples(prev_text: str, prev_tokens: list[int], sample_size: int) -> str:
-    """Extract last N tokens from previous text as continuity example.
+    """Grab the last N tokens of text to show the model what happened recently.
 
     Args:
         prev_text: Previous chunk text (fallback if decode fails)
@@ -146,7 +146,7 @@ def extract_continuity_examples(prev_text: str, prev_tokens: list[int], sample_s
 
 
 def build_continuity_block(input_example: str, output_example: str) -> str:
-    """Build continuity block using exact template from spec.
+    """Format the continuity block using our hardcoded template.
 
     Args:
         input_example: Previous input text excerpt
@@ -163,7 +163,7 @@ def fit_continuity_to_budget(
     base_input_tokens: int,
     max_input_tokens: int = MAX_CONTEXT_TOKENS,
 ) -> str:
-    """Truncate continuity examples to fit within token budget.
+    """Cut down the continuity text until it fits in the remaining token allowance.
 
     Args:
         continuity_block: Full continuity block text
@@ -212,7 +212,7 @@ def calculate_continuity_budget(
     sample_size: int,
     max_context_tokens: int = MAX_CONTEXT_TOKENS,
 ) -> int:
-    """Calculate available token budget for continuity.
+    """Figure out how many tokens we can spend on context.
 
     Args:
         chunk_tokens: Tokens in current chunk

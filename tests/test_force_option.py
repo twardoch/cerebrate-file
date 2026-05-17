@@ -20,7 +20,7 @@ from cerebrate_file.cli import run as cli_run
 def sample_input_file():
     """Create a temporary input file for testing."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
-        f.write("""# Test Document
+        f.write("""# Ensure Document
 
 This is a test document for force option testing.
 
@@ -71,7 +71,7 @@ def temp_directory():
 
 
 def test_force_option_when_output_exists_single_file(sample_input_file, existing_output_file):
-    """Test that --force=False skips processing when output file exists."""
+    """Ensure that --force=False skips processing when output file exists."""
     # Mock API key validation and chunking to avoid actual API calls
     with (
         patch("cerebrate_file.config.validate_api_key", return_value=True),
@@ -91,11 +91,11 @@ def test_force_option_when_output_exists_single_file(sample_input_file, existing
         with open(existing_output_file) as f:
             content = f.read()
         assert "Existing output content" in content
-        assert "Test Document" not in content
+        assert "Ensure Document" not in content
 
 
 def test_force_option_when_output_exists_force_true(sample_input_file, existing_output_file):
-    """Test that --force=True processes file even when output exists."""
+    """Ensure that --force=True processes file even when output exists."""
     # Mock everything to avoid actual API calls but allow file operations
     with (
         patch("cerebrate_file.config.validate_api_key", return_value=True),
@@ -138,7 +138,7 @@ def test_force_option_when_output_exists_force_true(sample_input_file, existing_
 
 
 def test_force_option_when_input_equals_output(sample_input_file):
-    """Test that force option doesn't apply when input and output paths are the same."""
+    """Ensure that force option doesn't apply when input and output paths are the same."""
     # Mock to avoid actual processing
     with (
         patch("cerebrate_file.config.validate_api_key", return_value=True),
@@ -159,7 +159,7 @@ def test_force_option_when_input_equals_output(sample_input_file):
 
 
 def test_force_option_when_output_does_not_exist(sample_input_file):
-    """Test that processing continues normally when output file doesn't exist."""
+    """Ensure that processing continues normally when output file doesn't exist."""
     non_existent_output = sample_input_file + ".new_output"
 
     # Ensure output file doesn't exist
@@ -190,7 +190,7 @@ def test_force_option_when_output_does_not_exist(sample_input_file):
 
 
 def test_force_option_recursive_mode(temp_directory):
-    """Test force option in recursive processing mode."""
+    """Ensure force option in recursive processing mode."""
     input_dir = temp_directory["input"]
     output_dir = temp_directory["output"]
 
@@ -223,7 +223,7 @@ def test_force_option_recursive_mode(temp_directory):
         )()
         mock_process_parallel.return_value = mock_result
 
-        # Test recursive processing without force
+        # Ensure recursive processing without force
         # Since temp_directory fixture creates existing output files,
         # pre-screening should filter them all out and process_files_parallel should NOT be called
         cli_run(
@@ -242,13 +242,13 @@ def test_force_option_recursive_mode(temp_directory):
 
 
 def test_force_option_dry_run_mode(sample_input_file, existing_output_file):
-    """Test that force option works correctly in dry-run mode."""
+    """Ensure that force option works correctly in dry-run mode."""
     # Mock to avoid actual processing
     with (
         patch("cerebrate_file.config.validate_api_key", return_value=True),
         patch("cerebrate_file.config.validate_environment"),
     ):
-        # Test dry-run with existing output file - should not check force
+        # Ensure dry-run with existing output file - should not check force
         cli_run(
             input_data=sample_input_file,
             output_data=existing_output_file,
@@ -265,8 +265,8 @@ def test_force_option_dry_run_mode(sample_input_file, existing_output_file):
 
 
 def test_force_option_parameter_validation():
-    """Test that force parameter is properly validated."""
-    # Test default value
+    """Ensure that force parameter is properly validated."""
+    # Ensure default value
     with (
         patch("cerebrate_file.config.validate_api_key", return_value=True),
         patch("cerebrate_file.config.validate_environment"),
@@ -278,10 +278,10 @@ def test_force_option_parameter_validation():
             input_path = input_f.name
 
         try:
-            # Test with force=True
+            # Ensure with force=True
             cli_run(input_data=input_path, force=True, dry_run=True, verbose=False)
 
-            # Test with force=False (default)
+            # Ensure with force=False (default)
             cli_run(input_data=input_path, force=False, dry_run=True, verbose=False)
 
         finally:
@@ -290,7 +290,7 @@ def test_force_option_parameter_validation():
 
 
 def test_force_option_logged_messages(sample_input_file, existing_output_file, capsys):
-    """Test that appropriate messages are generated for force option."""
+    """Ensure that appropriate messages are generated for force option."""
     # Mock to avoid actual processing
     with (
         patch("cerebrate_file.config.validate_api_key", return_value=True),

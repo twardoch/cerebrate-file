@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # this_file: tests/test_constants.py
 
-"""Tests for cerebrate_file.constants module."""
+"""Ensure suite for .constants module."""
 
 import pytest
 
@@ -22,20 +22,20 @@ from cerebrate_file.constants import (
 
 
 def test_constants_values():
-    """Test that constants have expected values."""
+    """Ensure that constants have expected values."""
     assert MAX_CONTEXT_TOKENS == 131000
     assert MAX_OUTPUT_TOKENS == 40000
     assert DEFAULT_CHUNK_SIZE == 32000
 
 
 def test_required_metadata_fields():
-    """Test required metadata fields."""
+    """Ensure required metadata fields."""
     expected_fields = {"title", "author", "id", "type", "date"}
     assert expected_fields == REQUIRED_METADATA_FIELDS
 
 
 def test_metadata_schema():
-    """Test metadata schema structure."""
+    """Ensure metadata schema structure."""
     assert isinstance(METADATA_SCHEMA, dict)
     assert METADATA_SCHEMA["type"] == "object"
     assert "properties" in METADATA_SCHEMA
@@ -44,7 +44,7 @@ def test_metadata_schema():
 
 
 def test_error_classes():
-    """Test error classes."""
+    """Ensure error classes."""
     assert issubclass(APIError, CerebrateError)
     assert issubclass(ChunkingError, CerebrateError)
     assert issubclass(TokenizationError, CerebrateError)
@@ -52,7 +52,7 @@ def test_error_classes():
 
 
 def test_boundary_patterns():
-    """Test code boundary patterns."""
+    """Ensure code boundary patterns."""
     assert isinstance(CODE_BOUNDARY_PATTERNS, list)
     assert len(CODE_BOUNDARY_PATTERNS) > 0
     assert isinstance(COMPILED_BOUNDARY_PATTERNS, list)
@@ -60,14 +60,14 @@ def test_boundary_patterns():
 
 
 def test_cerebrate_error():
-    """Test CerebrateError exception class."""
+    """Ensure CerebrateError exception class."""
     error = CerebrateError("test message")
     assert str(error) == "test message"
     assert isinstance(error, Exception)
 
 
 def test_specific_error_classes():
-    """Test specific error classes."""
+    """Ensure specific error classes."""
     api_error = APIError("API failed")
     assert str(api_error) == "API failed"
     assert isinstance(api_error, CerebrateError)

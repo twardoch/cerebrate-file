@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # this_file: tests/test_models.py
 
-"""Tests for cerebrate_file.models module."""
+"""Ensure suite for .models module."""
 
 from datetime import datetime, timedelta
 
@@ -19,7 +19,7 @@ from cerebrate_file.models import (
 
 
 def test_chunk_creation():
-    """Test Chunk dataclass creation and methods."""
+    """Ensure Chunk dataclass creation and methods."""
     chunk = Chunk(text="Hello world", token_count=2)
     assert chunk.text == "Hello world"
     assert chunk.token_count == 2
@@ -29,14 +29,14 @@ def test_chunk_creation():
 
 
 def test_chunk_with_metadata():
-    """Test Chunk with metadata."""
+    """Ensure Chunk with metadata."""
     metadata = {"source": "test", "line": 1}
     chunk = Chunk(text="Hello", token_count=1, metadata=metadata)
     assert chunk.metadata == metadata
 
 
 def test_chunk_empty():
-    """Test empty chunk detection."""
+    """Ensure empty chunk detection."""
     empty_chunk = Chunk(text="", token_count=0)
     assert empty_chunk.is_empty()
 
@@ -48,7 +48,7 @@ def test_chunk_empty():
 
 
 def test_rate_limit_status():
-    """Test RateLimitStatus dataclass."""
+    """Ensure RateLimitStatus dataclass."""
     now = datetime.now()
     rate_limit = RateLimitStatus(
         requests_remaining=100,
@@ -61,7 +61,7 @@ def test_rate_limit_status():
 
 
 def test_processing_state():
-    """Test ProcessingState dataclass."""
+    """Ensure ProcessingState dataclass."""
     state = ProcessingState(
         prev_input_text="Previous input",
         prev_output_text="Previous output",
@@ -77,7 +77,7 @@ def test_processing_state():
 
 
 def test_processing_result():
-    """Test ProcessingResult dataclass."""
+    """Ensure ProcessingResult dataclass."""
     result = ProcessingResult(
         output_text="Processed content",
         chunks_processed=1,
@@ -93,7 +93,7 @@ def test_processing_result():
 
 
 def test_chunking_config():
-    """Test ChunkingConfig dataclass."""
+    """Ensure ChunkingConfig dataclass."""
     config = ChunkingConfig(chunk_size=1000, data_format="text", sample_size=200)
     assert config.chunk_size == 1000
     assert config.data_format == "text"
@@ -101,7 +101,7 @@ def test_chunking_config():
 
 
 def test_api_config():
-    """Test APIConfig dataclass."""
+    """Ensure APIConfig dataclass."""
     config = APIConfig(model="test-model", temperature=0.98, top_p=0.9, max_tokens_ratio=100)
     assert config.model == "test-model"
     assert config.temperature == 0.98

@@ -25,7 +25,7 @@ from cerebrate_file.models import APIConfig, ChunkingConfig
 def sample_text_file():
     """Create a temporary text file for testing."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
-        f.write("""# Test Document
+        f.write("""# Ensure Document
 
 This is a test document for integration testing.
 
@@ -55,8 +55,8 @@ def mock_api_response():
 
 
 def test_full_pipeline_dry_run(sample_text_file):
-    """Test the full processing pipeline in dry-run mode."""
-    # Test that dry-run mode works without making API calls
+    """Ensure the full processing pipeline in dry-run mode."""
+    # Ensure that dry-run mode works without making API calls
     from cerebrate_file.cli import run as cli_run
 
     # Call the function directly with parameters
@@ -75,13 +75,13 @@ def test_full_pipeline_dry_run(sample_text_file):
 
 
 def test_file_io_operations(sample_text_file):
-    """Test file reading and writing operations."""
-    # Test reading
+    """Ensure file reading and writing operations."""
+    # Ensure reading
     content = read_file_safely(sample_text_file)
-    assert "Test Document" in content
+    assert "Ensure Document" in content
     assert "Section 1" in content
 
-    # Test writing
+    # Ensure writing
     output_file = sample_text_file + ".out"
     try:
         # write_output_atomically expects (content, output_path, metadata)
@@ -90,17 +90,17 @@ def test_file_io_operations(sample_text_file):
         # Verify written content
         new_content = read_file_safely(output_file)
         assert "Added content" in new_content
-        assert "Test Document" in new_content
+        assert "Ensure Document" in new_content
     finally:
         if Path(output_file):
             Path(output_file)
 
 
 def test_chunking_pipeline():
-    """Test the chunking pipeline with different strategies."""
+    """Ensure the chunking pipeline with different strategies."""
     test_text = "Line 1\n" * 100  # Create text that needs multiple chunks
 
-    # Test different chunking strategies
+    # Ensure different chunking strategies
     strategies = ["text", "semantic", "markdown", "code"]
 
     for strategy in strategies:
@@ -112,13 +112,13 @@ def test_chunking_pipeline():
 
 
 def test_configuration_validation():
-    """Test configuration validation and setup."""
-    # Test API config
+    """Ensure configuration validation and setup."""
+    # Ensure API config
     api_config = APIConfig(model="zai-glm-4.6", temperature=0.98, top_p=0.8, max_tokens_ratio=100)
     assert api_config.model == "zai-glm-4.6"
     assert api_config.temperature == 0.98
 
-    # Test chunking config
+    # Ensure chunking config
     chunk_config = ChunkingConfig(chunk_size=1000, data_format="text", sample_size=200)
     assert chunk_config.chunk_size == 1000
     assert chunk_config.data_format == "text"
@@ -126,7 +126,7 @@ def test_configuration_validation():
 
 @patch("cerebrate_file.api_client.CerebrasClient")
 def test_api_client_integration(mock_client_class, sample_text_file):
-    """Test API client integration with processing pipeline."""
+    """Ensure API client integration with processing pipeline."""
     # Setup mock client
     mock_client = Mock()
     mock_client.process_chunk.return_value = {
@@ -135,7 +135,7 @@ def test_api_client_integration(mock_client_class, sample_text_file):
     }
     mock_client_class.return_value = mock_client
 
-    # Test processing (would normally make API calls)
+    # Ensure processing (would normally make API calls)
     content = read_file_safely(sample_text_file)
     chunks = create_chunks(content, "text", 1000)
 
@@ -144,24 +144,24 @@ def test_api_client_integration(mock_client_class, sample_text_file):
 
 
 def test_error_handling_pipeline():
-    """Test error handling throughout the pipeline."""
+    """Ensure error handling throughout the pipeline."""
     from cerebrate_file.cli import run as cli_run
 
-    # Test with non-existent file
+    # Ensure with non-existent file
     with pytest.raises((FileNotFoundError, SystemExit)):
         cli_run(input_data="nonexistent_file_that_does_not_exist.txt", dry_run=True)
 
-    # Test chunking with empty content
+    # Ensure chunking with empty content
     empty_chunks = create_chunks("", "text", 100)
     assert isinstance(empty_chunks, list)  # Should handle empty content gracefully
 
 
 def test_markdown_with_frontmatter():
-    """Test processing markdown files with frontmatter."""
+    """Ensure processing markdown files with frontmatter."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
         f.write("""---
-title: Test Document
-author: Test Author
+title: Ensure Document
+author: Ensure Author
 date: 2024-01-01
 ---
 
@@ -185,7 +185,7 @@ This is the main content of the document.
 
 
 def test_code_chunking_integration():
-    """Test code chunking with realistic code."""
+    """Ensure code chunking with realistic code."""
     code_sample = """
 def function_one():
     '''First function'''
@@ -221,7 +221,7 @@ if __name__ == "__main__":
 
 
 def test_large_file_handling():
-    """Test handling of large files that require multiple chunks."""
+    """Ensure handling of large files that require multiple chunks."""
     # Create a large text that will definitely need chunking
     large_text = "\n".join([f"Paragraph {i}. " * 20 for i in range(100)])
 
@@ -241,7 +241,7 @@ def test_large_file_handling():
 
 
 def test_continuity_preservation():
-    """Test that continuity is maintained across chunks."""
+    """Ensure that continuity is maintained across chunks."""
     text_with_context = """
 Chapter 1: Introduction
 This chapter introduces the main concepts.
@@ -263,15 +263,15 @@ This chapter concludes the discussion.
 
 @patch.dict(os.environ, {"CEREBRAS_API_KEY": "test-key-123"})
 def test_cli_environment_integration():
-    """Test CLI integration with environment variables."""
+    """Ensure CLI integration with environment variables."""
     from cerebrate_file.cli import run as cli_run
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
-        f.write("Test content for environment integration")
+        f.write("Ensure content for environment integration")
         temp_path = f.name
 
     try:
-        # Test that CLI picks up environment variables
+        # Ensure that CLI picks up environment variables
         # Mock the API key validation since we're in dry-run mode
         with patch("cerebrate_file.config.validate_api_key", return_value=True):
             result = cli_run(input_data=temp_path, dry_run=True, verbose=False)
@@ -283,7 +283,7 @@ def test_cli_environment_integration():
 
 
 def test_explain_mode_integration():
-    """Test explain mode for metadata extraction."""
+    """Ensure explain mode for metadata extraction."""
     from cerebrate_file.cli import run as cli_run
 
     # Note: explain mode requires specific metadata handling
@@ -307,7 +307,7 @@ The research focuses on key areas.
         temp_path = f.name
 
     try:
-        # Test explain mode processing
+        # Ensure explain mode processing
         with patch("cerebrate_file.config.validate_api_key", return_value=True):
             result = cli_run(input_data=temp_path, explain=True, dry_run=True, verbose=False)
             assert result is None  # Dry run

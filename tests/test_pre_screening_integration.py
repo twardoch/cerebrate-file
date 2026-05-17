@@ -14,10 +14,10 @@ from cerebrate_file.cli import run
 
 
 class TestPreScreeningIntegration:
-    """Test pre-screening integration in CLI recursive mode."""
+    """Ensure pre-screening integration in CLI recursive mode."""
 
     def test_recursive_pre_screening_with_existing_outputs(self, tmp_path, capsys):
-        """Test that recursive mode properly pre-screens files with existing outputs."""
+        """Ensure that recursive mode properly pre-screens files with existing outputs."""
         # Create input directory structure
         input_dir = tmp_path / "input"
         input_dir.mkdir()
@@ -74,7 +74,7 @@ class TestPreScreeningIntegration:
         )
 
     def test_recursive_pre_screening_with_force_true(self, tmp_path, capsys):
-        """Test that force=True bypasses pre-screening in recursive mode."""
+        """Ensure that force=True bypasses pre-screening in recursive mode."""
         # Create input directory structure
         input_dir = tmp_path / "input"
         input_dir.mkdir()
@@ -124,7 +124,7 @@ class TestPreScreeningIntegration:
         assert "Found 2 files to process" in captured.out
 
     def test_recursive_pre_screening_all_files_filtered(self, tmp_path, capsys):
-        """Test behavior when all files are filtered out by pre-screening."""
+        """Ensure behavior when all files are filtered out by pre-screening."""
         # Create input directory structure
         input_dir = tmp_path / "input"
         input_dir.mkdir()
@@ -161,7 +161,7 @@ class TestPreScreeningIntegration:
         assert "All files have existing outputs. Use --force to overwrite." in captured.out
 
     def test_recursive_pre_screening_dry_run_mode(self, tmp_path, capsys):
-        """Test that dry-run mode works correctly with pre-screening."""
+        """Ensure that dry-run mode works correctly with pre-screening."""
         # Create input directory structure
         input_dir = tmp_path / "input"
         input_dir.mkdir()
@@ -198,7 +198,7 @@ class TestPreScreeningIntegration:
         assert "file2.md" in captured.out  # Should show the one file that would be processed
 
     def test_recursive_pre_screening_in_place_processing(self, tmp_path, capsys):
-        """Test pre-screening works correctly with in-place processing."""
+        """Ensure pre-screening works correctly with in-place processing."""
         # Create input directory structure
         input_dir = tmp_path / "input"
         input_dir.mkdir()

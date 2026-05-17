@@ -16,10 +16,10 @@ from cerebrate_file.recursive import pre_screen_files
 
 
 class TestOutputFileExists:
-    """Test the output_file_exists utility function."""
+    """Ensure the output_file_exists utility function."""
 
     def test_output_file_exists_when_same_path(self, tmp_path):
-        """Test that in-place processing (same input/output path) returns False."""
+        """Ensure that in-place processing (same input/output path) returns False."""
         test_file = tmp_path / "test.md"
         test_file.write_text("test content")
 
@@ -27,7 +27,7 @@ class TestOutputFileExists:
         assert result is False
 
     def test_output_file_exists_when_output_exists(self, tmp_path):
-        """Test that returns True when output file exists and differs from input."""
+        """Ensure that returns True when output file exists and differs from input."""
         input_file = tmp_path / "input.md"
         output_file = tmp_path / "output.md"
 
@@ -38,7 +38,7 @@ class TestOutputFileExists:
         assert result is True
 
     def test_output_file_exists_when_output_missing(self, tmp_path):
-        """Test that returns False when output file doesn't exist."""
+        """Ensure that returns False when output file doesn't exist."""
         input_file = tmp_path / "input.md"
         output_file = tmp_path / "output.md"
 
@@ -49,7 +49,7 @@ class TestOutputFileExists:
         assert result is False
 
     def test_output_file_exists_handles_permission_error(self, tmp_path):
-        """Test that permission errors are handled gracefully."""
+        """Ensure that permission errors are handled gracefully."""
         input_file = tmp_path / "input.md"
         output_file = tmp_path / "output.md"
 
@@ -62,10 +62,10 @@ class TestOutputFileExists:
 
 
 class TestPreScreenFiles:
-    """Test the pre_screen_files function."""
+    """Ensure the pre_screen_files function."""
 
     def test_pre_screen_files_with_force_true(self, tmp_path):
-        """Test that force=True returns all files unchanged."""
+        """Ensure that force=True returns all files unchanged."""
         input1 = tmp_path / "input1.md"
         output1 = tmp_path / "output1.md"
         input2 = tmp_path / "input2.md"
@@ -86,7 +86,7 @@ class TestPreScreenFiles:
         assert result == file_pairs
 
     def test_pre_screen_files_with_force_false_no_existing_outputs(self, tmp_path):
-        """Test that force=False returns all files when no outputs exist."""
+        """Ensure that force=False returns all files when no outputs exist."""
         input1 = tmp_path / "input1.md"
         output1 = tmp_path / "output1.md"
         input2 = tmp_path / "input2.md"
@@ -104,7 +104,7 @@ class TestPreScreenFiles:
         assert result == file_pairs
 
     def test_pre_screen_files_with_force_false_some_existing_outputs(self, tmp_path):
-        """Test that force=False filters out files with existing outputs."""
+        """Ensure that force=False filters out files with existing outputs."""
         input1 = tmp_path / "input1.md"
         output1 = tmp_path / "output1.md"
         input2 = tmp_path / "input2.md"
@@ -129,7 +129,7 @@ class TestPreScreenFiles:
         assert result == [(input2, output2)]
 
     def test_pre_screen_files_with_force_false_all_existing_outputs(self, tmp_path):
-        """Test that force=False returns empty list when all outputs exist."""
+        """Ensure that force=False returns empty list when all outputs exist."""
         input1 = tmp_path / "input1.md"
         output1 = tmp_path / "output1.md"
         input2 = tmp_path / "input2.md"
@@ -149,7 +149,7 @@ class TestPreScreenFiles:
         assert result == []
 
     def test_pre_screen_files_with_empty_list(self):
-        """Test that empty file pairs list is handled correctly."""
+        """Ensure that empty file pairs list is handled correctly."""
         result = pre_screen_files([], force=False)
         assert result == []
 
@@ -157,7 +157,7 @@ class TestPreScreenFiles:
         assert result == []
 
     def test_pre_screen_files_with_in_place_processing(self, tmp_path):
-        """Test that in-place processing (same input/output path) is not filtered."""
+        """Ensure that in-place processing (same input/output path) is not filtered."""
         test_file = tmp_path / "test.md"
         test_file.write_text("test content")
 
@@ -169,7 +169,7 @@ class TestPreScreenFiles:
         assert result == file_pairs
 
     def test_pre_screen_files_logs_appropriately(self, tmp_path):
-        """Test that pre_screen_files returns correct results (logging verified by other tests)."""
+        """Ensure that pre_screen_files returns correct results (logging verified by other tests)."""
         input1 = tmp_path / "input1.md"
         output1 = tmp_path / "output1.md"
         input2 = tmp_path / "input2.md"

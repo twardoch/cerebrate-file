@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # this_file: src/cerebrate_file/chunking.py
 
-"""Text chunking strategies for cerebrate_file package.
+"""How we slice text in cerebrate_file.
 
-This module provides various strategies for splitting large documents into
-smaller chunks that fit within model context windows while preserving
-semantic and structural boundaries.
+Splits huge documents into chunks that fit in an LLM context window.
+It respects paragraph, markdown, code, and XML boundaries so the model
+does not lose its mind mid-sentence.
 """
 
 from loguru import logger
@@ -27,7 +27,7 @@ __all__ = [
 
 
 class ChunkingStrategy:
-    """Base class for chunking strategies."""
+    """The blueprint for all chunking strategies."""
 
     def __init__(self, chunk_size: int) -> None:
         """Initialize the chunking strategy.
@@ -40,7 +40,7 @@ class ChunkingStrategy:
         self.chunk_size = chunk_size
 
     def chunk(self, content: str) -> list[Chunk]:
-        """Split content into chunks.
+        """Cut content into chunks.
 
         Args:
             content: Input text content
@@ -54,7 +54,7 @@ class ChunkingStrategy:
         raise NotImplementedError("Subclasses must implement chunk method")
 
     def _create_chunk(self, text: str) -> Chunk:
-        """Create a chunk from text with token counting.
+        """Build a chunk and count its tokens.
 
         Args:
             text: Text content for the chunk
@@ -67,11 +67,11 @@ class ChunkingStrategy:
 
     @staticmethod
     def _normalize_newlines(content: str) -> str:
-        """Normalize line endings to \\n."""
+        """Force line endings to \\n."""
         return content.replace("\r\n", "\n").replace("\r", "\n")
 
     def _handle_overlong_line(self, line: str, chunks: list[Chunk]) -> None:
-        """Split a line that exceeds chunk_size into sub-chunks using binary search.
+        """Chop a gigantic line into sub-chunks using binary search.
 
         Args:
             line: The overlong line
@@ -101,10 +101,10 @@ class ChunkingStrategy:
 
 
 class TextChunker(ChunkingStrategy):
-    """Line-based greedy accumulation respecting token limits."""
+    """Greedily grabs lines until it hits the token limit."""
 
     def chunk(self, content: str) -> list[Chunk]:
-        """Split content using line-based chunking.
+        """Slice content line by line.
 
         Args:
             content: Input text content
@@ -147,10 +147,10 @@ class TextChunker(ChunkingStrategy):
 
 
 class SemanticChunker(ChunkingStrategy):
-    """Use semantic-text-splitter with token callback."""
+    """Uses `semantic-text-splitter` to keep paragraphs intact."""
 
     def chunk(self, content: str) -> list[Chunk]:
-        """Split content using semantic boundaries.
+        """Slice content at semantic boundaries.
 
         Args:
             content: Input text content
@@ -180,10 +180,10 @@ class SemanticChunker(ChunkingStrategy):
 
 
 class MarkdownChunker(ChunkingStrategy):
-    """Use MarkdownSplitter with token callback."""
+    """Uses `MarkdownSplitter` to keep headings and lists intact."""
 
     def chunk(self, content: str) -> list[Chunk]:
-        """Split content respecting Markdown structure.
+        """Slice content at Markdown boundaries.
 
         Args:
             content: Input text content
@@ -213,7 +213,7 @@ class MarkdownChunker(ChunkingStrategy):
 
 
 class CodeChunker(ChunkingStrategy):
-    """Code-aware chunking that respects code structure boundaries."""
+    """Code-aware chunker. Respects syntax boundaries like functions and classes."""
 
     def __init__(self, chunk_size: int) -> None:
         """Initialize the code chunker.
@@ -227,7 +227,7 @@ class CodeChunker(ChunkingStrategy):
     def _is_good_split_point(
         self, line_idx: int, line: str, brace_depth: int, paren_depth: int, in_string: bool
     ) -> bool:
-        """Determine if this is a good place to split chunks.
+        """Is this a safe place to cut the code? (e.g. not inside a string or nested brackets)
 
         Args:
             line_idx: Index of the line
@@ -260,7 +260,7 @@ class CodeChunker(ChunkingStrategy):
         return False
 
     def _track_code_structure(self, line: str) -> tuple[int, int, bool, str | None]:
-        """Track code structure depth for better splitting decisions.
+        """Count braces and parentheses to figure out how deep we are in the code.
 
         Args:
             line: The line to analyze
@@ -296,7 +296,7 @@ class CodeChunker(ChunkingStrategy):
         return brace_change, paren_change, in_string, string_delimiter
 
     def chunk(self, content: str) -> list[Chunk]:
-        """Split content using code-aware chunking.
+        """Slice content at safe code syntax boundaries.
 
         Args:
             content: Input text content
@@ -404,7 +404,7 @@ class CodeChunker(ChunkingStrategy):
 
 
 class XmlChunker(ChunkingStrategy):
-    """XML-aware chunking that respects XML structure.
+    """XML chunker. Respects tag boundaries so you do not send half an element.
 
     This chunker:
     1. Checks if content is valid XML
@@ -413,7 +413,7 @@ class XmlChunker(ChunkingStrategy):
     """
 
     def _is_valid_xml(self, content: str) -> bool:
-        """Check if content is valid XML.
+        """Does this look like valid XML?
 
         Args:
             content: Content to check
@@ -430,7 +430,7 @@ class XmlChunker(ChunkingStrategy):
             return False
 
     def _normalize_to_xml(self, content: str) -> str:
-        """Normalize content to valid XML by wrapping non-XML text in <p> tags.
+        """Force content into valid XML by wrapping stray text in <p> tags and putting an <x> root around it.
 
         Wraps text outside tags in <p> elements and wraps everything in <x> root.
         Only wraps text at the root level (depth 0), not text inside elements.
@@ -534,7 +534,7 @@ class XmlChunker(ChunkingStrategy):
         return normalized
 
     def _escape_xml_text(self, text: str) -> str:
-        """Escape XML special characters in text content.
+        """Escape XML characters like Escape XML special characters in text content. and < so the parser does not choke.
 
         Args:
             text: Text to escape
@@ -551,7 +551,7 @@ class XmlChunker(ChunkingStrategy):
         )
 
     def _find_element_boundaries(self, content: str) -> list[tuple[int, int, int]]:
-        """Find all top-level element boundaries in XML content.
+        """Find the start and end of every top-level XML element.
 
         Args:
             content: XML content to analyze
@@ -620,7 +620,7 @@ class XmlChunker(ChunkingStrategy):
         return boundaries
 
     def chunk(self, content: str) -> list[Chunk]:
-        """Split content using XML-aware chunking.
+        """Slice content at XML element boundaries.
 
         Args:
             content: Input text content
@@ -690,7 +690,7 @@ class XmlChunker(ChunkingStrategy):
         return chunks
 
     def _wrap_chunk(self, elements: list[str]) -> str:
-        """Wrap chunk elements in XML container.
+        """Wrap sliced XML elements in an <x> container.
 
         Args:
             elements: List of XML element strings
@@ -706,7 +706,7 @@ class XmlChunker(ChunkingStrategy):
 
 
 def get_chunking_strategy(data_format: str, chunk_size: int) -> ChunkingStrategy:
-    """Get a chunking strategy instance.
+    """Pick the right chunker based on the requested format.
 
     Args:
         data_format: Chunking strategy name
@@ -735,7 +735,7 @@ def get_chunking_strategy(data_format: str, chunk_size: int) -> ChunkingStrategy
 
 
 def create_chunks(content: str, data_format: str, chunk_size: int) -> list[Chunk]:
-    """Create chunks using the specified strategy.
+    """Slice the text using the chosen strategy.
 
     Args:
         content: Input text content

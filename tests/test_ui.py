@@ -15,10 +15,10 @@ from cerebrate_file.ui import FileProgressDisplay, MultiFileProgressDisplay
 
 
 class TestFileProgressDisplay:
-    """Test FileProgressDisplay class."""
+    """Ensure FileProgressDisplay class."""
 
     def test_init_default_console(self):
-        """Test initialization with default console."""
+        """Ensure initialization with default console."""
         display = FileProgressDisplay()
         assert display.console is not None
         assert display.current_task_id is None
@@ -27,13 +27,13 @@ class TestFileProgressDisplay:
         assert display.remaining_calls == 0
 
     def test_init_custom_console(self):
-        """Test initialization with custom console."""
+        """Ensure initialization with custom console."""
         custom_console = Console(file=StringIO(), width=80)
         display = FileProgressDisplay(console=custom_console)
         assert display.console is custom_console
 
     def test_start_file_processing(self):
-        """Test starting file processing."""
+        """Ensure starting file processing."""
         output = StringIO()
         console = Console(file=output, width=80)
         display = FileProgressDisplay(console=console)
@@ -50,7 +50,7 @@ class TestFileProgressDisplay:
         assert display.progress.tasks[display.current_task_id].total == total_chunks
 
     def test_update_progress(self):
-        """Test updating progress."""
+        """Ensure updating progress."""
         output = StringIO()
         console = Console(file=output, width=80)
         display = FileProgressDisplay(console=console)
@@ -65,7 +65,7 @@ class TestFileProgressDisplay:
         assert display.progress.tasks[display.current_task_id].completed == 3
 
     def test_update_progress_no_active_task(self):
-        """Test updating progress when no active task."""
+        """Ensure updating progress when no active task."""
         output = StringIO()
         console = Console(file=output, width=80)
         display = FileProgressDisplay(console=console)
@@ -77,7 +77,7 @@ class TestFileProgressDisplay:
         assert display.current_task_id is None
 
     def test_finish_file_processing(self):
-        """Test finishing file processing."""
+        """Ensure finishing file processing."""
         output = StringIO()
         console = Console(file=output, width=80)
         display = FileProgressDisplay(console=console)
@@ -93,7 +93,7 @@ class TestFileProgressDisplay:
         assert display.progress.tasks[task_id].completed == 5
 
     def test_complete_workflow(self):
-        """Test complete workflow from start to finish."""
+        """Ensure complete workflow from start to finish."""
         output = StringIO()
         console = Console(file=output, width=80)
         display = FileProgressDisplay(console=console)
@@ -115,10 +115,10 @@ class TestFileProgressDisplay:
 
 
 class TestMultiFileProgressDisplay:
-    """Test MultiFileProgressDisplay class."""
+    """Ensure MultiFileProgressDisplay class."""
 
     def test_init_default_console(self):
-        """Test initialization with default console."""
+        """Ensure initialization with default console."""
         display = MultiFileProgressDisplay()
         assert display.console is not None
         assert display.file_displays == {}
@@ -126,13 +126,13 @@ class TestMultiFileProgressDisplay:
         assert display.completed_files == 0
 
     def test_init_custom_console(self):
-        """Test initialization with custom console."""
+        """Ensure initialization with custom console."""
         custom_console = Console(file=StringIO(), width=80)
         display = MultiFileProgressDisplay(console=custom_console)
         assert display.console is custom_console
 
     def test_start_overall_processing(self):
-        """Test starting overall processing."""
+        """Ensure starting overall processing."""
         output = StringIO()
         console = Console(file=output, width=80)
         display = MultiFileProgressDisplay(console=console)
@@ -148,7 +148,7 @@ class TestMultiFileProgressDisplay:
         assert "files" in output_content
 
     def test_start_file(self):
-        """Test starting individual file processing."""
+        """Ensure starting individual file processing."""
         output = StringIO()
         console = Console(file=output, width=80)
         display = MultiFileProgressDisplay(console=console)
@@ -164,7 +164,7 @@ class TestMultiFileProgressDisplay:
         assert file_display.output_path == output_path
 
     def test_update_file_progress(self):
-        """Test updating progress for specific file."""
+        """Ensure updating progress for specific file."""
         output = StringIO()
         console = Console(file=output, width=80)
         display = MultiFileProgressDisplay(console=console)
@@ -179,7 +179,7 @@ class TestMultiFileProgressDisplay:
         assert file_display.progress.tasks[file_display.current_task_id].completed == 2
 
     def test_update_file_progress_unknown_file(self):
-        """Test updating progress for unknown file."""
+        """Ensure updating progress for unknown file."""
         output = StringIO()
         console = Console(file=output, width=80)
         display = MultiFileProgressDisplay(console=console)
@@ -190,7 +190,7 @@ class TestMultiFileProgressDisplay:
         assert "unknown.txt" not in display.file_displays
 
     def test_finish_file(self):
-        """Test finishing individual file processing."""
+        """Ensure finishing individual file processing."""
         output = StringIO()
         console = Console(file=output, width=80)
         display = MultiFileProgressDisplay(console=console)
@@ -207,7 +207,7 @@ class TestMultiFileProgressDisplay:
         assert display.completed_files == 1
 
     def test_finish_overall_processing(self):
-        """Test finishing overall processing."""
+        """Ensure finishing overall processing."""
         output = StringIO()
         console = Console(file=output, width=80)
         display = MultiFileProgressDisplay(console=console)
@@ -221,7 +221,7 @@ class TestMultiFileProgressDisplay:
         assert "2" in output_content
 
     def test_complete_multi_file_workflow(self):
-        """Test complete multi-file processing workflow."""
+        """Ensure complete multi-file processing workflow."""
         output = StringIO()
         console = Console(file=output, width=80)
         display = MultiFileProgressDisplay(console=console)
@@ -257,11 +257,11 @@ class TestUIIntegration:
     """Integration tests for UI components."""
 
     def test_progress_display_renders_without_error(self):
-        """Test that progress displays render without throwing exceptions."""
+        """Ensure that progress displays render without throwing exceptions."""
         output = StringIO()
         console = Console(file=output, width=80, height=24)
 
-        # Test single file display
+        # Ensure single file display
         single_display = FileProgressDisplay(console=console)
         single_display.start_file_processing(
             "long_filename_test.md", "output/long_filename_test_processed.md", 10
@@ -272,7 +272,7 @@ class TestUIIntegration:
 
         single_display.finish_file_processing()
 
-        # Test multi-file display
+        # Ensure multi-file display
         multi_display = MultiFileProgressDisplay(console=console)
         multi_display.start_overall_processing(2)
 
@@ -291,12 +291,12 @@ class TestUIIntegration:
         assert len(output_content) > 100  # Should have substantial output
 
     def test_ui_with_edge_case_paths(self):
-        """Test UI with edge case file paths."""
+        """Ensure UI with edge case file paths."""
         output = StringIO()
         console = Console(file=output, width=80)
         display = FileProgressDisplay(console=console)
 
-        # Test with various path types
+        # Ensure with various path types
         edge_case_paths = [
             ("", "output.txt"),  # Empty input path
             ("input.txt", ""),  # Empty output path

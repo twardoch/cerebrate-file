@@ -22,7 +22,7 @@ class MockAPIStatusError(Exception):
 
 
 def test_503_error_triggers_retry():
-    """Test that 503 errors are converted to retryable APIErrors."""
+    """Ensure that 503 errors are converted to retryable APIErrors."""
     mock_client = Mock()
 
     # Mock the cerebras module to simulate the API error
@@ -34,7 +34,7 @@ def test_503_error_triggers_retry():
             503, {"message": "Service unavailable"}
         )
 
-        # Test that the function raises APIError (which is retryable)
+        # Ensure that the function raises APIError (which is retryable)
         with pytest.raises(APIError) as exc_info:
             make_cerebras_request(
                 mock_client, [{"role": "user", "content": "test"}], "llama3.1-8b", 1000, 0.7, 0.9
@@ -45,7 +45,7 @@ def test_503_error_triggers_retry():
 
 
 def test_non_retryable_errors_not_converted():
-    """Test that 400-level errors are not converted to retryable APIErrors."""
+    """Ensure that 400-level errors are not converted to retryable APIErrors."""
     mock_client = Mock()
 
     # Mock the cerebras module to simulate the API error
@@ -56,7 +56,7 @@ def test_non_retryable_errors_not_converted():
         error = MockAPIStatusError(400, {"message": "Bad request"})
         mock_client.chat.completions.create.side_effect = error
 
-        # Test that the function raises the original error (not APIError)
+        # Ensure that the function raises the original error (not APIError)
         with pytest.raises(MockAPIStatusError) as exc_info:
             make_cerebras_request(
                 mock_client, [{"role": "user", "content": "test"}], "llama3.1-8b", 1000, 0.7, 0.9
@@ -67,7 +67,7 @@ def test_non_retryable_errors_not_converted():
 
 
 def test_retryable_status_codes():
-    """Test that all expected status codes are marked as retryable."""
+    """Ensure that all expected status codes are marked as retryable."""
     retryable_codes = [503, 502, 504, 429]
     mock_client = Mock()
 
@@ -80,7 +80,7 @@ def test_retryable_status_codes():
                 status_code, {"message": f"Error {status_code}"}
             )
 
-            # Test that the function raises APIError (which is retryable)
+            # Ensure that the function raises APIError (which is retryable)
             with pytest.raises(APIError) as exc_info:
                 make_cerebras_request(
                     mock_client,
@@ -96,13 +96,13 @@ def test_retryable_status_codes():
 
 
 def test_successful_request():
-    """Test that successful requests work normally."""
+    """Ensure that successful requests work normally."""
     mock_client = Mock()
 
     # Mock successful streaming response
     mock_chunk = Mock()
     mock_chunk.choices = [Mock()]
-    mock_chunk.choices[0].delta.content = "Test response"
+    mock_chunk.choices[0].delta.content = "Ensure response"
 
     class DummyStream(list):
         """List subclass that allows attaching metadata attributes."""
@@ -120,12 +120,12 @@ def test_successful_request():
         )
 
     # Verify successful response
-    assert result[0] == "Test response"
+    assert result[0] == "Ensure response"
     assert result[1] is not None  # Rate limit status
 
 
 def test_full_retry_flow(mocker):
-    """Test retry flow with make_request_with_fallback."""
+    """Ensure retry flow with make_request_with_fallback."""
     from cerebrate_file.api_client import make_request_with_fallback
 
     # Mock the implementation function

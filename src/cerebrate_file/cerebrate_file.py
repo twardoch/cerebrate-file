@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # this_file: src/cerebrate_file/cerebrate_file.py
 
-"""Main processing logic for cerebrate_file package.
+"""The core engine for cerebrate_file.
 
-This module contains the core document processing pipeline that chunks
-large documents and processes them through Cerebras AI models.
+It takes huge documents, slices them up, and feeds them through Cerebras AI models.
 """
 
 import json
@@ -44,12 +43,11 @@ __all__ = [
 
 
 def calculate_completion_budget(chunk_tokens: int, max_tokens_ratio: int) -> int:
-    """Calculate max_completion_tokens for this chunk.
+    """Figure out the token allowance for this chunk.
 
-    Cerebras recently introduced verbose reasoning streams that easily
-    consume thousands of completion tokens before emitting user-facing
-    content. This helper therefore guarantees a generous minimum budget
-    and a reasoning multiplier so each chunk can finish its thought.
+    Cerebras reasoning streams can burn through thousands of completion tokens
+    before they output anything useful. This guarantees a generous minimum budget
+    so every chunk has room to finish its thought.
 
     Args:
         chunk_tokens: Number of tokens in the current chunk
@@ -68,7 +66,7 @@ def calculate_completion_budget(chunk_tokens: int, max_tokens_ratio: int) -> int
     reasoning_target = math.ceil(chunk_tokens * REASONING_COMPLETION_RATIO / 100)
 
     # Even tiny chunks (frontmatter) need a few thousand tokens to finish reasoning
-    minimum_budget = MIN_COMPLETION_TOKENS if chunk_tokens > 0 else MIN_COMPLETION_TOKENS
+    minimum_budget = MIN_COMPLETION_TOKENS
 
     effective_tokens = max(requested_tokens, reasoning_target, minimum_budget)
     max_completion_tokens = min(MAX_OUTPUT_TOKENS, effective_tokens)
@@ -94,7 +92,7 @@ def prepare_chunk_messages(
     base_prompt_tokens: int,
     metadata: dict[str, Any] | None = None,
 ) -> tuple[list[dict[str, str]], int]:
-    """Prepare chat messages for API call with token validation.
+    """Pack the chat messages and check the token count.
 
     Args:
         base_prompt: System prompt text
@@ -175,7 +173,7 @@ def process_document(
     progress_callback: object | None = None,
     chunk_writer: Callable[[str], None] | None = None,
 ) -> tuple[str, ProcessingState]:
-    """Process all chunks through the Cerebras API.
+    """Stream every chunk through the Cerebras API.
 
     Args:
         client: Initialized Cerebras client

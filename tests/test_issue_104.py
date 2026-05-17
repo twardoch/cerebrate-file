@@ -14,7 +14,7 @@ from cerebrate_file.models import Chunk, ProcessingState, RateLimitStatus
 
 
 def test_call_counting_bug():
-    """Test that call counting decreases properly between requests."""
+    """Ensure that call counting decreases properly between requests."""
     # Mock headers showing decreasing call counts
     headers_first = {"x-ratelimit-remaining-requests-day": "172799"}
     headers_second = {"x-ratelimit-remaining-requests-day": "172798"}
@@ -28,12 +28,12 @@ def test_call_counting_bug():
 
 
 def test_frontmatter_missing_when_metadata_empty():
-    """Test that frontmatter is still written even when metadata is empty."""
+    """Ensure that frontmatter is still written even when metadata is empty."""
     with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".md") as f:
         test_file = f.name
 
     try:
-        # Test with empty metadata in explain mode
+        # Ensure with empty metadata in explain mode
         write_output_atomically("test content", test_file, {})
 
         with open(test_file) as f:
@@ -48,12 +48,12 @@ def test_frontmatter_missing_when_metadata_empty():
 
 
 def test_frontmatter_not_written_when_metadata_none():
-    """Test that frontmatter is not written when metadata is None."""
+    """Ensure that frontmatter is not written when metadata is None."""
     with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".md") as f:
         test_file = f.name
 
     try:
-        # Test with None metadata (normal mode)
+        # Ensure with None metadata (normal mode)
         write_output_atomically("test content", test_file, None)
 
         with open(test_file) as f:
@@ -68,7 +68,7 @@ def test_frontmatter_not_written_when_metadata_none():
 
 
 def test_chunk_processing_double_processing_issue():
-    """Test that first chunk isn't processed twice in explain mode."""
+    """Ensure that first chunk isn't processed twice in explain mode."""
     # This test simulates the issue where first chunk is processed for metadata
     # then the same chunks are reused for content processing
 
@@ -111,7 +111,7 @@ def test_chunk_processing_double_processing_issue():
 
 
 def test_progress_callback_uses_correct_remaining_count():
-    """Test that progress callback gets called with correct remaining count."""
+    """Ensure that progress callback gets called with correct remaining count."""
     callback_calls = []
 
     def mock_progress_callback(chunks_completed, remaining_calls):
@@ -143,7 +143,7 @@ def test_call_counting_issue_debug():
     # The issue from the bug report: "172,799 calls remaining" appears after every call
     # This suggests the API returns the same value or parsing fails
 
-    # Test scenario 1: API returns no rate limit headers
+    # Ensure scenario 1: API returns no rate limit headers
     empty_headers = {}
     status_no_headers = parse_rate_limit_headers(empty_headers)
 
@@ -151,14 +151,14 @@ def test_call_counting_issue_debug():
     assert status_no_headers.requests_remaining is None or status_no_headers.requests_remaining == 0
     assert status_no_headers.headers_parsed is False
 
-    # Test scenario 2: API returns malformed headers
+    # Ensure scenario 2: API returns malformed headers
     bad_headers = {"x-ratelimit-remaining-requests-day": "invalid"}
     status_bad_headers = parse_rate_limit_headers(bad_headers)
 
     # Should handle invalid data gracefully
     assert status_bad_headers.headers_parsed is False
 
-    # Test scenario 3: API returns the same value repeatedly (the suspected issue)
+    # Ensure scenario 3: API returns the same value repeatedly (the suspected issue)
     same_value_headers = {"x-ratelimit-remaining-requests-day": "172799"}
     status1 = parse_rate_limit_headers(same_value_headers)
     status2 = parse_rate_limit_headers(same_value_headers)
@@ -171,13 +171,13 @@ def test_call_counting_issue_debug():
 
 
 def test_explain_mode_metadata_completeness_check():
-    """Test metadata completeness checking logic."""
+    """Ensure metadata completeness checking logic."""
     from cerebrate_file.file_utils import check_metadata_completeness
 
     # Complete metadata
     complete_metadata = {
-        "title": "Test Title",
-        "author": "Test Author",
+        "title": "Ensure Title",
+        "author": "Ensure Author",
         "id": "test-id",
         "type": "test-type",
         "date": "2023-01-01",
@@ -188,7 +188,7 @@ def test_explain_mode_metadata_completeness_check():
     assert missing == []
 
     # Incomplete metadata
-    incomplete_metadata = {"title": "Test Title", "author": "Test Author"}
+    incomplete_metadata = {"title": "Ensure Title", "author": "Ensure Author"}
 
     is_complete, missing = check_metadata_completeness(incomplete_metadata)
     assert is_complete is False

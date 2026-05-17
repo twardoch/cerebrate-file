@@ -3,12 +3,10 @@
 
 """API client utilities for cerebrate_file package.
 
-This module handles all Cerebras API communication including rate limiting,
-retries, fallback chain support, and structured output generation.
+Manages Cerebras API communication. Handles rate limiting, retries, fallback chains, and structured output generation.
 
-Supports:
-- Primary model (Cerebras by default)
-- Fallback chain to OpenAI-compatible APIs on rate limit/quota errors
+
+Fails over to OpenAI-compatible APIs when hit with rate limits or quota errors.
 """
 
 import json
@@ -19,7 +17,6 @@ from typing import Any
 
 from loguru import logger
 from tenacity import (
-    RetryError,
     before_sleep_log,
     retry,
     retry_if_exception_type,
@@ -58,7 +55,7 @@ cerebras = SimpleNamespace(cloud=SimpleNamespace(sdk=cerebras_sdk))
 
 
 def _get_sdk_class(name: str) -> type[Exception]:
-    """Safely resolve exception classes from the Cerebras SDK for patching/tests."""
+    """Fetch exception classes from the Cerebras SDK. Needed for patching and tests."""
     sdk = getattr(getattr(cerebras, "cloud", None), "sdk", cerebras_sdk)
     candidate = getattr(sdk, name, None)
     if isinstance(candidate, type) and issubclass(candidate, BaseException):
@@ -67,7 +64,7 @@ def _get_sdk_class(name: str) -> type[Exception]:
 
 
 def _format_response(response: Any) -> str:
-    """Safely format SDK responses for logging without triggering str.format placeholders."""
+    """Clean up SDK responses for logging so str.format placeholders do not crash it."""
     if response is None:
         return "None"
     return repr(response).replace("{", "{{").replace("}", "}}").replace("%", "%%")
@@ -124,7 +121,7 @@ def _is_server_error(error: Exception) -> bool:
 
 
 class CerebrasClient:
-    """Manages Cerebras API interactions with rate limiting."""
+    """Talks to the Cerebras API. Respects speed limits."""
 
     def __init__(self, api_key: str, model: str | None = None) -> None:
         """Initialize the Cerebras client.
@@ -140,11 +137,11 @@ class CerebrasClient:
         self.rate_status = RateLimitStatus()
 
     def _get_client(self):
-        """Get or create the Cerebras client instance."""
+        """Fetch the active Cerebras client, or build it if missing."""
         if self._client is None:
             if Cerebras is None:
                 raise APIError(
-                    "cerebras-cloud-sdk not available. Install with: uv add cerebras-cloud-sdk"
+                    "Missing cerebras-cloud-sdk. Fix: uv add cerebras-cloud-sdk"
                 )
             self._client = Cerebras(api_key=self.api_key)
         return self._client
@@ -156,7 +153,7 @@ class CerebrasClient:
         temperature: float | None = None,
         top_p: float | None = None,
     ) -> tuple[str, RateLimitStatus]:
-        """Make a chat completion request.
+        """Run a chat completion.
 
         Args:
             messages: Chat messages
@@ -165,7 +162,7 @@ class CerebrasClient:
             top_p: Nucleus sampling parameter (defaults to settings)
 
         Returns:
-            Tuple of (response text, rate limit status)
+            The raw response text, plus the rate limit state
         """
         settings = get_settings()
         temp = temperature if temperature is not None else settings.inference.temperature
@@ -184,7 +181,7 @@ class CerebrasClient:
         temperature: float | None = None,
         top_p: float | None = None,
     ) -> dict[str, Any]:
-        """Generate missing metadata fields using structured output.
+        """Fill in missing metadata fields using structured JSON.
 
         Args:
             existing_metadata: Current metadata
@@ -210,7 +207,7 @@ class CerebrasClient:
         )
 
     def calculate_delay(self, next_chunk_tokens: int) -> float:
-        """Calculate appropriate delay based on rate limits.
+        """Find the right wait time before hitting the API again.
 
         Args:
             next_chunk_tokens: Estimated tokens for next request
@@ -222,7 +219,7 @@ class CerebrasClient:
 
 
 class FallbackClient:
-    """Client for OpenAI-compatible fallback APIs."""
+    """Talks to fallback APIs (OpenAI-compatible)."""
 
     def __init__(self, model_config: ModelConfig) -> None:
         """Initialize the fallback client.
@@ -234,10 +231,10 @@ class FallbackClient:
         self._client = None
 
     def _get_client(self):
-        """Get or create the OpenAI client instance."""
+        """Fetch the active OpenAI client, or build it if missing."""
         if self._client is None:
             if OpenAI is None:
-                raise APIError("openai package not available. Install with: uv add openai")
+                raise APIError("Missing openai package. Fix: uv add openai")
             api_key = self.config.get_api_key()
             if not api_key:
                 raise APIError(
@@ -256,7 +253,7 @@ class FallbackClient:
         temperature: float | None = None,
         top_p: float | None = None,
     ) -> tuple[str, RateLimitStatus]:
-        """Make a chat completion request using OpenAI-compatible API.
+        """Run a chat completion.using OpenAI-compatible API.
 
         Args:
             messages: Chat messages
@@ -265,7 +262,7 @@ class FallbackClient:
             top_p: Nucleus sampling parameter (defaults to settings)
 
         Returns:
-            Tuple of (response text, rate limit status)
+            The raw response text, plus the rate limit state
         """
         settings = get_settings()
         temp = temperature if temperature is not None else settings.inference.temperature
@@ -305,7 +302,7 @@ class FallbackClient:
 
 
 def parse_rate_limit_headers(headers: dict[str, str], verbose: bool = False) -> RateLimitStatus:
-    """Extract rate limit info from response headers.
+    """Pull speed limit data from HTTP headers.
 
     Args:
         headers: HTTP response headers
@@ -389,7 +386,7 @@ def calculate_backoff_delay(
     rate_status: RateLimitStatus,
     next_chunk_tokens: int,
 ) -> float:
-    """Calculate optimal delay based on rate limit status.
+    """Calculate how long to wait before sending the next chunk.
 
     Args:
         rate_status: Current rate limit status
@@ -484,7 +481,7 @@ def explain_metadata_with_llm(
     temp: float,
     top_p: float,
 ) -> dict[str, Any]:
-    """Use structured outputs to generate missing metadata fields.
+    """Ask the model to fill in missing metadata using JSON.
 
     Args:
         client: Cerebras client instance
@@ -498,7 +495,7 @@ def explain_metadata_with_llm(
         Dictionary with generated metadata fields
     """
     try:
-        import cerebras.cloud.sdk
+        pass
 
         # Create explanation prompt
         existing_json = json.dumps(existing_metadata, separators=(",", ":"))
@@ -585,7 +582,7 @@ def _make_cerebras_request_impl(
     top_p: float,
     verbose: bool = False,
 ) -> tuple[str, RateLimitStatus]:
-    """Make streaming request to Cerebras API with retry logic.
+    """Stream a request to Cerebras and handle retries.
 
     Args:
         client: Cerebras client instance
@@ -674,7 +671,7 @@ def make_cerebras_request(
     top_p: float,
     verbose: bool = False,
 ) -> tuple[str, RateLimitStatus]:
-    """Make streaming Cerebras request (single attempt, no retry)."""
+    """Stream a request to Cerebras once. No retries here."""
     return _make_cerebras_request_impl(
         client,
         messages,
@@ -695,7 +692,7 @@ def make_request_with_fallback(
     top_p: float,
     verbose: bool = False,
 ) -> tuple[str, RateLimitStatus, str]:
-    """Make a request: try primary once, then fallbacks immediately, then retry primary.
+    """Hit the primary model. If it trips, hit fallbacks immediately. If they trip, retry primary with backoff.
 
     On any retryable error from primary, immediately tries all fallback models.
     Only retries primary (with backoff) after all fallbacks are exhausted.

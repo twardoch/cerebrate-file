@@ -51,7 +51,7 @@ class TestRecursiveIntegration:
             yield temp_path
 
     def test_simple_markdown_processing(self, temp_dir_structure):
-        """Test basic recursive processing of markdown files."""
+        """Ensure basic recursive processing of markdown files."""
         temp_dir = temp_dir_structure
         output_dir = temp_dir / "output"
 
@@ -75,10 +75,10 @@ class TestRecursiveIntegration:
             assert output_path == expected_output
 
     def test_complex_glob_patterns(self, temp_dir_structure):
-        """Test brace expansion and complex patterns."""
+        """Ensure brace expansion and complex patterns."""
         temp_dir = temp_dir_structure
 
-        # Test brace pattern
+        # Ensure brace pattern
         file_pairs = find_files_recursive(temp_dir, "**/*.{md,py,js}")
 
         # Should find: 3 md + 1 py + 1 js = 5 files
@@ -90,7 +90,7 @@ class TestRecursiveIntegration:
         assert ".js" in extensions
 
     def test_directory_structure_replication(self, temp_dir_structure):
-        """Test directory structure replication."""
+        """Ensure directory structure replication."""
         temp_dir = temp_dir_structure
         output_dir = temp_dir / "output"
 
@@ -114,25 +114,25 @@ class TestRecursiveIntegration:
             assert expected_dir.is_dir()
 
     def test_pattern_edge_cases(self, temp_dir_structure):
-        """Test edge cases in pattern matching."""
+        """Ensure edge cases in pattern matching."""
         temp_dir = temp_dir_structure
 
-        # Test pattern that matches no files
+        # Ensure pattern that matches no files
         file_pairs = find_files_recursive(temp_dir, "**/*.nonexistent")
         assert len(file_pairs) == 0
 
-        # Test very specific pattern
+        # Ensure very specific pattern
         file_pairs = find_files_recursive(temp_dir, "subdir1/*.js")
         assert len(file_pairs) == 1
         assert file_pairs[0][0].name == "app.js"
 
-        # Test deeply nested pattern
+        # Ensure deeply nested pattern
         file_pairs = find_files_recursive(temp_dir, "nested/**/*.yaml")
         assert len(file_pairs) == 1
         assert file_pairs[0][0].name == "config.yaml"
 
     def test_in_place_processing(self, temp_dir_structure):
-        """Test in-place processing (no output directory)."""
+        """Ensure in-place processing (no output directory)."""
         temp_dir = temp_dir_structure
 
         # Find files for in-place processing (recursive search)
@@ -149,7 +149,7 @@ class TestRecursiveIntegration:
         assert input_names == {"test1.md", "test2.md", "test3.md"}
 
     def test_parallel_processing_mock(self, temp_dir_structure):
-        """Test parallel processing with mocked processing function."""
+        """Ensure parallel processing with mocked processing function."""
         temp_dir = temp_dir_structure
 
         # Find some files to process
@@ -174,7 +174,7 @@ class TestRecursiveIntegration:
         assert result.total_time == 3.0  # 3 files * 1.0 seconds
 
     def test_parallel_processing_with_failures(self, temp_dir_structure):
-        """Test parallel processing with some failures."""
+        """Ensure parallel processing with some failures."""
         temp_dir = temp_dir_structure
 
         # Find files to process
@@ -206,7 +206,7 @@ class TestRecursiveIntegration:
         assert "Simulated processing error" in error
 
     def test_empty_directory_handling(self):
-        """Test handling of empty directories."""
+        """Ensure handling of empty directories."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 
@@ -219,7 +219,7 @@ class TestRecursiveIntegration:
             assert len(file_pairs) == 0
 
     def test_special_characters_in_filenames(self):
-        """Test handling of files with special characters."""
+        """Ensure handling of files with special characters."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 
@@ -244,18 +244,18 @@ class TestRecursiveIntegration:
                 assert expected_name in found_names
 
     def test_error_handling_invalid_directory(self):
-        """Test error handling for invalid directories."""
-        # Test non-existent directory
+        """Ensure error handling for invalid directories."""
+        # Ensure non-existent directory
         with pytest.raises(ValueError, match="Input directory does not exist"):
             find_files_recursive(Path("/nonexistent/directory"), "*.md")
 
-        # Test file instead of directory
+        # Ensure file instead of directory
         with tempfile.NamedTemporaryFile() as temp_file:
             with pytest.raises(ValueError, match="Input path is not a directory"):
                 find_files_recursive(Path(temp_file.name), "*.md")
 
     def test_progress_callback_integration(self, temp_dir_structure):
-        """Test progress callback integration."""
+        """Ensure progress callback integration."""
         temp_dir = temp_dir_structure
 
         # Find files to process
@@ -281,7 +281,7 @@ class TestRecursiveIntegration:
         assert all(completed == 1 for _, completed in progress_calls)
 
     def test_worker_count_variation(self, temp_dir_structure):
-        """Test processing with different worker counts."""
+        """Ensure processing with different worker counts."""
         temp_dir = temp_dir_structure
 
         # Find files to process
@@ -291,14 +291,14 @@ class TestRecursiveIntegration:
         def mock_processing_func(input_path: Path, output_path: Path) -> ProcessingState:
             return ProcessingState()
 
-        # Test with different worker counts
+        # Ensure with different worker counts
         for workers in [1, 2, 4]:
             result = process_files_parallel(file_pairs, mock_processing_func, workers=workers)
             assert len(result.successful) == 3
             assert len(result.failed) == 0
 
     def test_large_file_set_simulation(self):
-        """Test processing a large number of files (simulated)."""
+        """Ensure processing a large number of files (simulated)."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 

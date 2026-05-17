@@ -1,186 +1,122 @@
-Here's a revised version of your `README.md` with tighter prose, clearer structure, and minimal fluff. I've preserved all essential information while improving readability and precision.
+# cerebrate-file
 
----
+Feed large documents to the Cerebras AI cloud — chunk by chunk, at inference speeds that make OpenAI look sluggish.
 
-# cereproc.py
+## The problem it solves
 
-`old/cereproc.py` processes large documents by splitting them into chunks suitable for the Cerebras `zai-glm-4.6` model, generating completions for each chunk, and reassembling the results while maintaining context.
+Cerebras runs inference on dedicated wafer-scale hardware. It is genuinely fast — thousands of tokens per second. But like every language model, it has a context window. A 100-page document does not fit in one API call.
 
-## Quick Start
+`cerebrate-file` solves this by splitting your document into overlapping chunks, processing each one in sequence, and stitching the outputs back together. A "continuity block" carries a sample of the previous chunk's input and output into the next request, so the model knows it is in the middle of something.
+
+## What you can use it for
+
+Any task where you want an LLM to transform a document chunk by chunk:
+
+- Rewrite or summarise long reports
+- Apply a style guide to a manuscript
+- Extract structured data from multi-page documents
+- Edit Markdown files with a consistent voice
+- Run any freeform instruction over content too large for one prompt
+
+## Install
+
+```bash
+pip install cerebrate-file
+# or
+uv pip install cerebrate-file
+```
+
+Set your API key:
 
 ```bash
 export CEREBRAS_API_KEY="csk-..."
-uv run old/cereproc.py --input_data document.md --output_data document.out.md
 ```
 
-Add optional guidance using inline prompts or instruction files:
+## Quick start
 
 ```bash
-uv run old/cereproc.py \
-  --input_data huge.md \
-  --file_prompt prompts/style.md \
-  --prompt "Write concise technical summaries." \
-  -c code \
-  --chunk_size 28000 \
-  --sample_size 256 \
-  --verbose
+# Process a single file (overwrites in place)
+cerebrate-file document.md --prompt "Fix grammar and improve clarity"
+
+# Write to a separate output file
+cerebrate-file input.md output.md --prompt "Translate to formal English"
+
+# Use a prompt file instead of inline text
+cerebrate-file report.md --file-prompt prompts/summarize.md
+
+# Dry run — shows chunking plan without calling the API
+cerebrate-file large.md --dry-run --verbose
+
+# Process a directory recursively
+cerebrate-file ./docs --recurse "**/*.md" --prompt "Fix typos" --workers 4
 ```
 
-## CLI
+## How chunking works
+
+The document is split into chunks using one of five strategies selected by `--data-format`:
+
+| Mode | Best for |
+|---|---|
+| `markdown` (default) | Markdown files — splits at headings and paragraphs |
+| `text` | Plain prose — splits at sentence boundaries |
+| `semantic` | Mixed content — semantic similarity grouping |
+| `code` | Source code — splits at function/class boundaries |
+| `xml` | XML/HTML — splits at element boundaries |
+
+Each chunk is sized to fit within the model's context window alongside the system prompt and the continuity block. The completion budget (how many tokens the model can write back) is automatically calculated as a percentage of the input chunk size, with a generous minimum so reasoning-heavy models have room to think before outputting.
+
+## Continuity
+
+Between chunks, `cerebrate-file` builds a "continuity block": a sample of tokens from the tail of the previous chunk's input and a sample from the tail of its output. This gives the model just enough context to keep its voice and terminology consistent across chunks. The block is trimmed to fit the token budget if it would push the request over the context limit.
+
+## CLI reference
 
 ```
-NAME
-    cerebrate-file - Process large documents by chunking for Cerebras zai-glm-4.6
+cerebrate-file <input> [output] [options]
 
-SYNOPSIS
-    cerebrate-file INPUT_DATA <flags>
-
-POSITIONAL ARGUMENTS
-    INPUT_DATA
-        Path to input file to process
-
-FLAGS
-    -o, --output_data=OUTPUT_DATA
-        Output file path (default: overwrite input)
-    -f, --file_prompt=FILE_PROMPT
-        Path to file with initial instructions
-    -p, --prompt=PROMPT
-        Inline prompt text (appended after file_prompt)
-    -c, --chunk_size=CHUNK_SIZE
-        Target max chunk size in tokens (default: 32000)
-    --max_tokens_ratio=MAX_TOKENS_RATIO
-        Completion budget as % of chunk size (default: 100)
-    --data_format=DATA_FORMAT
-        Chunking strategy: text | semantic | markdown | code (default: markdown)
-    -s, --sample_size=SAMPLE_SIZE
-        Tokens from previous request/response to maintain context (default: 200)
-    --temp=TEMP
-        Model temperature (default: 0.7)
-    --top_p=TOP_P
-        Model top-p sampling (default: 0.8)
-    --model=MODEL
-        Override default model name (default: zai-glm-4.6)
-    -v, --verbose
-        Enable debug logging
-    -e, --explain
-        Parse and update frontmatter metadata
-    --dry_run
-        Show chunking details without calling the API
+  --file-prompt PATH      Path to a file with system instructions
+  --prompt TEXT           Freeform instructions appended to the system prompt
+  --chunk-size INT        Target chunk size in tokens (from config if omitted)
+  --max-tokens-ratio INT  Completion budget as % of chunk size (default: 150)
+  --data-format TEXT      Chunking strategy: text|semantic|markdown|code|xml
+  --sample-size INT       Tokens to carry forward as continuity context
+  --temp FLOAT            Model temperature
+  --top-p FLOAT           Nucleus sampling parameter
+  --model TEXT            Model name override
+  --verbose               Show per-chunk progress and token counts
+  --explain               Parse YAML frontmatter and auto-generate missing fields
+  --dry-run               Show chunk plan without making API calls
+  --recurse GLOB          Process a directory tree matching GLOB pattern
+  --workers INT           Parallel workers in recursive mode (default: 4)
+  --force                 Overwrite existing output files
 ```
-
-### Streaming via STDIN/STDOUT
-
-Use `-` to read from stdin or write to stdout:
-
-```bash
-cat huge.md | uv run cerebrate_file --input_data - --output_data - > processed.md
-```
-
-## Processing Pipeline
-
-1. Load `.env` and validate `CEREBRAS_API_KEY` and CLI arguments.
-2. Construct base prompt from `--file_prompt` and `--prompt`, separated by two newlines. Count its tokens.
-3. Read input file, preserving frontmatter. Parse metadata if `--explain` is enabled.
-4. Split document body using one of these strategies:
-   - `text`: line-based greedy splitting
-   - `semantic`: paragraph-aware via `semantic-text-splitter`
-   - `markdown`: structure-preserving Markdown splitting
-   - `code`: regex-based source code boundaries
-5. For each chunk, optionally prepend/append continuity examples (`--sample_size` tokens each) from prior interactions, ensuring total tokens stay under the 131K limit.
-6. Stream responses from Cerebras, with automatic retry and backoff on transient errors (`tenacity`).
-7. Write final output atomically. Update frontmatter if `--explain` is active.
-
-## Explain Mode Metadata
-
-When `--explain` is set, the script looks for frontmatter containing:
-
-- `title`
-- `author`
-- `id`
-- `type`
-- `date`
-
-Missing fields are filled via a structured JSON query to the model. Use `--dry_run` to preview parsed metadata without making network calls.
-
-## Dry Run Workflow
-
-Use `--dry_run` to inspect:
-- Chunk sizes
-- Token budgets
-- Message structure
-
-No API calls are made in this mode.
-
-## Dependencies
-
-Install with `uv` or your preferred package manager:
-
-- `fire`
-- `loguru`
-- `python-dotenv`
-- `tenacity`
-- `cerebras-cloud-sdk`
-- `semantic-text-splitter`
-- `qwen-tokenizer`
-- `tqdm`
-- `python-frontmatter`
 
 ## Configuration
 
-The tool uses a layered configuration system. Settings are loaded in this order (later sources override earlier ones):
+Settings load from three locations in order (later overrides earlier):
 
-1. **Built-in defaults** – `default_config.toml` bundled with the package
-2. **User config** – `~/.config/cerebrate-file/config.toml`
-3. **Project config** – `.cerebrate-file.toml` in the current directory
-4. **Environment variables** – e.g., `CEREBRATE_PRIMARY_MODEL`
-
-If no custom config exists, the built-in defaults are used automatically.
-
-### Config File Locations
-
-| Platform | User Config Path |
-|----------|------------------|
-| macOS/Linux | `~/.config/cerebrate-file/config.toml` |
-| Windows | `%APPDATA%\cerebrate-file\config.toml` |
-
-For project-specific settings, create `.cerebrate-file.toml` in your project root.
-
-### Example Config
+1. Built-in defaults (in the package)
+2. `~/.config/cerebrate-file/config.toml`
+3. `.cerebrate-file.toml` in the current directory
 
 ```toml
 [inference]
-temperature = 0.98
-top_p = 0.8
-chunk_size = 32000
-sample_size = 200
-
-[models.primary]
-name = "zai-glm-4.6"
-provider = "cerebras"
-api_key_env = "CEREBRAS_API_KEY"
-max_context_tokens = 131000
-max_output_tokens = 40960
-
-[models.fallback1]
-enabled = true
-name = "zai-org/GLM-4.6"
-provider = "chutes"
-api_key_env = "CHUTES_API_KEY"
-api_base = "https://llm.chutes.ai/v1"
+model = "llama-4-scout-17b-16e-instruct"
+chunk_size = 8000
+max_tokens_ratio = 150
+sample_size = 512
+temperature = 0.3
+top_p = 0.9
 ```
 
-## Environment Setup
+## Progressive output
 
-Set `CEREBRAS_API_KEY` before running. The tool will warn about placeholder keys and validate basic formatting. Use `--verbose` for extra runtime info and rate-limit headers.
+Output is written to a temporary file and renamed atomically on completion. If the process is killed mid-run, the input file is untouched. In streaming mode (`--output -`), each processed chunk is written to stdout immediately so you can pipe it elsewhere.
 
-## Testing Tips
+## Cerebras context window
 
-1. Run with `--dry_run` to check chunking logic quickly.
-2. Test on a small sample file with `--verbose` to observe:
-   - Context blending between chunks
-   - Output statistics
-3. Only then run on larger inputs.
+The Cerebras cloud API currently supports a 131,072 token context window. The tool enforces this limit before sending each request and raises an error if a chunk plus its system prompt would exceed it.
 
---- 
+## License
 
-Let me know if you'd like this tailored further toward users, developers, or integration into a larger documentation system.
+MIT

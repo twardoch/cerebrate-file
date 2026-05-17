@@ -21,10 +21,10 @@ from cerebrate_file.recursive import (
 
 
 class TestFindFilesRecursive:
-    """Test find_files_recursive function."""
+    """Ensure find_files_recursive function."""
 
     def test_find_files_with_simple_pattern(self):
-        """Test finding files with a simple pattern."""
+        """Ensure finding files with a simple pattern."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
 
@@ -46,7 +46,7 @@ class TestFindFilesRecursive:
             assert "file4.md" in input_files
 
     def test_find_files_with_recursive_pattern(self):
-        """Test finding files with recursive pattern."""
+        """Ensure finding files with recursive pattern."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
 
@@ -68,7 +68,7 @@ class TestFindFilesRecursive:
             assert "file3.md" in input_files
 
     def test_find_files_with_output_directory(self):
-        """Test finding files and generating output paths."""
+        """Ensure finding files and generating output paths."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             input_dir = tmp_path / "input"
@@ -93,7 +93,7 @@ class TestFindFilesRecursive:
                 assert output_path == expected_output
 
     def test_find_files_no_matches(self):
-        """Test finding files when no matches exist."""
+        """Ensure finding files when no matches exist."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
 
@@ -106,12 +106,12 @@ class TestFindFilesRecursive:
             assert len(result) == 0
 
     def test_find_files_nonexistent_directory(self):
-        """Test error when directory doesn't exist."""
+        """Ensure error when directory doesn't exist."""
         with pytest.raises(ValueError, match="does not exist"):
             find_files_recursive(Path("/nonexistent/path"), "*.md", None)
 
     def test_find_files_not_directory(self):
-        """Test error when path is not a directory."""
+        """Ensure error when path is not a directory."""
         with tempfile.NamedTemporaryFile() as tmpfile:
             tmp_path = Path(tmpfile.name)
 
@@ -120,10 +120,10 @@ class TestFindFilesRecursive:
 
 
 class TestReplicateDirectoryStructure:
-    """Test replicate_directory_structure function."""
+    """Ensure replicate_directory_structure function."""
 
     def test_replicate_simple_structure(self):
-        """Test replicating a simple directory structure."""
+        """Ensure replicating a simple directory structure."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             output_dir = tmp_path / "output"
@@ -142,7 +142,7 @@ class TestReplicateDirectoryStructure:
             assert (output_dir / "subdir").exists()
 
     def test_replicate_existing_directories(self):
-        """Test replicating when directories already exist."""
+        """Ensure replicating when directories already exist."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             output_dir = tmp_path / "output"
@@ -164,16 +164,16 @@ class TestReplicateDirectoryStructure:
             assert (output_dir / "existing").exists()
 
     def test_replicate_empty_list(self):
-        """Test replicating with empty file list."""
+        """Ensure replicating with empty file list."""
         # Should not fail with empty list
         replicate_directory_structure([])
 
 
 class TestProcessSingleFile:
-    """Test process_single_file function."""
+    """Ensure process_single_file function."""
 
     def test_process_successful(self):
-        """Test successful file processing."""
+        """Ensure successful file processing."""
         input_path = Path("input.txt")
         output_path = Path("output.txt")
 
@@ -197,7 +197,7 @@ class TestProcessSingleFile:
         progress_callback.assert_called_once_with(str(input_path), 1)
 
     def test_process_with_exception(self):
-        """Test file processing with exception."""
+        """Ensure file processing with exception."""
         input_path = Path("input.txt")
         output_path = Path("output.txt")
 
@@ -214,10 +214,10 @@ class TestProcessSingleFile:
 
 
 class TestProcessFilesParallel:
-    """Test process_files_parallel function."""
+    """Ensure process_files_parallel function."""
 
     def test_parallel_processing_success(self):
-        """Test successful parallel processing."""
+        """Ensure successful parallel processing."""
         # Create file pairs
         file_pairs = [
             (Path("input1.txt"), Path("output1.txt")),
@@ -242,7 +242,7 @@ class TestProcessFilesParallel:
         assert result.total_time == 2.0  # 1.0 * 2
 
     def test_parallel_processing_with_failures(self):
-        """Test parallel processing with some failures."""
+        """Ensure parallel processing with some failures."""
         # Create file pairs
         file_pairs = [
             (Path("input1.txt"), Path("output1.txt")),
@@ -271,7 +271,7 @@ class TestProcessFilesParallel:
         assert "Failed to process" in str(result.failed[0][1])
 
     def test_parallel_processing_empty_list(self):
-        """Test parallel processing with empty file list."""
+        """Ensure parallel processing with empty file list."""
         result = process_files_parallel([], Mock(), workers=2)
 
         assert len(result.successful) == 0
@@ -280,7 +280,7 @@ class TestProcessFilesParallel:
         assert result.total_output_tokens == 0
 
     def test_parallel_processing_with_progress(self):
-        """Test parallel processing with progress callback."""
+        """Ensure parallel processing with progress callback."""
         file_pairs = [
             (Path("input1.txt"), Path("output1.txt")),
         ]
@@ -300,10 +300,10 @@ class TestProcessFilesParallel:
 
 
 class TestProcessingResult:
-    """Test ProcessingResult class."""
+    """Ensure ProcessingResult class."""
 
     def test_initialization(self):
-        """Test ProcessingResult initialization."""
+        """Ensure ProcessingResult initialization."""
         result = ProcessingResult()
 
         assert result.successful == []
@@ -318,7 +318,7 @@ class TestRecursiveIntegration:
 
     @patch("cerebrate_file.recursive.ThreadPoolExecutor")
     def test_full_recursive_workflow(self, mock_executor):
-        """Test complete recursive processing workflow."""
+        """Ensure complete recursive processing workflow."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             input_dir = tmp_path / "input"

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # this_file: tests/test_error_recovery.py
 
-"""Tests for cerebrate_file.error_recovery module."""
+"""Ensure suite for .error_recovery module."""
 
 import json
 import tempfile
@@ -25,7 +25,7 @@ from cerebrate_file.error_recovery import (
 
 
 def test_retry_config_default():
-    """Test RetryConfig with default values."""
+    """Ensure RetryConfig with default values."""
     config = RetryConfig()
     assert config.max_attempts == 3
     assert config.base_delay == 1.0
@@ -33,7 +33,7 @@ def test_retry_config_default():
 
 
 def test_retry_config_get_delay():
-    """Test delay calculation with exponential backoff."""
+    """Ensure delay calculation with exponential backoff."""
     config = RetryConfig(base_delay=1.0, exponential_base=2.0, jitter=False)
     assert config.get_delay(0) == 1.0  # 1 * 2^0
     assert config.get_delay(1) == 2.0  # 1 * 2^1
@@ -41,13 +41,13 @@ def test_retry_config_get_delay():
 
 
 def test_retry_config_max_delay():
-    """Test that delay is capped at max_delay."""
+    """Ensure that delay is capped at max_delay."""
     config = RetryConfig(base_delay=10.0, max_delay=15.0, jitter=False)
     assert config.get_delay(10) == 15.0  # Should be capped
 
 
 def test_with_retry_success_first_try():
-    """Test successful function call on first try."""
+    """Ensure successful function call on first try."""
     mock_func = Mock(return_value="success")
 
     @with_retry
@@ -60,7 +60,7 @@ def test_with_retry_success_first_try():
 
 
 def test_with_retry_success_after_failures():
-    """Test retry succeeds after transient failures."""
+    """Ensure retry succeeds after transient failures."""
     mock_func = Mock(
         side_effect=[APIError("Temporary error"), APIError("Another error"), "success"]
     )
@@ -75,7 +75,7 @@ def test_with_retry_success_after_failures():
 
 
 def test_with_retry_all_attempts_fail():
-    """Test that exception is raised after all retries fail."""
+    """Ensure that exception is raised after all retries fail."""
     mock_func = Mock(side_effect=APIError("Persistent error"))
 
     @with_retry(config=RetryConfig(max_attempts=2, base_delay=0.01))
@@ -90,7 +90,7 @@ def test_with_retry_all_attempts_fail():
 
 
 def test_with_retry_non_retryable_error():
-    """Test that non-retryable errors are raised immediately."""
+    """Ensure that non-retryable errors are raised immediately."""
     mock_func = Mock(side_effect=ValueError("Not retryable"))
 
     @with_retry
@@ -104,7 +104,7 @@ def test_with_retry_non_retryable_error():
 
 
 def test_format_error_with_suggestions_api_error():
-    """Test error formatting for API errors."""
+    """Ensure error formatting for API errors."""
     error = APIError("API key invalid")
     enhanced = format_error_with_suggestions(error)
 
@@ -115,7 +115,7 @@ def test_format_error_with_suggestions_api_error():
 
 
 def test_format_error_with_suggestions_file_error():
-    """Test error formatting for file not found errors."""
+    """Ensure error formatting for file not found errors."""
     error = FileNotFoundError("File not found: test.txt")
     enhanced = format_error_with_suggestions(error)
 
@@ -125,7 +125,7 @@ def test_format_error_with_suggestions_file_error():
 
 
 def test_format_error_with_suggestions_validation_chunk_size():
-    """Test error formatting for chunk size validation errors."""
+    """Ensure error formatting for chunk size validation errors."""
     error = ValidationError("Chunk size 5 is too small")
     enhanced = format_error_with_suggestions(error)
 
@@ -134,7 +134,7 @@ def test_format_error_with_suggestions_validation_chunk_size():
 
 
 def test_format_error_message():
-    """Test format_error_message function."""
+    """Ensure format_error_message function."""
     error = ConnectionError("Network unreachable")
     msg = format_error_message(error)
 
@@ -143,7 +143,7 @@ def test_format_error_message():
 
 
 def test_save_and_load_checkpoint():
-    """Test saving and loading checkpoints."""
+    """Ensure saving and loading checkpoints."""
     with tempfile.TemporaryDirectory() as tmpdir:
         test_data = {"key": "value", "count": 42}
 
@@ -157,14 +157,14 @@ def test_save_and_load_checkpoint():
 
 
 def test_load_checkpoint_not_found():
-    """Test loading non-existent checkpoint returns None."""
+    """Ensure loading non-existent checkpoint returns None."""
     with tempfile.TemporaryDirectory() as tmpdir:
         result = load_checkpoint(checkpoint_dir=tmpdir, checkpoint_name="nonexistent")
         assert result is None
 
 
 def test_load_checkpoint_expired():
-    """Test that expired checkpoints are not loaded."""
+    """Ensure that expired checkpoints are not loaded."""
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create an old checkpoint
         checkpoint_data = {
@@ -182,7 +182,7 @@ def test_load_checkpoint_expired():
 
 
 def test_check_optional_dependency_available():
-    """Test checking available optional dependency."""
+    """Ensure checking available optional dependency."""
     # json is always available
     available, message = check_optional_dependency("json")
     assert available is True
@@ -190,7 +190,7 @@ def test_check_optional_dependency_available():
 
 
 def test_check_optional_dependency_missing():
-    """Test checking missing optional dependency."""
+    """Ensure checking missing optional dependency."""
     available, message = check_optional_dependency("nonexistent_module_xyz")
     assert available is False
     assert "Optional dependency 'nonexistent_module_xyz' not found" in message
@@ -198,7 +198,7 @@ def test_check_optional_dependency_missing():
 
 
 def test_check_optional_dependency_with_feature():
-    """Test checking dependency with feature name."""
+    """Ensure checking dependency with feature name."""
     available, message = check_optional_dependency(
         "missing_module",
         package_name="special-package",
@@ -210,7 +210,7 @@ def test_check_optional_dependency_with_feature():
 
 
 def test_recoverable_operation_no_checkpoint():
-    """Test RecoverableOperation without existing checkpoint."""
+    """Ensure RecoverableOperation without existing checkpoint."""
     with tempfile.TemporaryDirectory() as tmpdir:
         with patch("cerebrate_file.error_recovery.Path") as mock_path:
             mock_path.return_value = Path(tmpdir)
@@ -224,7 +224,7 @@ def test_recoverable_operation_no_checkpoint():
 
 
 def test_recoverable_operation_with_checkpoint():
-    """Test RecoverableOperation resuming from checkpoint."""
+    """Ensure RecoverableOperation resuming from checkpoint."""
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a checkpoint
         checkpoint_data = {
@@ -255,7 +255,7 @@ def test_recoverable_operation_with_checkpoint():
 
 
 def test_recoverable_operation_should_skip():
-    """Test RecoverableOperation skip logic."""
+    """Ensure RecoverableOperation skip logic."""
     with RecoverableOperation("test_op") as op:
         op.checkpoint_data = {"processed_items": ["item1", "item2"]}
 

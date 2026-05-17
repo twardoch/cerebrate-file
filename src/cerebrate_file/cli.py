@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # this_file: src/cerebrate_file/cli.py
 
-"""CLI interface for cerebrate_file package.
+"""Command-line entrypoint for cerebrate_file.
 
-This module provides the command-line interface using Fire,
-orchestrating the document processing pipeline.
+Wires up the Fire CLI and runs the chunking pipeline.
 """
 
 import builtins
@@ -67,7 +66,7 @@ def run(
     force: bool = False,
     unrestricted: bool = False,
 ) -> None:
-    """Process large documents by chunking for LLM inference.
+    """Chop up a large document and feed it to an LLM chunk by chunk.
 
     Model and inference parameters are loaded from configuration files:
     - Built-in: default_config.toml (in package)
@@ -130,7 +129,7 @@ def run(
             builtins.print = original_print
 
     def _execute() -> None:
-        """Execute the main CLI workflow."""
+        """Run the main pipeline."""
 
         nonlocal output_data
 
@@ -694,7 +693,7 @@ def _show_dry_run_analysis(
     max_tokens_ratio: int,
     metadata,
 ) -> None:
-    """Show dry-run analysis output."""
+    """Print what *would* happen, without hitting the API."""
     print("\n🔍 DRY-RUN MODE - No API calls will be made\n")
 
     # Display chunk analysis
@@ -766,7 +765,7 @@ def _show_dry_run_analysis(
 
 
 def _report_zero_output_failure(state: ProcessingState, input_path: str, output_path: str) -> None:
-    """Emit diagnostics and exit when every chunk generated zero tokens."""
+    """Crash loudly if the model spit out absolutely nothing across all chunks."""
 
     target_desc = "stdout" if output_path == "-" else output_path
     zero_chunks = [
@@ -774,7 +773,7 @@ def _report_zero_output_failure(state: ProcessingState, input_path: str, output_
     ]
 
     print(
-        f"❌ Cerebras returned zero tokens for the document – no data was written to {target_desc}."
+        f"❌ Cerebras returned zero tokens for the document- no data was written to {target_desc}."
     )
     print(f"   Input file remains unchanged: {input_path}")
 

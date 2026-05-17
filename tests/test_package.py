@@ -1,4 +1,4 @@
-"""Test suite for cerebrate_file."""
+"""Ensure suite for cerebrate_file."""
 
 
 def test_version():

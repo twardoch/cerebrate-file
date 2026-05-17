@@ -19,10 +19,10 @@ from cerebrate_file.prompt_library import (
 
 
 class TestPromptLibrary:
-    """Test prompt library functionality."""
+    """Ensure prompt library functionality."""
 
     def test_get_prompt_library_path(self):
-        """Test that prompt library path is correctly determined."""
+        """Ensure that prompt library path is correctly determined."""
         prompt_path = get_prompt_library_path()
 
         # Should return a Path object
@@ -33,18 +33,18 @@ class TestPromptLibrary:
         assert "cerebrate_file" in str(prompt_path)
 
     def test_resolve_prompt_file_direct_path(self, tmp_path):
-        """Test resolving a prompt file with a direct path."""
+        """Ensure resolving a prompt file with a direct path."""
         # Create a test prompt file
         test_prompt = tmp_path / "test_prompt.txt"
-        test_prompt.write_text("Test prompt content")
+        test_prompt.write_text("Ensure prompt content")
 
         # Should find the file using direct path
         resolved = resolve_prompt_file(str(test_prompt))
         assert resolved == test_prompt
 
     def test_resolve_prompt_file_from_library(self):
-        """Test resolving a prompt file from the library."""
-        # Test with the actual prompt file we added
+        """Ensure resolving a prompt file from the library."""
+        # Ensure with the actual prompt file we added
         resolved = resolve_prompt_file("fix-pdf-extracted-text.xml")
 
         # Should find the file in the library
@@ -53,7 +53,7 @@ class TestPromptLibrary:
         assert "prompts" in str(resolved)
 
     def test_resolve_prompt_file_not_found(self):
-        """Test behavior when prompt file is not found."""
+        """Ensure behavior when prompt file is not found."""
         # Non-existent file
         resolved = resolve_prompt_file("non_existent_prompt.txt")
 
@@ -61,7 +61,7 @@ class TestPromptLibrary:
         assert resolved is None
 
     def test_resolve_prompt_file_with_path_fallback(self):
-        """Test that filename is tried if full path doesn't exist in library."""
+        """Ensure that filename is tried if full path doesn't exist in library."""
         # Try with a path that doesn't exist, but filename might
         with patch("cerebrate_file.prompt_library.get_prompt_library_path") as mock_get_path:
             # Create a mock library with a test file
@@ -81,8 +81,8 @@ class TestPromptLibrary:
             assert mock_library.__truediv__.called
 
     def test_build_base_prompt_with_library_file(self):
-        """Test that build_base_prompt works with library files."""
-        # Test with actual library file
+        """Ensure that build_base_prompt works with library files."""
+        # Ensure with actual library file
         prompt_text, token_count = build_base_prompt("fix-pdf-extracted-text.xml", None)
 
         # Should have loaded content
@@ -93,7 +93,7 @@ class TestPromptLibrary:
         assert "document restoration specialist" in prompt_text
 
     def test_build_base_prompt_with_direct_file(self, tmp_path):
-        """Test that build_base_prompt works with direct file paths."""
+        """Ensure that build_base_prompt works with direct file paths."""
         # Create a test prompt file
         test_prompt = tmp_path / "test_prompt.txt"
         test_prompt.write_text("Direct prompt content")
@@ -106,7 +106,7 @@ class TestPromptLibrary:
         assert token_count > 0
 
     def test_build_base_prompt_with_missing_file(self):
-        """Test that build_base_prompt fails gracefully with missing file."""
+        """Ensure that build_base_prompt fails gracefully with missing file."""
         with pytest.raises(SystemExit):
             build_base_prompt("definitely_non_existent_file.txt", None)
 
@@ -115,10 +115,10 @@ class TestPromptLibraryIntegration:
     """Integration tests for prompt library with CLI."""
 
     def test_cli_can_use_library_prompt(self, tmp_path):
-        """Test that CLI can use prompts from the library."""
+        """Ensure that CLI can use prompts from the library."""
         # Create a test input file
         input_file = tmp_path / "input.txt"
-        input_file.write_text("Test content to process")
+        input_file.write_text("Ensure content to process")
 
         # Mock the necessary components to avoid actual API calls
         with (
@@ -148,7 +148,7 @@ class TestPromptLibraryIntegration:
                 pass
 
     def test_prompt_library_listing(self, capsys):
-        """Test that available prompts are listed when file not found."""
+        """Ensure that available prompts are listed when file not found."""
         # Try to resolve a non-existent prompt
         resolve_prompt_file("non_existent.txt")
 

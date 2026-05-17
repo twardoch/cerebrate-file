@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # this_file: src/cerebrate_file/error_recovery.py
 
-"""Error recovery and resilience utilities for cerebrate_file package.
+"""How cerebrate_file handles failures and bounces back.
 
-This module provides automatic retry mechanisms, helpful error messages,
-and recovery strategies for transient failures.
+Provides auto-retries, human-readable error messages, and
+checkpointing so transient API hiccups do not ruin a massive job.
 """
 
 import functools
@@ -29,7 +29,7 @@ T = TypeVar("T")
 
 
 class RetryConfig:
-    """Configuration for retry behavior."""
+    """How hard should we try before giving up?"""
 
     def __init__(
         self,
@@ -55,7 +55,7 @@ class RetryConfig:
         self.jitter = jitter
 
     def get_delay(self, attempt: int) -> float:
-        """Calculate delay for given attempt number.
+        """Figure out how many seconds to wait before the next try.
 
         Args:
             attempt: Attempt number (0-based)
@@ -78,7 +78,7 @@ def with_retry(
     retryable_errors: tuple = (APIError, ConnectionError, TimeoutError),
     on_retry: Callable[[Exception, int], None] | None = None,
 ) -> Callable:
-    """Decorator to add retry logic to functions.
+    """Wrap a function in a retry loop. If it fails, wait and try again.
 
     Args:
         func: Function to wrap
@@ -129,7 +129,7 @@ def with_retry(
 
 
 def format_error_with_suggestions(error: Exception) -> Exception:
-    """Format error with helpful suggestions for resolution.
+    """Format error messages so they actually help the user fix the problem.
 
     Args:
         error: Original exception
@@ -225,7 +225,7 @@ def format_error_with_suggestions(error: Exception) -> Exception:
 
 
 def format_error_message(error: Exception) -> str:
-    """Format error message with helpful context.
+    """Format the error and attach suggestions.
 
     Args:
         error: Exception to format
@@ -242,7 +242,7 @@ def save_checkpoint(
     checkpoint_dir: str = ".cerebrate_checkpoints",
     checkpoint_name: str = "checkpoint",
 ) -> Path:
-    """Save processing checkpoint for recovery.
+    """Write a checkpoint file so we can resume if the script dies.
 
     Args:
         data: Data to save in checkpoint
@@ -277,7 +277,7 @@ def load_checkpoint(
     checkpoint_name: str = "checkpoint",
     max_age_hours: float = 24,
 ) -> dict | None:
-    """Load processing checkpoint if available and recent.
+    """Read a checkpoint file if it exists and is fresh.
 
     Args:
         checkpoint_dir: Directory containing checkpoints
@@ -311,7 +311,7 @@ def check_optional_dependency(
     package_name: str | None = None,
     feature_name: str | None = None,
 ) -> tuple[bool, str | None]:
-    """Check if optional dependency is available with helpful message.
+    """Check if a package is installed. If not, tell the user how to get it.
 
     Args:
         module_name: Python module to import
@@ -340,7 +340,7 @@ def check_optional_dependency(
 
 
 class RecoverableOperation:
-    """Context manager for operations that support checkpointing."""
+    """A block that automatically loads checkpoints when it starts and deletes them when it succeeds."""
 
     def __init__(
         self,
@@ -379,7 +379,7 @@ class RecoverableOperation:
                 checkpoint_path.unlink()
 
     def update(self, **kwargs):
-        """Update checkpoint data and save if needed."""
+        """Record progress. Save to disk if we hit the interval."""
         self.checkpoint_data.update(kwargs)
         self.processed_count += 1
 
@@ -388,7 +388,7 @@ class RecoverableOperation:
             save_checkpoint(self.checkpoint_data, checkpoint_name=self.operation_name)
 
     def should_skip(self, item_id: Any) -> bool:
-        """Check if item should be skipped based on checkpoint."""
+        """Did we already process this item before the crash?"""
         if not self.enable_checkpoints:
             return False
 

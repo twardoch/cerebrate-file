@@ -1,6 +1,20 @@
 
 # Changelog
 
+## [Unreleased] - 2026-07-05
+
+### Fixed
+- `make_request_with_fallback` no longer crashes with `AttributeError` when no chunk ever parsed rate-limit headers (`state.last_rate_status` could be `None`).
+- Single-file progress display used the wrong display type, colliding with the recursive-mode type.
+- Recursive-mode integration test now resolves paths, fixing a false failure on macOS (`/var` → `/private/var` symlink).
+- `test_full_retry_flow` runs fully offline again — it previously reached a live fallback endpoint and asserted stale retry behaviour.
+
+### Changed
+- Test suite is fully offline: every Cerebras/OpenAI path is mocked (227 tests, green).
+- Clean `ruff check`, `ruff format`, and `mypy` across `src` and `tests`.
+- Added `pytest-mock` and `pytest-timeout` to the `test` extra.
+- Added a project icon.
+
 ## [Unreleased] - 2026-01-20
 
 ### Changed

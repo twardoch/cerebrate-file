@@ -12,6 +12,7 @@ import json
 import time
 from collections.abc import Callable
 from pathlib import Path
+from types import TracebackType
 from typing import Any, TypeVar
 
 from .constants import APIError, ValidationError
@@ -94,7 +95,7 @@ def with_retry(
 
     def decorator(f: Callable[..., T]) -> Callable[..., T]:
         @functools.wraps(f)
-        def wrapper(*args, **kwargs) -> T:
+        def wrapper(*args: Any, **kwargs: Any) -> T:
             last_error = None
 
             for attempt in range(config.max_attempts):
@@ -117,9 +118,11 @@ def with_retry(
                         # Final attempt failed
                         raise format_error_with_suggestions(e) from e
 
-            # Should not reach here, but handle it
+            # Loop always returns or raises above; this guards the theoretical
+            # zero-attempt / no-error fall-through so the function is total.
             if last_error:
                 raise last_error
+            raise RuntimeError("Retry wrapper exited without a result")
 
         return wrapper
 
@@ -294,14 +297,15 @@ def load_checkpoint(
 
     try:
         with checkpoint_path.open() as f:
-            checkpoint_data = json.load(f)
+            checkpoint_data: dict[str, Any] = json.load(f)
 
         # Check age
         age_hours = (time.time() - checkpoint_data["timestamp"]) / 3600
         if age_hours > max_age_hours:
             return None
 
-        return checkpoint_data["data"]
+        data: dict[Any, Any] | None = checkpoint_data["data"]
+        return data
     except (json.JSONDecodeError, KeyError, OSError):
         return None
 
@@ -359,9 +363,9 @@ class RecoverableOperation:
         self.checkpoint_interval = checkpoint_interval
         self.enable_checkpoints = enable_checkpoints
         self.processed_count = 0
-        self.checkpoint_data = {}
+        self.checkpoint_data: dict[str, Any] = {}
 
-    def __enter__(self):
+    def __enter__(self) -> "RecoverableOperation":
         """Enter context and load any existing checkpoint."""
         if self.enable_checkpoints:
             self.checkpoint_data = load_checkpoint(checkpoint_name=self.operation_name) or {}
@@ -370,7 +374,12 @@ class RecoverableOperation:
                 print(f"Resuming from checkpoint: {self.processed_count} items already processed")
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         """Clean up checkpoints on successful completion."""
         if exc_type is None and self.enable_checkpoints:
             # Operation completed successfully, clean up checkpoint
@@ -378,7 +387,7 @@ class RecoverableOperation:
             if checkpoint_path.exists():
                 checkpoint_path.unlink()
 
-    def update(self, **kwargs):
+    def update(self, **kwargs: Any) -> None:
         """Record progress. Save to disk if we hit the interval."""
         self.checkpoint_data.update(kwargs)
         self.processed_count += 1

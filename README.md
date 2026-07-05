@@ -1,3 +1,5 @@
+<p align="center"><img src="icon.png" alt="cerebrate-file" width="160"></p>
+
 # cerebrate-file
 
 Feed large documents to the Cerebras AI cloud — chunk by chunk, at inference speeds that make OpenAI look sluggish.

@@ -5,8 +5,6 @@
 
 from datetime import datetime, timedelta
 
-import pytest
-
 from cerebrate_file.models import (
     APIConfig,
     Chunk,

@@ -15,7 +15,6 @@ from cerebrate_file.chunking import (
     get_chunking_strategy,
 )
 from cerebrate_file.models import Chunk, ChunkingConfig
-from cerebrate_file.tokenizer import get_tokenizer_manager
 
 
 @pytest.fixture

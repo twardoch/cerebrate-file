@@ -12,7 +12,6 @@ This module handles loading and merging configuration from:
 
 import os
 from dataclasses import dataclass, field
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -22,7 +21,7 @@ from loguru import logger
 try:
     import tomllib
 except ImportError:
-    import tomli as tomllib  # type: ignore[import-not-found]
+    import tomli as tomllib
 
 __all__ = [
     "InferenceConfig",
@@ -112,8 +111,9 @@ class Settings:
 def _load_toml_file(path: Path) -> dict[str, Any]:
     """Load a TOML file and return its contents."""
     try:
-        with open(path, "rb") as f:
-            return tomllib.load(f)
+        with path.open("rb") as f:
+            data: dict[str, Any] = tomllib.load(f)
+        return data
     except FileNotFoundError:
         return {}
     except Exception as e:
@@ -132,7 +132,7 @@ def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any
     return result
 
 
-def _parse_model_config(data: dict[str, Any], key: str = "primary") -> ModelConfig | None:
+def _parse_model_config(data: dict[str, Any]) -> ModelConfig | None:
     """Parse a model configuration from dict."""
     if not data:
         return None
@@ -156,7 +156,7 @@ def _parse_fallback_models(models_data: dict[str, Any]) -> list[ModelConfig]:
     for i in range(1, 10):  # Support up to 9 fallbacks
         key = f"fallback{i}"
         if key in models_data:
-            model = _parse_model_config(models_data[key], key)
+            model = _parse_model_config(models_data[key])
             if model and model.name:  # Only add if it has a name
                 fallbacks.append(model)
 
@@ -243,7 +243,7 @@ def _load_settings_impl() -> Settings:
 
     # Parse model configs
     models_data = config_data.get("models", {})
-    primary_model = _parse_model_config(models_data.get("primary", {}), "primary")
+    primary_model = _parse_model_config(models_data.get("primary", {}))
     fallback_models = _parse_fallback_models(models_data)
 
     # Parse logging config

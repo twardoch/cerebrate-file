@@ -4,6 +4,7 @@
 """Tests for recursive file processing in cerebrate_file package."""
 
 import tempfile
+from concurrent.futures import Future
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
@@ -340,15 +341,18 @@ class TestRecursiveIntegration:
             assert output_dir.exists()
             assert (output_dir / "subdir").exists()
 
-            # Mock executor for parallel processing
+            # Mock executor for parallel processing. submit() must return real
+            # Futures — process_files_parallel drives them through as_completed,
+            # which hangs forever on bare MagicMocks.
             mock_executor_instance = MagicMock()
             mock_executor.return_value.__enter__.return_value = mock_executor_instance
-            mock_executor_instance.submit.return_value.result.return_value = (
-                Path("input"),
-                Path("output"),
-                ProcessingState(),
-                None,
-            )
+
+            def make_future(*args, **kwargs):
+                fut: Future = Future()
+                fut.set_result((Path("input"), Path("output"), ProcessingState(), None))
+                return fut
+
+            mock_executor_instance.submit.side_effect = make_future
 
             # Process files (mocked)
             def mock_process(input_path: Path, output_path: Path):

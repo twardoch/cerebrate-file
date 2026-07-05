@@ -311,7 +311,7 @@ class CodeChunker(ChunkingStrategy):
         lines = content.splitlines(keepends=True)
 
         # Track current chunk
-        current_chunk = []
+        current_chunk: list[str] = []
         current_tokens = 0
 
         # Track if we're inside a multi-line structure
@@ -446,7 +446,7 @@ class XmlChunker(ChunkingStrategy):
             return content
 
         result = []
-        current_text = []
+        current_text: list[str] = []
         i = 0
         depth = 0  # Track element nesting depth
 
@@ -559,10 +559,10 @@ class XmlChunker(ChunkingStrategy):
         Returns:
             List of (start, end, depth) tuples for each element
         """
-        boundaries = []
+        boundaries: list[tuple[int, int, int]] = []
         i = 0
         depth = 0
-        element_start = None
+        element_start: int | None = None
 
         while i < len(content):
             if content[i] == "<":
@@ -650,7 +650,7 @@ class XmlChunker(ChunkingStrategy):
             return TextChunker(self.chunk_size).chunk(normalized)
 
         chunks = []
-        current_elements = []
+        current_elements: list[str] = []
         current_tokens = 0
 
         for start, end, _depth in boundaries:

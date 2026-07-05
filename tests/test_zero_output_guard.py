@@ -104,13 +104,13 @@ def test_cli_aborts_before_overwriting_when_total_output_zero(
         patch("cerebrate_file.cli.process_document", return_value=("", mocked_state)),
         patch("cerebras.cloud.sdk.Cerebras"),
         patch("cerebrate_file.cli.write_output_atomically") as mock_writer,
+        pytest.raises(SystemExit) as excinfo,
     ):
-        with pytest.raises(SystemExit) as excinfo:
-            cli_run(
-                input_data=str(input_file),
-                output_data=None,
-                verbose=True,
-            )
+        cli_run(
+            input_data=str(input_file),
+            output_data=None,
+            verbose=True,
+        )
 
     assert excinfo.value.code == 1
     assert input_file.read_text(encoding="utf-8") == "source text"

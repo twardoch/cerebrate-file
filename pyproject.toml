@@ -85,6 +85,8 @@ test = [
     'pytest-xdist>=3.6.1', # Parallel test execution - Keep pytest-xdist as is, update if newer pytest-xdist version is required
     'pytest-benchmark[histogram]>=5.1.0', # Benchmarking plugin - Keep pytest-benchmark as is, update if newer pytest-benchmark version is required
     'pytest-asyncio>=0.25.3', # Async test support - Keep pytest-asyncio as is, update if newer pytest-asyncio version is required
+    'pytest-mock>=3.14.0', # `mocker` fixture used by test_api_retry
+    'pytest-timeout>=2.3.1', # Per-test timeout guards against hung parallel/API tests
     'coverage[toml]>=7.6.12',
 ]
 
@@ -312,6 +314,25 @@ module = ["tests.*"]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 
+# Third-party dependencies that ship no type stubs (and stdlib tomllib, which is
+# absent on the 3.10 target). mypy runs in an isolated env without these installed.
+[[tool.mypy.overrides]]
+module = [
+    "cerebras.*",
+    "dotenv",
+    "fire",
+    "frontmatter",
+    "loguru",
+    "openai",
+    "qwen_tokenizer",
+    "rich.*",
+    "semantic_text_splitter",
+    "tenacity",
+    "tomllib",
+    "tomli",
+]
+ignore_missing_imports = true
+
 #------------------------------------------------------------------------------
 # PYTEST CONFIGURATION
 # Configuration for pytest, including markers, options, and benchmark settings.
@@ -421,6 +442,7 @@ ban-relative-imports = 'all' # Ban all relative imports for consistency
 'tests/**/*' = [
     'PLR2004', # Allow magic values in tests for readability
     'S101', # Allow assertions in tests
-    'TID252'
-    # Allow relative imports in tests for convenience
+    'TID252', # Allow relative imports in tests for convenience
+    'ARG001', # Mock/callback stand-ins must match a signature but ignore some args
+    'ARG002', # Same, for unused method arguments in fakes/fixtures
 ]

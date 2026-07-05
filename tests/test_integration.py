@@ -7,6 +7,7 @@ These tests verify that all components work together correctly
 in realistic usage scenarios.
 """
 
+import contextlib
 import os
 import tempfile
 from pathlib import Path
@@ -14,9 +15,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from cerebrate_file.cerebrate_file import process_document
 from cerebrate_file.chunking import create_chunks
-from cerebrate_file.config import setup_logging, validate_inputs
 from cerebrate_file.file_utils import read_file_safely, write_output_atomically
 from cerebrate_file.models import APIConfig, ChunkingConfig
 
@@ -60,18 +59,15 @@ def test_full_pipeline_dry_run(sample_text_file):
     from cerebrate_file.cli import run as cli_run
 
     # Call the function directly with parameters
-    with patch("cerebrate_file.cli.sys.exit"):
-        # Should complete without errors in dry-run mode
-        try:
-            cli_run(
-                input_data=sample_text_file,
-                dry_run=True,
-                chunk_size=1000,
-                data_format="markdown",
-                verbose=False,
-            )
-        except SystemExit:
-            pass  # Expected in dry-run mode
+    with patch("cerebrate_file.cli.sys.exit"), contextlib.suppress(SystemExit):
+        # Should complete without errors in dry-run mode (SystemExit expected)
+        cli_run(
+            input_data=sample_text_file,
+            dry_run=True,
+            chunk_size=1000,
+            data_format="markdown",
+            verbose=False,
+        )
 
 
 def test_file_io_operations(sample_text_file):

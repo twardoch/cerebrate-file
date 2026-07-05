@@ -11,7 +11,9 @@ import contextlib
 import json
 import os
 import sys
+from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 from cerebras.cloud.sdk import Cerebras
 from dotenv import load_dotenv
@@ -38,7 +40,7 @@ from .file_utils import (
     read_file_safely,
     write_output_atomically,
 )
-from .models import ProcessingState
+from .models import Chunk, ProcessingState
 from .settings import get_settings
 from .tokenizer import encode_text
 from .ui import FileProgressDisplay
@@ -114,10 +116,10 @@ def run(
     streaming_output_requested = (output_data == "-") or (output_data is None and streaming_input)
 
     @contextlib.contextmanager
-    def _redirect_print_to_stderr():
+    def _redirect_print_to_stderr() -> Iterator[None]:
         original_print = builtins.print
 
-        def _streaming_print(*args, **kwargs):
+        def _streaming_print(*args: Any, **kwargs: Any) -> None:
             if "file" not in kwargs or kwargs["file"] is None:
                 kwargs["file"] = sys.__stderr__
             original_print(*args, **kwargs)
@@ -225,7 +227,7 @@ def run(
             base_prompt, base_prompt_tokens = build_base_prompt(file_prompt, text_prompt)
 
             # Define processing function for each file
-            def process_file_wrapper(input_file: Path, output_file: Path):
+            def process_file_wrapper(input_file: Path, output_file: Path) -> ProcessingState:
                 """Process a single file."""
                 from .models import ProcessingState
 
@@ -234,7 +236,7 @@ def run(
                     input_content = read_file_safely(str(input_file))
 
                     # Handle frontmatter parsing and metadata processing for --explain mode
-                    metadata = {}
+                    metadata: dict[str, Any] = {}
                     content_to_chunk = input_content
 
                     if explain:
@@ -302,7 +304,7 @@ def run(
                         progress_display.start_file(str(input_file), str(output_file), len(chunks))
 
                     # Create progress callback for this file
-                    def file_progress_callback(chunks_done: int, remaining_calls: int):
+                    def file_progress_callback(chunks_done: int, remaining_calls: int) -> None:
                         if progress_display:
                             progress_display.update_file_progress(
                                 str(input_file), chunks_done, remaining_calls
@@ -444,7 +446,7 @@ def run(
         logger.info(f"Input loaded: {len(input_content)} characters")
 
         # Handle frontmatter parsing and metadata processing for --explain mode
-        metadata = {}
+        metadata: dict[str, Any] = {}
         content_to_chunk = input_content
 
         if explain:
@@ -564,16 +566,18 @@ def run(
             logger.error(f"Failed to initialize Cerebras client: {e}")
             sys.exit(1)
 
-        # Set up progress display (only for non-verbose mode)
-        progress_display = None
+        # Set up progress display (only for non-verbose mode). Distinct name from the
+        # recursive branch's MultiFileProgressDisplay so the types don't collide.
+        file_progress: FileProgressDisplay | None = None
         progress_callback = None
 
         if not verbose and not streaming_output:
-            progress_display = FileProgressDisplay()
-            progress_display.start_file_processing(input_data, output_data, len(chunks))
+            file_progress = FileProgressDisplay()
+            file_progress.start_file_processing(input_data, output_data, len(chunks))
 
-            def update_progress(chunks_completed: int, remaining_calls: int):
-                progress_display.update_progress(chunks_completed, remaining_calls)
+            def update_progress(chunks_completed: int, remaining_calls: int) -> None:
+                assert file_progress is not None
+                file_progress.update_progress(chunks_completed, remaining_calls)
 
             progress_callback = update_progress
 
@@ -620,8 +624,8 @@ def run(
             )
 
             # Finish progress display
-            if progress_display:
-                progress_display.finish_file_processing()
+            if file_progress:
+                file_progress.finish_file_processing()
 
             # Abort before finalizing if the API never returned tokens
             if state.total_output_tokens == 0:
@@ -635,9 +639,14 @@ def run(
             progressive_writer.abort()
             raise
 
-        # Show remaining daily requests from the last chunk's rate limit headers
+        # Show remaining daily requests from the last chunk's rate limit headers.
+        # last_rate_status stays None if no chunk ever parsed rate-limit headers.
         last_rate_status = state.last_rate_status
-        if last_rate_status.headers_parsed and last_rate_status.requests_remaining is not None:
+        if (
+            last_rate_status is not None
+            and last_rate_status.headers_parsed
+            and last_rate_status.requests_remaining is not None
+        ):
             # Show remaining daily requests from rate limit headers
             print(f"📊 Remaining today: {last_rate_status.requests_remaining} requests")
 
@@ -685,13 +694,13 @@ def run(
 
 
 def _show_dry_run_analysis(
-    chunks,
+    chunks: list[Chunk],
     data_format: str,
     base_prompt: str,
     base_prompt_tokens: int,
     sample_size: int,
     max_tokens_ratio: int,
-    metadata,
+    metadata: dict[str, Any] | None,
 ) -> None:
     """Print what *would* happen, without hitting the API."""
     print("\n🔍 DRY-RUN MODE - No API calls will be made\n")

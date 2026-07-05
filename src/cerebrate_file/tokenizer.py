@@ -7,6 +7,8 @@ This module handles text encoding and decoding with fallback mechanisms
 for when the qwen-tokenizer dependency is not available.
 """
 
+from typing import Any
+
 from loguru import logger
 
 from .constants import CHARS_PER_TOKEN_FALLBACK, TokenizationError
@@ -36,7 +38,8 @@ class TokenizerManager:
         """
         self.model_name = model_name
         self.strict = strict
-        self._tokenizer: object | None = None
+        # Untyped: qwen_tokenizer ships no stubs, so the concrete tokenizer is Any.
+        self._tokenizer: Any = None
         self._initialized = False
         self._initialize_tokenizer()
 
@@ -100,7 +103,7 @@ class TokenizerManager:
             return list(range(len(text) // CHARS_PER_TOKEN_FALLBACK + 1))
 
         try:
-            return self._tokenizer.encode(text)
+            return list(self._tokenizer.encode(text))
         except Exception as e:
             error_msg = f"Tokenizer encode failed: {e}"
             if self.strict:
@@ -131,7 +134,7 @@ class TokenizerManager:
         try:
             # Check if tokenizer has decode method
             if hasattr(self._tokenizer, "decode"):
-                return self._tokenizer.decode(tokens)
+                return str(self._tokenizer.decode(tokens))
             else:
                 # Fallback: this is a limitation we'll handle gracefully
                 logger.debug("Tokenizer decode not available, using fallback")

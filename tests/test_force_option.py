@@ -88,7 +88,7 @@ def test_force_option_when_output_exists_single_file(sample_input_file, existing
         )
 
         # Output file should still contain original content
-        with open(existing_output_file) as f:
+        with Path(existing_output_file).open() as f:
             content = f.read()
         assert "Existing output content" in content
         assert "Ensure Document" not in content
@@ -259,7 +259,7 @@ def test_force_option_dry_run_mode(sample_input_file, existing_output_file):
 
         # In dry-run mode, force check should be bypassed
         # Original content should remain unchanged
-        with open(existing_output_file) as f:
+        with Path(existing_output_file).open() as f:
             content = f.read()
         assert "Existing output content" in content
 

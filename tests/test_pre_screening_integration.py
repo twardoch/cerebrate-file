@@ -8,8 +8,6 @@ the recursive processing CLI interface.
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from cerebrate_file.cli import run
 
 
@@ -34,37 +32,39 @@ class TestPreScreeningIntegration:
         (output_dir / "file3.md").write_text("existing output 3")
 
         # Mock the environment and processing to avoid actual API calls
-        with patch.dict("os.environ", {"CEREBRAS_API_KEY": "csk-test-key-12345678"}):
-            with patch("cerebrate_file.config.validate_environment"):
-                with patch("cerebrate_file.recursive.process_files_parallel") as mock_process:
-                    # Configure mock to return empty result
-                    mock_result = MagicMock()
-                    mock_result.successful = []
-                    mock_result.failed = []
-                    mock_result.total_input_tokens = 0
-                    mock_result.total_output_tokens = 0
-                    mock_result.total_time = 0.0
-                    mock_process.return_value = mock_result
+        with (
+            patch.dict("os.environ", {"CEREBRAS_API_KEY": "csk-test-key-12345678"}),
+            patch("cerebrate_file.config.validate_environment"),
+            patch("cerebrate_file.recursive.process_files_parallel") as mock_process,
+        ):
+            # Configure mock to return empty result
+            mock_result = MagicMock()
+            mock_result.successful = []
+            mock_result.failed = []
+            mock_result.total_input_tokens = 0
+            mock_result.total_output_tokens = 0
+            mock_result.total_time = 0.0
+            mock_process.return_value = mock_result
 
-                    # Run with recursive mode, no force
-                    run(
-                        input_data=str(input_dir),
-                        output_data=str(output_dir),
-                        recurse="*.md",
-                        force=False,
-                        dry_run=False,
-                        verbose=True,
-                    )
+            # Run with recursive mode, no force
+            run(
+                input_data=str(input_dir),
+                output_data=str(output_dir),
+                recurse="*.md",
+                force=False,
+                dry_run=False,
+                verbose=True,
+            )
 
-                    # Check that only file2.md was scheduled for processing
-                    mock_process.assert_called_once()
-                    call_args = mock_process.call_args[0]
-                    file_pairs = call_args[0]  # First argument is file_pairs
+            # Check that only file2.md was scheduled for processing
+            mock_process.assert_called_once()
+            call_args = mock_process.call_args[0]
+            file_pairs = call_args[0]  # First argument is file_pairs
 
-                    assert len(file_pairs) == 1
-                    input_file, output_file = file_pairs[0]
-                    assert input_file.name == "file2.md"
-                    assert output_file.name == "file2.md"
+            assert len(file_pairs) == 1
+            input_file, output_file = file_pairs[0]
+            assert input_file.name == "file2.md"
+            assert output_file.name == "file2.md"
 
         # Check console output
         captured = capsys.readouterr()
@@ -90,34 +90,36 @@ class TestPreScreeningIntegration:
         (output_dir / "file2.md").write_text("existing output 2")
 
         # Mock the environment and processing to avoid actual API calls
-        with patch.dict("os.environ", {"CEREBRAS_API_KEY": "csk-test-key-12345678"}):
-            with patch("cerebrate_file.config.validate_environment"):
-                with patch("cerebrate_file.recursive.process_files_parallel") as mock_process:
-                    # Configure mock to return empty result
-                    mock_result = MagicMock()
-                    mock_result.successful = []
-                    mock_result.failed = []
-                    mock_result.total_input_tokens = 0
-                    mock_result.total_output_tokens = 0
-                    mock_result.total_time = 0.0
-                    mock_process.return_value = mock_result
+        with (
+            patch.dict("os.environ", {"CEREBRAS_API_KEY": "csk-test-key-12345678"}),
+            patch("cerebrate_file.config.validate_environment"),
+            patch("cerebrate_file.recursive.process_files_parallel") as mock_process,
+        ):
+            # Configure mock to return empty result
+            mock_result = MagicMock()
+            mock_result.successful = []
+            mock_result.failed = []
+            mock_result.total_input_tokens = 0
+            mock_result.total_output_tokens = 0
+            mock_result.total_time = 0.0
+            mock_process.return_value = mock_result
 
-                    # Run with recursive mode, force=True
-                    run(
-                        input_data=str(input_dir),
-                        output_data=str(output_dir),
-                        recurse="*.md",
-                        force=True,
-                        dry_run=False,
-                        verbose=True,
-                    )
+            # Run with recursive mode, force=True
+            run(
+                input_data=str(input_dir),
+                output_data=str(output_dir),
+                recurse="*.md",
+                force=True,
+                dry_run=False,
+                verbose=True,
+            )
 
-                    # Check that all files were scheduled for processing
-                    mock_process.assert_called_once()
-                    call_args = mock_process.call_args[0]
-                    file_pairs = call_args[0]  # First argument is file_pairs
+            # Check that all files were scheduled for processing
+            mock_process.assert_called_once()
+            call_args = mock_process.call_args[0]
+            file_pairs = call_args[0]  # First argument is file_pairs
 
-                    assert len(file_pairs) == 2
+            assert len(file_pairs) == 2
 
         # Check console output
         captured = capsys.readouterr()
@@ -140,17 +142,19 @@ class TestPreScreeningIntegration:
         (output_dir / "file2.md").write_text("existing output 2")
 
         # Mock the environment to avoid validation
-        with patch.dict("os.environ", {"CEREBRAS_API_KEY": "csk-test-key-12345678"}):
-            with patch("cerebrate_file.config.validate_environment"):
-                # Run with recursive mode, no force
-                run(
-                    input_data=str(input_dir),
-                    output_data=str(output_dir),
-                    recurse="*.md",
-                    force=False,
-                    dry_run=False,
-                    verbose=True,
-                )
+        with (
+            patch.dict("os.environ", {"CEREBRAS_API_KEY": "csk-test-key-12345678"}),
+            patch("cerebrate_file.config.validate_environment"),
+        ):
+            # Run with recursive mode, no force
+            run(
+                input_data=str(input_dir),
+                output_data=str(output_dir),
+                recurse="*.md",
+                force=False,
+                dry_run=False,
+                verbose=True,
+            )
 
         # Check console output
         captured = capsys.readouterr()
@@ -176,17 +180,19 @@ class TestPreScreeningIntegration:
         (output_dir / "file1.md").write_text("existing output 1")
 
         # Mock the environment to avoid validation
-        with patch.dict("os.environ", {"CEREBRAS_API_KEY": "csk-test-key-12345678"}):
-            with patch("cerebrate_file.config.validate_environment"):
-                # Run with dry-run mode
-                run(
-                    input_data=str(input_dir),
-                    output_data=str(output_dir),
-                    recurse="*.md",
-                    force=False,
-                    dry_run=True,
-                    verbose=True,
-                )
+        with (
+            patch.dict("os.environ", {"CEREBRAS_API_KEY": "csk-test-key-12345678"}),
+            patch("cerebrate_file.config.validate_environment"),
+        ):
+            # Run with dry-run mode
+            run(
+                input_data=str(input_dir),
+                output_data=str(output_dir),
+                recurse="*.md",
+                force=False,
+                dry_run=True,
+                verbose=True,
+            )
 
         # Check console output
         captured = capsys.readouterr()
@@ -208,34 +214,36 @@ class TestPreScreeningIntegration:
         (input_dir / "file2.md").write_text("content 2")
 
         # Mock the environment and processing to avoid actual API calls
-        with patch.dict("os.environ", {"CEREBRAS_API_KEY": "csk-test-key-12345678"}):
-            with patch("cerebrate_file.config.validate_environment"):
-                with patch("cerebrate_file.recursive.process_files_parallel") as mock_process:
-                    # Configure mock to return empty result
-                    mock_result = MagicMock()
-                    mock_result.successful = []
-                    mock_result.failed = []
-                    mock_result.total_input_tokens = 0
-                    mock_result.total_output_tokens = 0
-                    mock_result.total_time = 0.0
-                    mock_process.return_value = mock_result
+        with (
+            patch.dict("os.environ", {"CEREBRAS_API_KEY": "csk-test-key-12345678"}),
+            patch("cerebrate_file.config.validate_environment"),
+            patch("cerebrate_file.recursive.process_files_parallel") as mock_process,
+        ):
+            # Configure mock to return empty result
+            mock_result = MagicMock()
+            mock_result.successful = []
+            mock_result.failed = []
+            mock_result.total_input_tokens = 0
+            mock_result.total_output_tokens = 0
+            mock_result.total_time = 0.0
+            mock_process.return_value = mock_result
 
-                    # Run with recursive mode, no output directory (in-place)
-                    run(
-                        input_data=str(input_dir),
-                        output_data=None,  # In-place processing
-                        recurse="*.md",
-                        force=False,
-                        dry_run=False,
-                        verbose=True,
-                    )
+            # Run with recursive mode, no output directory (in-place)
+            run(
+                input_data=str(input_dir),
+                output_data=None,  # In-place processing
+                recurse="*.md",
+                force=False,
+                dry_run=False,
+                verbose=True,
+            )
 
-                    # Check that all files were scheduled for processing (in-place doesn't get filtered)
-                    mock_process.assert_called_once()
-                    call_args = mock_process.call_args[0]
-                    file_pairs = call_args[0]  # First argument is file_pairs
+            # Check that all files were scheduled for processing (in-place doesn't get filtered)
+            mock_process.assert_called_once()
+            call_args = mock_process.call_args[0]
+            file_pairs = call_args[0]  # First argument is file_pairs
 
-                    assert len(file_pairs) == 2
+            assert len(file_pairs) == 2
 
         # Check console output - should not show any skipped files
         captured = capsys.readouterr()

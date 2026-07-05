@@ -10,7 +10,7 @@ import pytest
 
 from cerebrate_file.api_client import parse_rate_limit_headers
 from cerebrate_file.file_utils import write_output_atomically
-from cerebrate_file.models import Chunk, ProcessingState, RateLimitStatus
+from cerebrate_file.models import Chunk, RateLimitStatus
 
 
 def test_call_counting_bug():
@@ -36,7 +36,7 @@ def test_frontmatter_missing_when_metadata_empty():
         # Ensure with empty metadata in explain mode
         write_output_atomically("test content", test_file, {})
 
-        with open(test_file) as f:
+        with Path(test_file).open() as f:
             content = f.read()
 
         # Should have frontmatter even with empty metadata
@@ -56,7 +56,7 @@ def test_frontmatter_not_written_when_metadata_none():
         # Ensure with None metadata (normal mode)
         write_output_atomically("test content", test_file, None)
 
-        with open(test_file) as f:
+        with Path(test_file).open() as f:
             content = f.read()
 
         # Should not have frontmatter

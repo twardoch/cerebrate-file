@@ -3,8 +3,6 @@
 
 """Tests for brace pattern expansion in recursive processing."""
 
-import pytest
-
 from cerebrate_file.recursive import expand_brace_patterns
 
 

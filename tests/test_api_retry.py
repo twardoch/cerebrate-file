@@ -125,30 +125,35 @@ def test_successful_request():
 
 
 def test_full_retry_flow(mocker):
-    """Ensure retry flow with make_request_with_fallback."""
+    """Ensure the primary model is retried with backoff after fallbacks are exhausted."""
     from cerebrate_file.api_client import make_request_with_fallback
 
-    # Mock the implementation function
-    mocked_impl = mocker.patch("cerebrate_file.api_client._make_cerebras_request_impl")
+    # No fallbacks available, so the flow is: primary fails -> retry primary.
+    # This keeps the test fully offline (FallbackClient would otherwise make a
+    # real network call to the configured OpenAI-compatible endpoint).
+    mock_settings = mocker.Mock()
+    mock_settings.rate_limiting.max_retry_attempts = 3
+    mock_settings.get_available_fallbacks.return_value = []
+    mocker.patch("cerebrate_file.api_client.get_settings", return_value=mock_settings)
 
-    # Configure: first call raises rate limit error, second call succeeds
+    # First primary attempt raises a rate-limit error; the retry succeeds.
+    mocked_impl = mocker.patch("cerebrate_file.api_client._make_cerebras_request_impl")
     mocked_impl.side_effect = [
         APIError("Error code: 429 - rate limit exceeded"),  # First call fails
-        ("Successful response", RateLimitStatus()),  # Second call succeeds
+        ("Successful response", RateLimitStatus()),  # Retry succeeds
     ]
 
-    # Mock time.sleep to avoid delays in tests
+    # Mock time.sleep to avoid backoff delays in tests
     mocker.patch("cerebrate_file.api_client.time.sleep")
 
     mock_client = Mock()
     messages = [{"role": "user", "content": "test"}]
 
-    # Call the fallback function which handles retries
     result, _, model_used = make_request_with_fallback(
         mock_client, messages, "llama3.1-8b", 1000, 0.7, 0.9
     )
 
-    # Assert we retried and got the successful response
+    # Retried the primary once (2 impl calls total) and got the successful response
     assert mocked_impl.call_count == 2
     assert result == "Successful response"
     assert model_used == "llama3.1-8b"

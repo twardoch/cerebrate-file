@@ -10,7 +10,6 @@ import pytest
 
 from cerebrate_file.models import ProcessingState
 from cerebrate_file.recursive import (
-    ProcessingResult,
     find_files_recursive,
     process_files_parallel,
     replicate_directory_structure,
@@ -52,7 +51,9 @@ class TestRecursiveIntegration:
 
     def test_simple_markdown_processing(self, temp_dir_structure):
         """Ensure basic recursive processing of markdown files."""
-        temp_dir = temp_dir_structure
+        # find_files_recursive resolves paths, so resolve here too — on macOS the
+        # temp dir lives under /var, a symlink to /private/var.
+        temp_dir = temp_dir_structure.resolve()
         output_dir = temp_dir / "output"
 
         # Find markdown files
@@ -250,9 +251,11 @@ class TestRecursiveIntegration:
             find_files_recursive(Path("/nonexistent/directory"), "*.md")
 
         # Ensure file instead of directory
-        with tempfile.NamedTemporaryFile() as temp_file:
-            with pytest.raises(ValueError, match="Input path is not a directory"):
-                find_files_recursive(Path(temp_file.name), "*.md")
+        with (
+            tempfile.NamedTemporaryFile() as temp_file,
+            pytest.raises(ValueError, match="Input path is not a directory"),
+        ):
+            find_files_recursive(Path(temp_file.name), "*.md")
 
     def test_progress_callback_integration(self, temp_dir_structure):
         """Ensure progress callback integration."""

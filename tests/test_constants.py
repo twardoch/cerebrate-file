@@ -3,8 +3,6 @@
 
 """Ensure suite for .constants module."""
 
-import pytest
-
 from cerebrate_file.constants import (
     CODE_BOUNDARY_PATTERNS,
     COMPILED_BOUNDARY_PATTERNS,

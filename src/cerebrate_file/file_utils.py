@@ -11,6 +11,7 @@ import contextlib
 import sys
 import tempfile
 from pathlib import Path
+from types import TracebackType
 from typing import Any
 
 import frontmatter
@@ -92,7 +93,9 @@ class ProgressiveFileWriter:
             self._actual_write_path = output_path_obj
 
         try:
-            self._file_handle = open(self._actual_write_path, "w", encoding="utf-8")
+            # Handle is stored on the instance and closed in finalize()/abort(),
+            # so it deliberately outlives this method (no `with` block).
+            self._file_handle = self._actual_write_path.open("w", encoding="utf-8")
             logger.debug(f"Opened file for progressive writing: {self._actual_write_path}")
         except Exception as e:
             raise FileError(
@@ -126,7 +129,7 @@ class ProgressiveFileWriter:
             Content with frontmatter prepended
         """
         post = frontmatter.Post(content, **metadata)
-        return frontmatter.dumps(post)
+        return str(frontmatter.dumps(post))
 
     def finalize(self) -> None:
         """Finalize the file writing.
@@ -182,7 +185,12 @@ class ProgressiveFileWriter:
         self.open()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         """Context manager exit."""
         if exc_type is not None:
             self.abort()

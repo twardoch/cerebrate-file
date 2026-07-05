@@ -9,8 +9,6 @@ pre-screening stage when --force is not provided.
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from cerebrate_file.file_utils import output_file_exists
 from cerebrate_file.recursive import pre_screen_files
 

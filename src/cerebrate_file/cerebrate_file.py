@@ -159,7 +159,7 @@ def prepare_chunk_messages(
 
 
 def process_document(
-    client,
+    client: Any,
     chunks: list[Chunk],
     base_prompt: str,
     base_prompt_tokens: int,
@@ -170,7 +170,7 @@ def process_document(
     sample_size: int,
     metadata: dict[str, Any] | None = None,
     verbose: bool = False,
-    progress_callback: object | None = None,
+    progress_callback: Callable[[int, int], None] | None = None,
     chunk_writer: Callable[[str], None] | None = None,
 ) -> tuple[str, ProcessingState]:
     """Stream every chunk through the Cerebras API.

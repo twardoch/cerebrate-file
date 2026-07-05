@@ -8,7 +8,6 @@ Tests the rich-based progress display components for single and multi-file proce
 
 from io import StringIO
 
-import pytest
 from rich.console import Console
 
 from cerebrate_file.ui import FileProgressDisplay, MultiFileProgressDisplay

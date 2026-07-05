@@ -97,7 +97,7 @@ def test_with_retry_non_retryable_error():
     def test_func():
         return mock_func()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Not retryable"):
         test_func()
 
     assert mock_func.call_count == 1
@@ -211,16 +211,18 @@ def test_check_optional_dependency_with_feature():
 
 def test_recoverable_operation_no_checkpoint():
     """Ensure RecoverableOperation without existing checkpoint."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        with patch("cerebrate_file.error_recovery.Path") as mock_path:
-            mock_path.return_value = Path(tmpdir)
+    with (
+        tempfile.TemporaryDirectory() as tmpdir,
+        patch("cerebrate_file.error_recovery.Path") as mock_path,
+    ):
+        mock_path.return_value = Path(tmpdir)
 
-            with RecoverableOperation("test_op") as op:
-                assert op.processed_count == 0
-                assert op.checkpoint_data == {}
+        with RecoverableOperation("test_op") as op:
+            assert op.processed_count == 0
+            assert op.checkpoint_data == {}
 
-                op.update(item="test1")
-                assert op.processed_count == 1
+            op.update(item="test1")
+            assert op.processed_count == 1
 
 
 def test_recoverable_operation_with_checkpoint():

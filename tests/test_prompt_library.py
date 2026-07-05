@@ -6,6 +6,7 @@ Tests verify that the prompt library can load prompts from both
 user-specified paths and the built-in library.
 """
 
+import contextlib
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -132,10 +133,9 @@ class TestPromptLibraryIntegration:
             # Import here to avoid issues before mocking
             from cerebrate_file.cli import run
 
-            # This should use the prompt from library
-            # We're not actually running it to avoid API calls,
-            # but we verify the prompt loading mechanism works
-            try:
+            # This should use the prompt from library. We don't actually run it
+            # (to avoid API calls); dry-run exits via SystemExit after showing info.
+            with contextlib.suppress(SystemExit):
                 run(
                     input_data=str(input_file),
                     file_prompt="fix-pdf-extracted-text.xml",
@@ -143,9 +143,6 @@ class TestPromptLibraryIntegration:
                     dry_run=True,  # Use dry-run to avoid actual processing
                     verbose=False,
                 )
-            except SystemExit:
-                # Dry-run exits after showing info
-                pass
 
     def test_prompt_library_listing(self, capsys):
         """Ensure that available prompts are listed when file not found."""

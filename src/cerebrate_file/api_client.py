@@ -13,7 +13,7 @@ import json
 import time
 from datetime import datetime, timedelta
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 from loguru import logger
 from tenacity import (
@@ -32,20 +32,20 @@ from .models import RateLimitStatus
 from .settings import ModelConfig, get_settings
 
 try:
-    import cerebras.cloud.sdk as cerebras_sdk  # type: ignore[import-not-found]
+    import cerebras.cloud.sdk as cerebras_sdk
     from cerebras.cloud.sdk import Cerebras
 except ImportError:
     cerebras_sdk = SimpleNamespace(
         APIStatusError=type("APIStatusError", (Exception,), {}),
         RateLimitError=type("RateLimitError", (Exception,), {}),
     )
-    Cerebras = None  # type: ignore[assignment]
+    Cerebras = None
 
 try:
     import openai as openai_sdk
     from openai import OpenAI
 except ImportError:
-    OpenAI = None  # type: ignore[assignment]
+    OpenAI = None
     openai_sdk = SimpleNamespace(
         APIStatusError=type("APIStatusError", (Exception,), {}),
         RateLimitError=type("RateLimitError", (Exception,), {}),
@@ -58,9 +58,9 @@ def _get_sdk_class(name: str) -> type[Exception]:
     """Fetch exception classes from the Cerebras SDK. Needed for patching and tests."""
     sdk = getattr(getattr(cerebras, "cloud", None), "sdk", cerebras_sdk)
     candidate = getattr(sdk, name, None)
-    if isinstance(candidate, type) and issubclass(candidate, BaseException):
+    if isinstance(candidate, type) and issubclass(candidate, Exception):
         return candidate
-    return getattr(cerebras_sdk, name)
+    return cast(type[Exception], getattr(cerebras_sdk, name))
 
 
 def _format_response(response: Any) -> str:
@@ -136,13 +136,11 @@ class CerebrasClient:
         self._client = None
         self.rate_status = RateLimitStatus()
 
-    def _get_client(self):
+    def _get_client(self) -> Any:
         """Fetch the active Cerebras client, or build it if missing."""
         if self._client is None:
             if Cerebras is None:
-                raise APIError(
-                    "Missing cerebras-cloud-sdk. Fix: uv add cerebras-cloud-sdk"
-                )
+                raise APIError("Missing cerebras-cloud-sdk. Fix: uv add cerebras-cloud-sdk")
             self._client = Cerebras(api_key=self.api_key)
         return self._client
 
@@ -197,7 +195,8 @@ class CerebrasClient:
         tp = top_p if top_p is not None else settings.inference.top_p
 
         client = self._get_client()
-        return explain_metadata_with_llm(
+        # explain_metadata_with_llm is Any-typed via its tenacity decorator.
+        result: dict[str, Any] = explain_metadata_with_llm(
             client,
             existing_metadata,
             first_chunk_text,
@@ -205,6 +204,7 @@ class CerebrasClient:
             temp,
             tp,
         )
+        return result
 
     def calculate_delay(self, next_chunk_tokens: int) -> float:
         """Find the right wait time before hitting the API again.
@@ -230,7 +230,7 @@ class FallbackClient:
         self.config = model_config
         self._client = None
 
-    def _get_client(self):
+    def _get_client(self) -> Any:
         """Fetch the active OpenAI client, or build it if missing."""
         if self._client is None:
             if OpenAI is None:
@@ -466,7 +466,9 @@ def calculate_backoff_delay(
     return 0.1
 
 
-@retry(
+# tenacity ships no stubs in the isolated type-check env, so its decorator reads
+# as untyped; the ignore keeps disallow_untyped_decorators happy.
+@retry(  # type: ignore[untyped-decorator]
     stop=stop_after_attempt(8),
     wait=wait_fixed(0),
     retry=retry_if_exception_type((ConnectionError, TimeoutError, APIError)),
@@ -474,7 +476,7 @@ def calculate_backoff_delay(
     reraise=True,
 )
 def explain_metadata_with_llm(
-    client,
+    client: Any,
     existing_metadata: dict[str, Any],
     first_chunk_text: str,
     model: str,
@@ -545,7 +547,7 @@ First chunk: {truncated_chunk}
 
         # Parse the structured response
         response_content = response.choices[0].message.content
-        generated_metadata = json.loads(response_content)
+        generated_metadata: dict[str, Any] = json.loads(response_content)
 
         logger.info(f"Metadata explanation successful: {len(generated_metadata)} fields generated")
         return generated_metadata
@@ -559,13 +561,17 @@ First chunk: {truncated_chunk}
             raise APIError(f"Rate limit error: {e}") from e
 
         if isinstance(e, api_status_error):
-            logger.error(f"API error during metadata explanation {e.status_code}: {e.response}")
-            if getattr(e, "status_code", None) in (503, 502, 504, 429):
+            status_code = getattr(e, "status_code", None)
+            logger.error(
+                f"API error during metadata explanation {status_code}: "
+                f"{getattr(e, 'response', None)}"
+            )
+            if status_code in (503, 502, 504, 429):
                 logger.debug(
-                    f"Retryable metadata explanation error {e.status_code}, will retry with backoff"
+                    f"Retryable metadata explanation error {status_code}, will retry with backoff"
                 )
                 raise APIError(
-                    f"Error code: {e.status_code} - {_format_response(getattr(e, 'response', None))}"
+                    f"Error code: {status_code} - {_format_response(getattr(e, 'response', None))}"
                 ) from e
             raise e
 
@@ -574,7 +580,7 @@ First chunk: {truncated_chunk}
 
 
 def _make_cerebras_request_impl(
-    client,
+    client: Any,
     messages: list[dict[str, str]],
     model: str,
     max_completion_tokens: int,
@@ -653,9 +659,10 @@ def _make_cerebras_request_impl(
         if isinstance(e, api_status_error):
             formatted_response = _format_response(getattr(e, "response", None))
             logger.error(f"API error {getattr(e, 'status_code', 'unknown')}: {formatted_response}")
-            if getattr(e, "status_code", None) in (500, 502, 503, 504, 429):
-                logger.debug(f"Retryable error {e.status_code}, will retry with backoff")
-                raise APIError(f"Error code: {e.status_code} - {formatted_response}") from e
+            status_code = getattr(e, "status_code", None)
+            if status_code in (500, 502, 503, 504, 429):
+                logger.debug(f"Retryable error {status_code}, will retry with backoff")
+                raise APIError(f"Error code: {status_code} - {formatted_response}") from e
             raise e
 
         logger.error(f"Unexpected error in Cerebras request: {e}")
@@ -663,7 +670,7 @@ def _make_cerebras_request_impl(
 
 
 def make_cerebras_request(
-    client,
+    client: Any,
     messages: list[dict[str, str]],
     model: str,
     max_completion_tokens: int,
@@ -684,7 +691,7 @@ def make_cerebras_request(
 
 
 def make_request_with_fallback(
-    primary_client,
+    primary_client: Any,
     messages: list[dict[str, str]],
     model: str,
     max_completion_tokens: int,

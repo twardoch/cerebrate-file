@@ -18,3 +18,14 @@ Prior sprint:
 - Model update from zai-glm-4.6 to zai-glm-4.7
 - Cleanup of obsolete files (test_retry_mechanism.py, issues/, md.txt)
 - Test fix for chunk_writer callback mocking
+
+## 2026-10-06: writing comparison adapter
+
+Added compatible.py and seven response-boundary tests. Baseline: 224 passed, three force-option failures caused by wrong mock targets and archived live model. Fixed imported CLI mock targets; full suite: 234 passed in 4.01s. CLI constructors in other tests still produce TCP warming requests; strict network isolation remains to verify.
+
+## 2026-11-13: askllm2 backend
+
+- Added explicit `--provider askllm2` routing for FreeLLM default chain and `poe:<bot>`, preserving Cerebras as the default. Document data goes through stdin, chunk failures abort, and file destinations use atomic replacement.
+- Live FreeLLM default-chain and Poe Gemma CLI smoke tests on disposable `The sky are blue.` both produced `The sky is blue.`.
+- Verification: full Python 3.12 test suite 240 passed; subsequent targeted suite 8 passed (two additional tests added after the full run); targeted Ruff and mypy clean. Existing legacy tests still issue Cerebras TCP warming requests. Initial Python 3.14 setup failed because locked tiktoken PyO3 supports up to 3.13; Python 3.12 succeeded.
+- Independent review fixes: preserve chat roles via `--messages -`, fail closed on metadata errors, report recursive failures via nonzero exit, and restrict generated metadata to missing fields. Full suite: 247 passed; targeted Ruff and mypy clean. Live FreeLLM and Poe document transforms repeated after role-preserving changes and both succeeded.

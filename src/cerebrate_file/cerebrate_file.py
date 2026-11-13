@@ -15,6 +15,7 @@ from typing import Any
 from loguru import logger
 
 from .api_client import make_request_with_fallback
+from .askllm2 import AskLLM2Client
 
 # from .chunking import create_chunks  # unused
 # from .config import validate_environment, validate_inputs  # unused
@@ -172,6 +173,7 @@ def process_document(
     verbose: bool = False,
     progress_callback: Callable[[int, int], None] | None = None,
     chunk_writer: Callable[[str], None] | None = None,
+    raise_on_error: bool = False,
 ) -> tuple[str, ProcessingState]:
     """Stream every chunk through the Cerebras API.
 
@@ -270,19 +272,28 @@ def process_document(
 
             # Make API request
             logger.debug(
-                f"Making Cerebras request: {total_input_tokens} input tokens, "
+                f"Making {'askllm2' if isinstance(client, AskLLM2Client) else 'Cerebras'} request: {total_input_tokens} input tokens, "
                 f"{max_completion_tokens} max completion tokens"
             )
 
             if verbose:
-                print("  → Calling Cerebras API...")
+                print(
+                    f"  → Calling {'askllm2' if isinstance(client, AskLLM2Client) else 'Cerebras API'}..."
+                )
 
-            response_text, rate_status, model_used = make_request_with_fallback(
-                client, messages, model, max_completion_tokens, temp, top_p, verbose
-            )
+            if isinstance(client, AskLLM2Client):
+                response_text = client.complete(messages, max_completion_tokens, temp, top_p)
+                rate_status, model_used = RateLimitStatus(), model
+            else:
+                response_text, rate_status, model_used = make_request_with_fallback(
+                    client, messages, model, max_completion_tokens, temp, top_p, verbose
+                )
 
             if model_used != model:
                 logger.info(f"Response from fallback model: {model_used}")
+
+            if raise_on_error and not response_text.strip():
+                raise ValueError(f"Chunk {i + 1} returned an empty response")
 
             # Update state for next iteration
             state.prev_input_text = chunk.text
@@ -351,6 +362,8 @@ def process_document(
             )
 
         except Exception as e:
+            if raise_on_error or isinstance(client, AskLLM2Client):
+                raise
             error_msg = format_error_message(e)
             if verbose:
                 print(f"  ✗ Chunk {i + 1} failed: {error_msg}")

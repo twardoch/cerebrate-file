@@ -20,6 +20,7 @@ from dotenv import load_dotenv
 from loguru import logger
 
 from .api_client import explain_metadata_with_llm
+from .askllm2 import AskLLM2Client
 from .cerebrate_file import (
     calculate_completion_budget,
     prepare_chunk_messages,
@@ -67,6 +68,7 @@ def run(
     workers: int = 4,
     force: bool = False,
     unrestricted: bool = False,
+    provider: str = "cerebras",
 ) -> None:
     """Chop up a large document and feed it to an LLM chunk by chunk.
 
@@ -94,6 +96,7 @@ def run(
         workers: Number of parallel workers for recursive processing (default: 4)
         force: Overwrite existing output files without confirmation (default: False)
         unrestricted: Skip .gitignore filtering in recursive mode (default: False)
+        provider: cerebras or askllm2 (default: cerebras)
     """
     # Load settings and apply defaults
     settings = get_settings()
@@ -104,7 +107,13 @@ def run(
     sample_size = sample_size if sample_size is not None else settings.inference.sample_size
     temp = temp if temp is not None else settings.inference.temperature
     top_p = top_p if top_p is not None else settings.inference.top_p
-    model = model if model is not None else settings.get_default_model_name()
+    if provider not in {"cerebras", "askllm2"}:
+        raise ValueError("provider must be cerebras or askllm2")
+    model = (
+        model
+        if model is not None
+        else ("auto" if provider == "askllm2" else settings.get_default_model_name())
+    )
     # Load environment variables
     load_dotenv()
 
@@ -145,7 +154,8 @@ def run(
         )
 
         # Validate environment and inputs
-        validate_environment()
+        if provider == "cerebras":
+            validate_environment()
 
         # Check if we're in recursive mode
         if recurse is not None:
@@ -256,21 +266,39 @@ def run(
                             if temp_chunks:
                                 # Initialize Cerebras client for explanation
                                 try:
-                                    client = Cerebras(api_key=os.environ.get("CEREBRAS_API_KEY"))
+                                    client = (
+                                        AskLLM2Client(model)
+                                        if provider == "askllm2"
+                                        else Cerebras(api_key=os.environ.get("CEREBRAS_API_KEY"))
+                                    )
 
                                     # Generate missing metadata
-                                    generated_metadata = explain_metadata_with_llm(
-                                        client=client,
-                                        existing_metadata=metadata,
-                                        first_chunk_text=temp_chunks[0].text,
-                                        model=model,
-                                        temp=temp,
-                                        top_p=top_p,
+                                    generated_metadata = (
+                                        client.explain_metadata(
+                                            metadata, temp_chunks[0].text, temp, top_p
+                                        )
+                                        if isinstance(client, AskLLM2Client)
+                                        else explain_metadata_with_llm(
+                                            client=client,
+                                            existing_metadata=metadata,
+                                            first_chunk_text=temp_chunks[0].text,
+                                            model=model,
+                                            temp=temp,
+                                            top_p=top_p,
+                                        )
                                     )
 
                                     # Update metadata with generated fields
                                     if generated_metadata:
-                                        metadata.update(generated_metadata)
+                                        metadata.update(
+                                            {
+                                                key: value
+                                                for key, value in generated_metadata.items()
+                                                if key in missing_fields
+                                            }
+                                            if provider == "askllm2"
+                                            else generated_metadata
+                                        )
                                         logger.info(
                                             f"Metadata updated for {input_file} with generated fields: {list(generated_metadata.keys())}"
                                         )
@@ -283,6 +311,8 @@ def run(
                                     logger.error(
                                         f"Failed to generate metadata for {input_file}: {e}"
                                     )
+                                    if provider == "askllm2":
+                                        raise
 
                             chunks = temp_chunks
                         else:
@@ -297,7 +327,11 @@ def run(
 
                     # Initialize client (reuse if already created for metadata)
                     if not explain or "client" not in locals():
-                        client = Cerebras(api_key=os.environ.get("CEREBRAS_API_KEY"))
+                        client = (
+                            AskLLM2Client(model)
+                            if provider == "askllm2"
+                            else Cerebras(api_key=os.environ.get("CEREBRAS_API_KEY"))
+                        )
 
                     # Start progress for this file if display available
                     if progress_display:
@@ -315,6 +349,7 @@ def run(
                         output_path=str(output_file),
                         input_path=str(input_file),
                         create_backup=False,
+                        atomic=provider == "askllm2",
                     )
 
                     try:
@@ -399,6 +434,10 @@ def run(
             logger.info(
                 f"Recursive processing complete: {len(result.successful)} successful, {len(result.failed)} failed"
             )
+            if provider == "askllm2" and result.failed:
+                raise RuntimeError(
+                    f"{len(result.failed)} file(s) failed during recursive processing"
+                )
             return
 
         # Single file processing mode - existing logic
@@ -484,21 +523,37 @@ def run(
                     else:
                         # Initialize Cerebras client for explanation
                         try:
-                            client = Cerebras(api_key=os.environ.get("CEREBRAS_API_KEY"))
+                            client = (
+                                AskLLM2Client(model)
+                                if provider == "askllm2"
+                                else Cerebras(api_key=os.environ.get("CEREBRAS_API_KEY"))
+                            )
 
                             # Generate missing metadata
-                            generated_metadata = explain_metadata_with_llm(
-                                client=client,
-                                existing_metadata=metadata,
-                                first_chunk_text=temp_chunks[0].text,
-                                model=model,
-                                temp=temp,
-                                top_p=top_p,
+                            generated_metadata = (
+                                client.explain_metadata(metadata, temp_chunks[0].text, temp, top_p)
+                                if isinstance(client, AskLLM2Client)
+                                else explain_metadata_with_llm(
+                                    client=client,
+                                    existing_metadata=metadata,
+                                    first_chunk_text=temp_chunks[0].text,
+                                    model=model,
+                                    temp=temp,
+                                    top_p=top_p,
+                                )
                             )
 
                             # Update metadata with generated fields
                             if generated_metadata:
-                                metadata.update(generated_metadata)
+                                metadata.update(
+                                    {
+                                        key: value
+                                        for key, value in generated_metadata.items()
+                                        if key in missing_fields
+                                    }
+                                    if provider == "askllm2"
+                                    else generated_metadata
+                                )
                                 logger.info(
                                     f"Metadata updated with generated fields: {list(generated_metadata.keys())}"
                                 )
@@ -511,6 +566,8 @@ def run(
 
                         except Exception as e:
                             logger.error(f"Failed to generate metadata: {e}")
+                            if provider == "askllm2":
+                                raise
                             if verbose:
                                 print(f"❌ Metadata generation failed: {e}")
             else:
@@ -560,8 +617,12 @@ def run(
 
         # Initialize Cerebras client (only if not dry-run)
         try:
-            client = Cerebras(api_key=os.environ.get("CEREBRAS_API_KEY"))
-            logger.debug("Cerebras client initialized")
+            client = (
+                AskLLM2Client(model)
+                if provider == "askllm2"
+                else Cerebras(api_key=os.environ.get("CEREBRAS_API_KEY"))
+            )
+            logger.debug(f"{provider} client initialized")
         except Exception as e:
             logger.error(f"Failed to initialize Cerebras client: {e}")
             sys.exit(1)
@@ -586,6 +647,7 @@ def run(
             output_path=output_data,
             input_path=input_data,
             create_backup=False,
+            atomic=provider == "askllm2",
         )
 
         try:

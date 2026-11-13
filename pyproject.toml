@@ -50,7 +50,6 @@ dependencies = [
 # Author information
 [[project.authors]]
 name = 'Adam Twardoch'
-email = 'adam+github@twardoch.com'
 
 # License information
 [project.license]
@@ -128,12 +127,13 @@ build-backend = 'hatchling.build' # Specifies Hatchling as the build backend
 # how to handle versioning.
 #------------------------------------------------------------------------------
 [tool.hatch.build]
-# Include package data files
+# Include source and project metadata in both distribution formats.
 include = [
-    "src/cerebrate_file/py.typed", # For better type checking support
-    "src/cerebrate_file/data/**/*", # Include data files if any
-    "src/cerebrate_file/prompts/**/*", # Include prompt library files
-    "src/cerebrate_file/default_config.toml", # Built-in configuration defaults
+    "src/cerebrate_file/**",
+    "examples/**",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
 ]
 exclude = ["**/__pycache__", "**/.pytest_cache", "**/.mypy_cache"]
 

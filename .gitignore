@@ -92,3 +92,4 @@ var/
 venv.bak/
 venv/
 wheels/
+.omc/

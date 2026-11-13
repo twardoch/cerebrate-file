@@ -53,6 +53,35 @@ cerebrate-file large.md --dry-run --verbose
 cerebrate-file ./docs --recurse "**/*.md" --prompt "Fix typos" --workers 4
 ```
 
+## FreeLLM and Poe through askllm2
+
+Select the unified client explicitly to process a file with the active FreeLLM chain:
+
+```bash
+cerebrate-file document.md --provider askllm2 --model auto --prompt "Fix grammar"
+cerebrate-file document.md --provider askllm2 --model poe:Gemma-4-31B --prompt "Fix grammar"
+```
+
+This requires an executable `~/bin/askllm2.py` and its configured provider credentials. System and user messages are passed to it as JSON on stdin. File output is replaced only after every chunk succeeds; streamed stdout may already contain earlier chunks if a later request fails. Existing Cerebras behavior remains the default. Model context limits and routing depend on the selected provider.
+
+## Python library
+
+Import `process_text` to transform text and return the result:
+
+```python
+from cerebrate_file import process_text
+
+edited = process_text(
+    "The sky are blue.",
+    "Correct grammar. Return only the corrected text.",
+)
+print(edited)
+```
+
+Use `process_file(input_path, prompt, output_path=...)` to read a UTF-8 file and optionally write the result atomically. Omitting `output_path` returns the result without changing a file; passing the input path explicitly replaces it after successful processing. Both functions accept `provider="cerebras"` (the default, requiring `CEREBRAS_API_KEY`) or `provider="askllm2"`, plus `model`, `data_format`, `chunk_size`, `sample_size`, `max_tokens_ratio`, `temperature`, and `top_p`. Errors and empty chunk responses raise exceptions instead of producing partial files.
+
+Runnable examples are in [`examples/library_text.py`](examples/library_text.py) and [`examples/library_file.py`](examples/library_file.py).
+
 ## How chunking works
 
 The document is split into chunks using one of five strategies selected by `--data-format`:
@@ -84,6 +113,7 @@ cerebrate-file <input> [output] [options]
   --sample-size INT       Tokens to carry forward as continuity context
   --temp FLOAT            Model temperature
   --top-p FLOAT           Nucleus sampling parameter
+  --provider TEXT         cerebras (default) or askllm2
   --model TEXT            Model name override
   --verbose               Show per-chunk progress and token counts
   --explain               Parse YAML frontmatter and auto-generate missing fields

@@ -6035,7 +6035,6 @@ dependencies = [
 # Author information
 [[project.authors]]
 name = 'Adam Twardoch'
-email = 'adam+github@twardoch.com'
 
 # License information
 [project.license]
@@ -6412,7 +6411,7 @@ ban-relative-imports = 'all' # Ban all relative imports for consistency
 </document_content>
 </document>
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/__init__.py
+# File: src/cerebrate_file/__init__.py
 # Language: python
 
 from .__version__ import __version__
@@ -6428,7 +6427,7 @@ from .settings import (
 )
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/__main__.py
+# File: src/cerebrate_file/__main__.py
 # Language: python
 
 import fire
@@ -6437,7 +6436,7 @@ from .cli import run
 def main(()) -> None:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/api_client.py
+# File: src/cerebrate_file/api_client.py
 # Language: python
 
 import json
@@ -6595,7 +6594,7 @@ def _try_primary(()) -> tuple[str, RateLimitStatus]:
 def _is_retryable((e: Exception)) -> bool:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/cerebrate_file.py
+# File: src/cerebrate_file/cerebrate_file.py
 # Language: python
 
 import json
@@ -6648,7 +6647,7 @@ def process_document((
 )) -> tuple[str, ProcessingState]:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/chunking.py
+# File: src/cerebrate_file/chunking.py
 # Language: python
 
 from loguru import logger
@@ -6733,7 +6732,7 @@ def get_chunking_strategy((data_format: str, chunk_size: int)) -> ChunkingStrate
 def create_chunks((content: str, data_format: str, chunk_size: int)) -> list[Chunk]:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/cli.py
+# File: src/cerebrate_file/cli.py
 # Language: python
 
 import builtins
@@ -6831,7 +6830,7 @@ def _show_dry_run_analysis((
 def _report_zero_output_failure((state: ProcessingState, input_path: str, output_path: str)) -> None:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/config.py
+# File: src/cerebrate_file/config.py
 # Language: python
 
 import os
@@ -6896,7 +6895,7 @@ def validate_recursive_inputs((
 )) -> None:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/constants.py
+# File: src/cerebrate_file/constants.py
 # Language: python
 
 import re
@@ -6931,7 +6930,7 @@ class ConfigurationError(C, e, r, e, b, r, a, t, e, E, r, r, o, r):
 class FileError(C, e, r, e, b, r, a, t, e, E, r, r, o, r):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/continuity.py
+# File: src/cerebrate_file/continuity.py
 # Language: python
 
 from loguru import logger
@@ -7073,7 +7072,7 @@ format = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level>
 </document_content>
 </document>
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/error_recovery.py
+# File: src/cerebrate_file/error_recovery.py
 # Language: python
 
 import functools
@@ -7171,7 +7170,7 @@ def update((self, **kwargs)):
 def should_skip((self, item_id: Any)) -> bool:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/file_utils.py
+# File: src/cerebrate_file/file_utils.py
 # Language: python
 
 import contextlib
@@ -7247,7 +7246,7 @@ def output_file_exists((input_path: Path, output_path: Path)) -> bool:
 def build_base_prompt((file_prompt: str | None, text_prompt: str | None)) -> tuple[str, int]:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/models.py
+# File: src/cerebrate_file/models.py
 # Language: python
 
 from dataclasses import dataclass, field
@@ -7337,7 +7336,7 @@ def __post_init__((self)) -> None:
 def __post_init__((self)) -> None:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/prompt_library.py
+# File: src/cerebrate_file/prompt_library.py
 # Language: python
 
 from pathlib import Path
@@ -7421,7 +7420,7 @@ The file prompt loads first, then the text prompt.
 </document_content>
 </document>
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/recursive.py
+# File: src/cerebrate_file/recursive.py
 # Language: python
 
 import re
@@ -7469,7 +7468,7 @@ def process_files_parallel((
 )) -> ProcessingResult:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/settings.py
+# File: src/cerebrate_file/settings.py
 # Language: python
 
 import os
@@ -7521,7 +7520,7 @@ def get_settings(()) -> Settings:
 def reload_settings(()) -> Settings:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/tokenizer.py
+# File: src/cerebrate_file/tokenizer.py
 # Language: python
 
 from loguru import logger
@@ -7559,7 +7558,7 @@ def encode_text((text: str)) -> list[int]:
 def decode_tokens_safely((tokens: list[int])) -> str:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/ui.py
+# File: src/cerebrate_file/ui.py
 # Language: python
 
 from loguru import logger
@@ -7612,7 +7611,7 @@ def finish_file((self, input_path: str)) -> None:
 def finish_overall_processing((self)) -> None:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/src/cerebrate_file/validators.py
+# File: src/cerebrate_file/validators.py
 # Language: python
 
 import contextlib
@@ -7647,7 +7646,7 @@ def validate_model_parameters((
 )) -> tuple[int, float, float, int]:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/testapi.py
+# File: testapi.py
 # Language: python
 
 import os
@@ -7658,7 +7657,7 @@ from cerebras.cloud.sdk import Cerebras
 def main(()) -> int:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_api_retry.py
+# File: tests/test_api_retry.py
 # Language: python
 
 from unittest.mock import Mock, patch
@@ -7686,7 +7685,7 @@ def test_successful_request(()):
 def test_full_retry_flow((mocker)):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_brace_patterns.py
+# File: tests/test_brace_patterns.py
 # Language: python
 
 import pytest
@@ -7731,7 +7730,7 @@ def test_empty_braces((self)):
 def test_numeric_extensions((self)):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_cerebrate_file.py
+# File: tests/test_cerebrate_file.py
 # Language: python
 
 import math
@@ -7749,7 +7748,7 @@ def test_calculate_completion_budget_applies_reasoning_multiplier(()) -> None:
 def test_calculate_completion_budget_caps_at_max_output(()) -> None:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_chunking.py
+# File: tests/test_chunking.py
 # Language: python
 
 import pytest
@@ -7804,7 +7803,7 @@ def test_chunk_token_counts((sample_text)):
 def test_chunk_text_content((sample_text)):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_cli_streams.py
+# File: tests/test_cli_streams.py
 # Language: python
 
 import io
@@ -7824,7 +7823,7 @@ def test_cli_run_streams_stdin_to_stdout((
 def mock_process_document((*args, **kwargs)):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_constants.py
+# File: tests/test_constants.py
 # Language: python
 
 import pytest
@@ -7858,7 +7857,7 @@ def test_cerebrate_error(()):
 def test_specific_error_classes(()):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_error_recovery.py
+# File: tests/test_error_recovery.py
 # Language: python
 
 import json
@@ -7928,7 +7927,7 @@ def test_recoverable_operation_with_checkpoint(()):
 def test_recoverable_operation_should_skip(()):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_file_utils.py
+# File: tests/test_file_utils.py
 # Language: python
 
 import io
@@ -7954,7 +7953,7 @@ def test_read_file_safely_reads_regular_files((temporary_text_file: Path)) -> No
 def test_write_output_atomically_writes_regular_files((monkeypatch: pytest.MonkeyPatch)) -> None:
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_force_option.py
+# File: tests/test_force_option.py
 # Language: python
 
 import tempfile
@@ -7986,7 +7985,7 @@ def test_force_option_parameter_validation(()):
 def test_force_option_logged_messages((sample_input_file, existing_output_file, capsys)):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_integration.py
+# File: tests/test_integration.py
 # Language: python
 
 import os
@@ -8033,7 +8032,7 @@ def test_cli_environment_integration(()):
 def test_explain_mode_integration(()):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_issue_104.py
+# File: tests/test_issue_104.py
 # Language: python
 
 import tempfile
@@ -8063,7 +8062,7 @@ def test_call_counting_issue_debug(()):
 def test_explain_mode_metadata_completeness_check(()):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_models.py
+# File: tests/test_models.py
 # Language: python
 
 from datetime import datetime, timedelta
@@ -8097,7 +8096,7 @@ def test_api_config(()):
 def test_chunk_diagnostics_to_log_dict(()):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_package.py
+# File: tests/test_package.py
 # Language: python
 
 import cerebrate_file
@@ -8105,7 +8104,7 @@ import cerebrate_file
 def test_version(()):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_pre_screening.py
+# File: tests/test_pre_screening.py
 # Language: python
 
 from pathlib import Path
@@ -8152,7 +8151,7 @@ def test_pre_screen_files_with_in_place_processing((self, tmp_path)):
 def test_pre_screen_files_logs_appropriately((self, tmp_path)):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_pre_screening_integration.py
+# File: tests/test_pre_screening_integration.py
 # Language: python
 
 from unittest.mock import MagicMock, patch
@@ -8177,7 +8176,7 @@ def test_recursive_pre_screening_dry_run_mode((self, tmp_path, capsys)):
 def test_recursive_pre_screening_in_place_processing((self, tmp_path, capsys)):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_prompt_library.py
+# File: tests/test_prompt_library.py
 # Language: python
 
 from pathlib import Path
@@ -8225,7 +8224,7 @@ def test_cli_can_use_library_prompt((self, tmp_path)):
 def test_prompt_library_listing((self, capsys)):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_recursive.py
+# File: tests/test_recursive.py
 # Language: python
 
 import tempfile
@@ -8358,7 +8357,7 @@ def test_git_dir_excluded_with_unrestricted((self)):
 def test_git_dir_nested_excluded((self)):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_recursive_integration.py
+# File: tests/test_recursive_integration.py
 # Language: python
 
 import tempfile
@@ -8443,7 +8442,7 @@ Final paragraph to ensure proper handling of document endings.
 </document_content>
 </document>
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_tokenizer.py
+# File: tests/test_tokenizer.py
 # Language: python
 
 from unittest.mock import patch
@@ -8485,7 +8484,7 @@ def test_encode_text_with_long_text(()):
 def test_encode_text_with_special_characters(()):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_ui.py
+# File: tests/test_ui.py
 # Language: python
 
 from io import StringIO
@@ -8554,7 +8553,7 @@ def test_progress_display_renders_without_error((self)):
 def test_ui_with_edge_case_paths((self)):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_validators.py
+# File: tests/test_validators.py
 # Language: python
 
 import tempfile
@@ -8609,7 +8608,7 @@ def test_validate_model_parameters_invalid_ratio(()):
 def test_validate_model_parameters_multiple_invalid(()):
 
 
-# File: /Users/adam/Developer/vcs3/github.twardoch/pub/cerebrate-file/tests/test_zero_output_guard.py
+# File: tests/test_zero_output_guard.py
 # Language: python
 
 from pathlib import Path

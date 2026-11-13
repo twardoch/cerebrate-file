@@ -76,7 +76,7 @@ def test_force_option_when_output_exists_single_file(sample_input_file, existing
     with (
         patch("cerebrate_file.config.validate_api_key", return_value=True),
         patch("cerebrate_file.config.validate_environment"),
-        patch("cerebrate_file.chunking.create_chunks", return_value=[]),
+        patch("cerebrate_file.cli.create_chunks", return_value=[]),
     ):
         # Call without force - should skip processing
         cli_run(
@@ -100,9 +100,9 @@ def test_force_option_when_output_exists_force_true(sample_input_file, existing_
     with (
         patch("cerebrate_file.config.validate_api_key", return_value=True),
         patch("cerebrate_file.config.validate_environment"),
-        patch("cerebrate_file.chunking.create_chunks") as mock_chunks,
-        patch("cerebrate_file.cerebrate_file.process_document") as mock_process,
-        patch("cerebras.cloud.sdk.Cerebras"),
+        patch("cerebrate_file.cli.create_chunks") as mock_chunks,
+        patch("cerebrate_file.cli.process_document") as mock_process,
+        patch("cerebrate_file.cli.Cerebras"),
     ):
         # Setup mocks
         mock_chunks.return_value = []  # Empty chunks to skip processing
@@ -143,8 +143,8 @@ def test_force_option_when_input_equals_output(sample_input_file):
     with (
         patch("cerebrate_file.config.validate_api_key", return_value=True),
         patch("cerebrate_file.config.validate_environment"),
-        patch("cerebrate_file.chunking.create_chunks", return_value=[]),
-        patch("cerebras.cloud.sdk.Cerebras"),
+        patch("cerebrate_file.cli.create_chunks", return_value=[]),
+        patch("cerebrate_file.cli.Cerebras"),
     ):
         # When input_data == output_data, force check should not apply
         cli_run(
@@ -171,8 +171,8 @@ def test_force_option_when_output_does_not_exist(sample_input_file):
         with (
             patch("cerebrate_file.config.validate_api_key", return_value=True),
             patch("cerebrate_file.config.validate_environment"),
-            patch("cerebrate_file.chunking.create_chunks", return_value=[]),
-            patch("cerebras.cloud.sdk.Cerebras"),
+            patch("cerebrate_file.cli.create_chunks", return_value=[]),
+            patch("cerebrate_file.cli.Cerebras"),
         ):
             # Should proceed normally since output doesn't exist
             cli_run(
@@ -270,7 +270,7 @@ def test_force_option_parameter_validation():
     with (
         patch("cerebrate_file.config.validate_api_key", return_value=True),
         patch("cerebrate_file.config.validate_environment"),
-        patch("cerebrate_file.chunking.create_chunks", return_value=[]),
+        patch("cerebrate_file.cli.create_chunks", return_value=[]),
     ):
         # Create temporary files
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as input_f:
@@ -295,7 +295,7 @@ def test_force_option_logged_messages(sample_input_file, existing_output_file, c
     with (
         patch("cerebrate_file.config.validate_api_key", return_value=True),
         patch("cerebrate_file.config.validate_environment"),
-        patch("cerebrate_file.chunking.create_chunks", return_value=[]),
+        patch("cerebrate_file.cli.create_chunks", return_value=[]),
     ):
         # Use verbose mode to enable INFO logging level
         cli_run(

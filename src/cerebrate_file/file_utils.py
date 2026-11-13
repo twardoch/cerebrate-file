@@ -45,6 +45,7 @@ class ProgressiveFileWriter:
         output_path: str | Path,
         input_path: str | Path | None = None,
         create_backup: bool = False,
+        atomic: bool = False,
     ) -> None:
         """Initialize the progressive writer.
 
@@ -56,6 +57,7 @@ class ProgressiveFileWriter:
         self._output_path_str = str(output_path)
         self._input_path_str = str(input_path) if input_path else None
         self._create_backup = create_backup
+        self._atomic = atomic
         self._is_stdout = self._output_path_str == "-"
         self._file_handle: Any = None
         self._temp_path: Path | None = None
@@ -83,6 +85,22 @@ class ProgressiveFileWriter:
         # Create backup if requested and file exists
         if self._create_backup and output_path_obj.exists():
             backup_file(output_path_obj)
+
+        if self._atomic:
+            self._atomic_destination = output_path_obj.resolve()
+            handle = tempfile.NamedTemporaryFile(  # noqa: SIM115
+                mode="w", encoding="utf-8", dir=self._atomic_destination.parent, delete=False
+            )
+            self._file_handle = handle
+            self._temp_path = Path(handle.name)
+            self._actual_write_path = self._temp_path
+            try:
+                if self._atomic_destination.exists():
+                    self._temp_path.chmod(self._atomic_destination.stat().st_mode)
+            except OSError:
+                self.abort()
+                raise
+            return
 
         if self._is_in_place:
             # Use temp file with .tmptmp extension for in-place updates
@@ -147,7 +165,9 @@ class ProgressiveFileWriter:
                 self._file_handle.close()
                 self._file_handle = None
 
-                if self._is_in_place and self._temp_path is not None:
+                if self._atomic and self._temp_path is not None:
+                    self._temp_path.replace(self._atomic_destination)
+                elif self._is_in_place and self._temp_path is not None:
                     output_path_obj = Path(self._output_path_str)
 
                     # Remove the original input file

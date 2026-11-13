@@ -163,7 +163,7 @@ class SemanticChunker(ChunkingStrategy):
 
             # Use character-based approximation to avoid tokenizer recursion
             char_limit = self.chunk_size * CHARS_PER_TOKEN_FALLBACK
-            splitter = TextSplitter(char_limit)
+            splitter = TextSplitter(char_limit, trim=False)
             chunk_texts = splitter.chunks(content)
 
             chunks = [self._create_chunk(text) for text in chunk_texts]
@@ -196,7 +196,7 @@ class MarkdownChunker(ChunkingStrategy):
 
             # Use character-based approximation to avoid tokenizer recursion
             char_limit = self.chunk_size * CHARS_PER_TOKEN_FALLBACK
-            splitter = MarkdownSplitter(char_limit)
+            splitter = MarkdownSplitter(char_limit, trim=False)
             chunk_texts = splitter.chunks(content)
 
             chunks = [self._create_chunk(text) for text in chunk_texts]

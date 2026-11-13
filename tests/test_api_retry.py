@@ -103,6 +103,7 @@ def test_successful_request():
     mock_chunk = Mock()
     mock_chunk.choices = [Mock()]
     mock_chunk.choices[0].delta.content = "Ensure response"
+    mock_chunk.choices[0].finish_reason = "stop"
 
     class DummyStream(list):
         """List subclass that allows attaching metadata attributes."""
@@ -157,3 +158,27 @@ def test_full_retry_flow(mocker):
     assert mocked_impl.call_count == 2
     assert result == "Successful response"
     assert model_used == "llama3.1-8b"
+
+
+@pytest.mark.parametrize("finish_reason", ["length", None])
+def test_fallback_rejects_incomplete_stream(finish_reason):
+    """Never return a truncated or unterminated fallback response as complete."""
+    from types import SimpleNamespace
+
+    from cerebrate_file.api_client import FallbackClient
+    from cerebrate_file.settings import ModelConfig
+
+    fallback = FallbackClient(ModelConfig(name="test", provider="test", api_key_env="TEST_KEY"))
+    client = Mock()
+    client.chat.completions.create.return_value = [
+        SimpleNamespace(
+            choices=[
+                SimpleNamespace(
+                    delta=SimpleNamespace(content="partial"), finish_reason=finish_reason
+                )
+            ]
+        )
+    ]
+    fallback._client = client
+    with pytest.raises(APIError, match="Incomplete fallback response"):
+        fallback.chat_completion([{"role": "user", "content": "test"}], 100)

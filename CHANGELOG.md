@@ -101,3 +101,13 @@
 
 ### Dependencies
 - fire, loguru, python-dotenv, tenacity, cerebras-cloud-sdk, semantic-text-splitter, qwen-tokenizer.
+## Unreleased — explicit compatible providers
+
+- Added an explicit OpenAI-compatible client with chat/raw completion support, response provenance, disabled SDK retries, and retained partial failures.
+- Corrected force-option mocks to patch imported CLI symbols.
+- Validation: 234 tests passed (`uv run --extra test pytest -q`).
+
+## Unreleased — askllm2 backend
+
+- Added opt-in FreeLLM and Poe document processing via `--provider askllm2`, with stdin transport and atomic file output on success.
+- Preserve message roles and existing metadata; fail on metadata or recursive processing errors.

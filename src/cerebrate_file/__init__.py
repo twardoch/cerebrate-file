@@ -28,6 +28,7 @@ except ImportError:
 
 # Main public interface
 from .cli import run
+from .library import process_file, process_text
 from .models import Chunk, ProcessingState, RateLimitStatus
 from .settings import (
     InferenceConfig,
@@ -48,6 +49,8 @@ __all__ = [
     "Settings",
     "__version__",
     "get_settings",
+    "process_file",
+    "process_text",
     "reload_settings",
     "run",
 ]

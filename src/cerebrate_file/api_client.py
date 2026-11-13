@@ -282,9 +282,14 @@ class FallbackClient:
             )
 
             response_text = ""
+            finish_reason = None
             for chunk in stream:
                 if chunk.choices and chunk.choices[0].delta.content:
                     response_text += chunk.choices[0].delta.content
+                if chunk.choices and chunk.choices[0].finish_reason is not None:
+                    finish_reason = chunk.choices[0].finish_reason
+            if finish_reason != "stop":
+                raise ValueError(f"Incomplete fallback response: {finish_reason}")
 
             # Fallback APIs don't provide detailed rate limit headers
             rate_status = RateLimitStatus()
@@ -615,11 +620,16 @@ def _make_cerebras_request_impl(
         response_text = ""
         rate_status = RateLimitStatus()
         last_chunk = None
+        finish_reason = None
 
         for chunk in stream:
-            if chunk.choices[0].delta.content:
+            if chunk.choices and chunk.choices[0].delta.content:
                 response_text += chunk.choices[0].delta.content
+            if chunk.choices and chunk.choices[0].finish_reason is not None:
+                finish_reason = chunk.choices[0].finish_reason
             last_chunk = chunk
+        if finish_reason != "stop":
+            raise ValueError(f"Incomplete Cerebras response: {finish_reason}")
 
         # Extract rate limit info from the final chunk/stream response headers
         try:

@@ -109,10 +109,12 @@ Every new feature must have tests:
 import pytest
 from cerebrate_file.your_module import your_function
 
+
 def test_your_function():
     """Test basic functionality."""
     result = your_function("input")
     assert result == "expected"
+
 
 def test_your_function_edge_case():
     """Test edge cases."""
@@ -199,6 +201,7 @@ from pathlib import Path
 DEFAULT_CHUNK_SIZE = 32000
 MAX_RETRIES = 3
 
+
 class ExampleClass:
     """Class docstring with description."""
 
@@ -238,9 +241,9 @@ Always use type hints:
 ```python
 from typing import Optional, List, Dict, Union, Tuple
 
+
 def process_files(
-    paths: List[Path],
-    options: Optional[Dict[str, str]] = None
+    paths: List[Path], options: Optional[Dict[str, str]] = None
 ) -> Tuple[List[str], List[str]]:
     """Process multiple files."""
     successes: List[str] = []
@@ -263,15 +266,21 @@ Use specific exceptions:
 ```python
 class CerebrateError(Exception):
     """Base exception for cerebrate-file."""
+
     pass
+
 
 class ConfigurationError(CerebrateError):
     """Configuration related errors."""
+
     pass
+
 
 class APIError(CerebrateError):
     """API related errors."""
+
     pass
+
 
 def validate_config(config: Dict) -> None:
     """Validate configuration."""
@@ -288,6 +297,7 @@ Use loguru for logging:
 
 ```python
 from loguru import logger
+
 
 def process_document(path: str, verbose: bool = False) -> str:
     """Process document with logging."""
@@ -313,9 +323,7 @@ Write comprehensive docstrings:
 
 ```python
 def complex_function(
-    input_data: str,
-    chunk_size: int = 32000,
-    strategy: str = "markdown"
+    input_data: str, chunk_size: int = 32000, strategy: str = "markdown"
 ) -> List[str]:
     """
     Split input data into processable chunks.
@@ -360,6 +368,7 @@ import pytest
 from unittest.mock import Mock, patch
 from cerebrate_file.module import function_to_test
 
+
 class TestFeatureName:
     """Test suite for feature."""
 
@@ -377,11 +386,14 @@ class TestFeatureName:
         assert function_to_test("") == ""
         assert function_to_test(None) is None
 
-    @pytest.mark.parametrize("input,expected", [
-        ("test1", "result1"),
-        ("test2", "result2"),
-        ("test3", "result3"),
-    ])
+    @pytest.mark.parametrize(
+        "input,expected",
+        [
+            ("test1", "result1"),
+            ("test2", "result2"),
+            ("test3", "result3"),
+        ],
+    )
     def test_multiple_cases(self, input, expected):
         """Test multiple scenarios."""
         assert function_to_test(input) == expected
@@ -391,7 +403,7 @@ class TestFeatureName:
         with pytest.raises(ValueError, match="Invalid input"):
             function_to_test("invalid")
 
-    @patch('cerebrate_file.module.external_function')
+    @patch("cerebrate_file.module.external_function")
     def test_with_mock(self, mock_func):
         """Test with mocked dependencies."""
         mock_func.return_value = "mocked"
@@ -408,6 +420,7 @@ import tempfile
 from pathlib import Path
 from cerebrate_file import process_document
 
+
 def test_end_to_end_processing():
     """Test complete processing pipeline."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -418,9 +431,7 @@ def test_end_to_end_processing():
         # Process
         output_file = Path(tmpdir) / "output.md"
         process_document(
-            input_data=str(input_file),
-            output_data=str(output_file),
-            prompt="Add emoji"
+            input_data=str(input_file), output_data=str(output_file), prompt="Add emoji"
         )
 
         # Verify
@@ -438,6 +449,7 @@ import cProfile
 import pstats
 from io import StringIO
 
+
 def profile_function():
     """Profile function performance."""
     profiler = cProfile.Profile()
@@ -449,7 +461,7 @@ def profile_function():
     profiler.disable()
     stream = StringIO()
     stats = pstats.Stats(profiler, stream=stream)
-    stats.sort_stats('cumulative')
+    stats.sort_stats("cumulative")
     stats.print_stats(10)
     print(stream.getvalue())
 
@@ -461,6 +473,7 @@ def profile_function():
 ```python
 from memory_profiler import profile
 
+
 @profile
 def memory_intensive_function():
     """Monitor memory usage."""
@@ -469,10 +482,11 @@ def memory_intensive_function():
         process_chunk(chunk)
         del chunk  # Explicit cleanup
 
+
 def generate_chunks(data, chunk_size=1000):
     """Generator to avoid loading all data."""
     for i in range(0, len(data), chunk_size):
-        yield data[i:i + chunk_size]
+        yield data[i : i + chunk_size]
 ```
 
 ## Release Process
@@ -582,6 +596,7 @@ Brief description of changes
 ```python
 import pdb
 
+
 def debug_function(data):
     """Debug with pdb."""
     pdb.set_trace()  # Breakpoint
@@ -600,7 +615,7 @@ logger.remove()
 logger.add(
     sys.stderr,
     format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-    level="DEBUG"
+    level="DEBUG",
 )
 ```
 

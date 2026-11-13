@@ -27,6 +27,7 @@ Main function for processing documents.
 ```python
 from cerebrate_file import process_document
 
+
 def process_document(
     input_data: str,
     output_data: Optional[str] = None,
@@ -42,7 +43,7 @@ def process_document(
     verbose: bool = False,
     explain: bool = False,
     dry_run: bool = False,
-    api_key: Optional[str] = None
+    api_key: Optional[str] = None,
 ) -> str:
     """
     Process a document using Cerebras AI.
@@ -81,9 +82,7 @@ from cerebrate_file import process_document
 
 # Basic processing
 result = process_document(
-    input_data="document.md",
-    prompt="Summarize each section",
-    output_data="summary.md"
+    input_data="document.md", prompt="Summarize each section", output_data="summary.md"
 )
 
 # Advanced processing
@@ -93,7 +92,7 @@ result = process_document(
     chunk_size=48000,
     data_format="semantic",
     temp=0.5,
-    verbose=True
+    verbose=True,
 )
 ```
 
@@ -105,6 +104,7 @@ Client for interacting with Cerebras API.
 
 ```python
 from cerebrate_file.api_client import CerebrasClient
+
 
 class CerebrasClient:
     """Client for Cerebras API interactions."""
@@ -124,7 +124,7 @@ class CerebrasClient:
         max_tokens: int,
         temperature: float = 0.7,
         top_p: float = 0.8,
-        stream: bool = True
+        stream: bool = True,
     ) -> Union[str, Iterator[str]]:
         """
         Create a completion from the model.
@@ -152,14 +152,10 @@ client = CerebrasClient(api_key="csk-...")
 # Create completion
 messages = [
     {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "Explain quantum computing."}
+    {"role": "user", "content": "Explain quantum computing."},
 ]
 
-response = client.create_completion(
-    messages=messages,
-    max_tokens=1000,
-    temperature=0.98
-)
+response = client.create_completion(messages=messages, max_tokens=1000, temperature=0.98)
 
 # Handle streaming response
 for chunk in response:
@@ -173,6 +169,7 @@ Strategies for splitting documents into chunks.
 ```python
 from cerebrate_file.chunking import ChunkingStrategy
 
+
 class ChunkingStrategy:
     """Base class for chunking strategies."""
 
@@ -181,12 +178,13 @@ class ChunkingStrategy:
         """Split text into chunks."""
         pass
 
+
 # Available strategies
 from cerebrate_file.chunking import (
-    TextChunker,      # Simple text splitting
+    TextChunker,  # Simple text splitting
     SemanticChunker,  # Paragraph-aware
     MarkdownChunker,  # Markdown structure-aware
-    CodeChunker       # Code structure-aware
+    CodeChunker,  # Code structure-aware
 )
 ```
 
@@ -213,6 +211,7 @@ Configuration management.
 ```python
 from cerebrate_file.config import Config
 
+
 class Config:
     """Configuration container."""
 
@@ -234,11 +233,7 @@ from cerebrate_file.config import Config
 
 # Create configuration
 config = Config(
-    input_data="document.md",
-    output_data="output.md",
-    chunk_size=32000,
-    temp=0.7,
-    top_p=0.8
+    input_data="document.md", output_data="output.md", chunk_size=32000, temp=0.7, top_p=0.8
 )
 
 # Validate
@@ -258,6 +253,7 @@ Count tokens in text.
 ```python
 from cerebrate_file.tokenizer import count_tokens
 
+
 def count_tokens(text: str) -> int:
     """
     Count tokens in text using Qwen tokenizer.
@@ -268,6 +264,7 @@ def count_tokens(text: str) -> int:
     Returns:
         Number of tokens
     """
+
 
 # Example
 text = "This is a sample text."
@@ -282,11 +279,14 @@ Read and write files with proper encoding.
 ```python
 from cerebrate_file.utils import read_file, write_file
 
+
 def read_file(path: str) -> str:
     """Read file with UTF-8 encoding."""
 
+
 def write_file(path: str, content: str) -> None:
     """Write file with UTF-8 encoding."""
+
 
 # Example
 content = read_file("input.txt")
@@ -301,6 +301,7 @@ Parse and update frontmatter in markdown files.
 ```python
 from cerebrate_file.frontmatter import parse_frontmatter, update_frontmatter
 
+
 def parse_frontmatter(content: str) -> Tuple[Dict, str]:
     """
     Parse frontmatter from content.
@@ -308,6 +309,7 @@ def parse_frontmatter(content: str) -> Tuple[Dict, str]:
     Returns:
         Tuple of (metadata dict, body text)
     """
+
 
 def update_frontmatter(content: str, metadata: Dict) -> str:
     """
@@ -320,6 +322,7 @@ def update_frontmatter(content: str, metadata: Dict) -> str:
     Returns:
         Content with updated frontmatter
     """
+
 
 # Example
 metadata, body = parse_frontmatter(content)
@@ -339,6 +342,7 @@ from cerebrate_file.chunking import MarkdownChunker
 from cerebrate_file.tokenizer import count_tokens
 import os
 
+
 class CustomProcessor:
     """Custom document processor."""
 
@@ -350,7 +354,7 @@ class CustomProcessor:
         """Process document with validation."""
 
         # Read input
-        with open(input_path, 'r', encoding='utf-8') as f:
+        with open(input_path, "r", encoding="utf-8") as f:
             content = f.read()
 
         # Validate size
@@ -365,10 +369,7 @@ class CustomProcessor:
         results = []
         for chunk in chunks:
             response = self.client.create_completion(
-                messages=[
-                    {"role": "user", "content": chunk}
-                ],
-                max_tokens=32000
+                messages=[{"role": "user", "content": chunk}], max_tokens=32000
             )
             results.append(response)
 
@@ -376,10 +377,11 @@ class CustomProcessor:
         output = "\n\n".join(results)
 
         # Write output
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(output)
 
         return output
+
 
 # Usage
 processor = CustomProcessor(api_key=os.getenv("CEREBRAS_API_KEY"))
@@ -395,17 +397,14 @@ from cerebrate_file import process_document
 from pathlib import Path
 import concurrent.futures
 
+
 def process_batch(file_paths: List[str], prompt: str, workers: int = 4):
     """Process multiple files in parallel."""
 
     def process_file(path):
         try:
             output_path = f"processed_{Path(path).name}"
-            process_document(
-                input_data=path,
-                output_data=output_path,
-                prompt=prompt
-            )
+            process_document(input_data=path, output_data=output_path, prompt=prompt)
             return f"✓ {path}"
         except Exception as e:
             return f"✗ {path}: {e}"
@@ -415,6 +414,7 @@ def process_batch(file_paths: List[str], prompt: str, workers: int = 4):
 
     for result in results:
         print(result)
+
 
 # Usage
 files = Path(".").glob("*.md")
@@ -427,26 +427,19 @@ Implement robust error handling:
 
 ```python
 from cerebrate_file import process_document
-from cerebrate_file.exceptions import (
-    APIError,
-    RateLimitError,
-    TokenLimitError,
-    NetworkError
-)
+from cerebrate_file.exceptions import APIError, RateLimitError, TokenLimitError, NetworkError
 import time
+
 
 def process_with_retry(input_path: str, max_retries: int = 3):
     """Process with automatic retry on failure."""
 
     for attempt in range(max_retries):
         try:
-            return process_document(
-                input_data=input_path,
-                prompt="Process this document"
-            )
+            return process_document(input_data=input_path, prompt="Process this document")
 
         except RateLimitError as e:
-            wait_time = 2 ** attempt * 60  # Exponential backoff
+            wait_time = 2**attempt * 60  # Exponential backoff
             print(f"Rate limited. Waiting {wait_time} seconds...")
             time.sleep(wait_time)
 
@@ -456,7 +449,7 @@ def process_with_retry(input_path: str, max_retries: int = 3):
             return process_document(
                 input_data=input_path,
                 prompt="Process this document",
-                chunk_size=16000  # Smaller chunks
+                chunk_size=16000,  # Smaller chunks
             )
 
         except NetworkError as e:
@@ -468,6 +461,7 @@ def process_with_retry(input_path: str, max_retries: int = 3):
             raise  # Don't retry API errors
 
     raise Exception(f"Failed after {max_retries} attempts")
+
 
 # Usage
 try:
@@ -484,6 +478,7 @@ Implement custom chunking logic:
 ```python
 from cerebrate_file.chunking import ChunkingStrategy
 from typing import List
+
 
 class CustomChunker(ChunkingStrategy):
     """Custom chunking implementation."""
@@ -510,6 +505,7 @@ class CustomChunker(ChunkingStrategy):
 
         return chunks
 
+
 # Usage
 chunker = CustomChunker()
 chunks = chunker.split(document_text, max_tokens=8000)
@@ -529,13 +525,14 @@ import os
 
 app = Flask(__name__)
 
-@app.route('/process', methods=['POST'])
+
+@app.route("/process", methods=["POST"])
 def process_endpoint():
     """Process document via API."""
     try:
         # Get file and prompt
-        file = request.files['document']
-        prompt = request.form.get('prompt', '')
+        file = request.files["document"]
+        prompt = request.form.get("prompt", "")
 
         # Save temporarily
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
@@ -543,26 +540,18 @@ def process_endpoint():
             temp_path = tmp.name
 
         # Process
-        result = process_document(
-            input_data=temp_path,
-            prompt=prompt
-        )
+        result = process_document(input_data=temp_path, prompt=prompt)
 
         # Clean up
         os.unlink(temp_path)
 
-        return jsonify({
-            'success': True,
-            'result': result
-        })
+        return jsonify({"success": True, "result": result})
 
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({"success": False, "error": str(e)}), 500
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app.run(debug=True)
 ```
 
@@ -576,17 +565,16 @@ from cerebrate_file import process_document
 import os
 
 # Set API key
-os.environ['CEREBRAS_API_KEY'] = 'csk-...'
+os.environ["CEREBRAS_API_KEY"] = "csk-..."
 
 # Cell 2: Process document
 result = process_document(
-    input_data='notebook_content.md',
-    prompt='Summarize key points',
-    verbose=True
+    input_data="notebook_content.md", prompt="Summarize key points", verbose=True
 )
 
 # Cell 3: Display result
 from IPython.display import Markdown
+
 display(Markdown(result))
 ```
 

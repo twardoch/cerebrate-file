@@ -111,3 +111,9 @@
 
 - Added opt-in FreeLLM and Poe document processing via `--provider askllm2`, with stdin transport and atomic file output on success.
 - Preserve message roles and existing metadata; fail on metadata or recursive processing errors.
+
+## [1.0.38] - 2026-11-13
+
+- Added Python `process_text` and `process_file` APIs, usage examples, and an optional FreeLLM/Poe backend.
+- Preserved chunk boundaries and rejected incomplete model responses before replacing files.
+- Corrected package build contents and removed private runtime data from the current tree.

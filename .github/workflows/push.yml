@@ -72,7 +72,7 @@ jobs:
           uv pip install --system ".[test]"
 
       - name: Run tests with Pytest
-        run: uv run pytest -n auto --maxfail=1 --disable-warnings --cov-report=xml --cov-config=pyproject.toml --cov=src/cerebrate_file --cov=tests tests/
+        run: uv run --extra test pytest -n auto --maxfail=1 --disable-warnings --cov-report=xml --cov-config=pyproject.toml --cov=src/cerebrate_file --cov=tests tests/
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4

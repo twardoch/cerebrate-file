@@ -152,3 +152,14 @@ The Cerebras cloud API currently supports a 131,072 token context window. The to
 ## License
 
 MIT
+
+## Explicit OpenAI-compatible providers
+
+For comparisons requiring a fixed provider and model, use
+`cerebrate_file.compatible.CompatibleClient.connect(model, base_url, api_key)`.
+Call `.complete(text, instruction, max_tokens=4096)` for chat, or pass
+`raw_prompt=` for text-completion models. The returned `Completion` records text,
+actual model, request ID, finish reason, and usage. The adapter disables SDK
+retries and performs no model fallback; callers own retry and chunk persistence.
+`CompletionFailure.text` retains partial text on empty or truncated responses.
+Use the existing `create_chunks` and `ContinuityManager` for large documents.
